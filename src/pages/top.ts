@@ -1,4 +1,30 @@
-export function topPage(): string {
+interface LatestArticle {
+  slug: string; title: string; excerpt: string;
+  category: string; thumbnail_url: string; author: string; published_at: string;
+}
+
+const CATEGORY_LABELS: Record<string, string> = {
+  'safety': '安全対策', 'technology': 'テクノロジー', 'regulation': '法規制',
+  'installation': '取付ガイド', 'case-study': '導入事例', 'general': 'その他'
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'safety': 'bg-red-50 text-red-700', 'technology': 'bg-blue-50 text-blue-700',
+  'regulation': 'bg-amber-50 text-amber-700', 'installation': 'bg-green-50 text-green-700',
+  'case-study': 'bg-purple-50 text-purple-700', 'general': 'bg-gray-100 text-gray-600'
+}
+
+function escapeForHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function fmtDate(dateStr: string | null): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`
+}
+
+export function topPage(latestArticles: LatestArticle[] = []): string {
   const structuredData = JSON.stringify({
     "@context": "https://schema.org",
     "@graph": [
@@ -181,6 +207,41 @@ export function topPage(): string {
     .stat-number {
       font-variant-numeric: tabular-nums;
     }
+    /* Hero logo - blend white bg into dark bg */
+    .hero-logo-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-logo-container img {
+      mix-blend-mode: lighten;
+      filter: drop-shadow(0 0 40px rgba(196, 30, 58, 0.15));
+    }
+    .hero-logo-glow {
+      position: absolute;
+      inset: -20%;
+      background: radial-gradient(ellipse at center, rgba(196, 30, 58, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    /* Hero decorative elements */
+    .hero-grid-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+    .hero-accent-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #C41E3A, transparent);
+    }
   </style>
 </head>
 <body class="bg-white text-sva-gray antialiased">
@@ -196,7 +257,7 @@ export function topPage(): string {
           <a href="#service" class="text-gray-600 hover:text-sva-red transition-colors">サービス</a>
           <a href="#vehicles" class="text-gray-600 hover:text-sva-red transition-colors">対応車両</a>
           <a href="#devices" class="text-gray-600 hover:text-sva-red transition-colors">取付装置</a>
-          <a href="#flow" class="text-gray-600 hover:text-sva-red transition-colors">ご依頼の流れ</a>
+          <a href="/column" class="text-gray-600 hover:text-sva-red transition-colors">コラム</a>
           <a href="#partner" class="text-gray-600 hover:text-sva-red transition-colors">パートナー募集</a>
           <a href="#faq" class="text-gray-600 hover:text-sva-red transition-colors">FAQ</a>
         </nav>
@@ -216,7 +277,7 @@ export function topPage(): string {
         <a href="#service" class="block text-sm text-gray-600 py-2">サービス</a>
         <a href="#vehicles" class="block text-sm text-gray-600 py-2">対応車両</a>
         <a href="#devices" class="block text-sm text-gray-600 py-2">取付装置</a>
-        <a href="#flow" class="block text-sm text-gray-600 py-2">ご依頼の流れ</a>
+        <a href="/column" class="block text-sm text-gray-600 py-2">コラム</a>
         <a href="#partner" class="block text-sm text-gray-600 py-2">パートナー募集</a>
         <a href="#faq" class="block text-sm text-gray-600 py-2">FAQ</a>
         <a href="#contact" class="block text-sm text-white bg-sva-red rounded-lg px-4 py-2.5 text-center font-medium">お問い合わせ</a>
@@ -226,24 +287,29 @@ export function topPage(): string {
 
   <main>
     <!-- Hero Section -->
-    <section class="hero-gradient pt-28 sm:pt-32 pb-16 sm:pb-24">
+    <section class="hero-gradient pt-28 sm:pt-32 pb-16 sm:pb-24 overflow-hidden">
       <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <div class="max-w-3xl">
-          <p class="text-sva-red font-medium text-sm tracking-widest mb-4">SPECIAL VEHICLE ASSIST</p>
-          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
-            特殊車両の装置取付を、<br>全国どこでも。
-          </h1>
-          <p class="text-gray-300 text-base sm:text-lg leading-relaxed mb-8 max-w-2xl">
-            フォークリフト・重機・建機・トラック・バス ──<br class="hidden sm:block">
-            乗用車以外のすべての車両に、ドライブレコーダー・AIカメラ等の安全装置を出張取付する日本初のB2B専門プラットフォームです。
-          </p>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <a href="#contact" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
-              取付を依頼する
-            </a>
-            <a href="#partner" class="inline-flex items-center justify-center px-8 py-3.5 border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-colors text-sm">
-              公認パートナーに応募する
-            </a>
+        <div class="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+          <div class="flex-1 text-center lg:text-left">
+            <p class="text-sva-red font-medium text-sm tracking-widest mb-4">SPECIAL VEHICLE ASSIST</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
+              特殊車両の装置取付を、<br>全国どこでも。
+            </h1>
+            <p class="text-gray-300 text-base sm:text-lg leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
+              フォークリフト・重機・建機・トラック・バス ──<br class="hidden sm:block">
+              乗用車以外のすべての車両に、ドライブレコーダー・AIカメラ等の安全装置を出張取付する日本初のB2B専門プラットフォームです。
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <a href="#contact" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
+                取付を依頼する
+              </a>
+              <a href="#partner" class="inline-flex items-center justify-center px-8 py-3.5 border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-colors text-sm">
+                公認パートナーに応募する
+              </a>
+            </div>
+          </div>
+          <div class="flex-shrink-0 w-64 sm:w-80 lg:w-96">
+            <img src="/static/images/sva-logo.png" alt="SVA - Special Vehicle Assist" class="w-full h-auto hero-logo-blend select-none" draggable="false">
           </div>
         </div>
       </div>
@@ -370,6 +436,47 @@ export function topPage(): string {
         </div>
       </div>
     </section>
+
+    <!-- Column / Latest Articles -->
+    ${latestArticles.length > 0 ? `
+    <section id="column" class="py-16 sm:py-24 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="text-center mb-12">
+          <p class="text-sva-red text-sm font-medium tracking-widest mb-2">COLUMN</p>
+          <h2 class="text-2xl sm:text-3xl font-bold text-sva-dark">最新コラム</h2>
+          <p class="text-gray-500 mt-3 text-sm">特殊車両の安全装置に関する最新情報をお届けします</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          ${latestArticles.map(a => `
+            <a href="/column/${escapeForHtml(a.slug)}" class="bg-white rounded-xl border border-gray-100 overflow-hidden card-hover block">
+              <div class="aspect-[16/9] bg-gray-100 relative overflow-hidden">
+                ${a.thumbnail_url
+                  ? `<img src="${escapeForHtml(a.thumbnail_url)}" alt="${escapeForHtml(a.title)}" class="w-full h-full object-cover">`
+                  : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+                       <svg class="w-12 h-12 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                     </div>`
+                }
+                <span class="absolute top-3 left-3 px-2.5 py-1 text-xs font-medium rounded ${CATEGORY_COLORS[a.category] || 'bg-gray-100 text-gray-600'}">${CATEGORY_LABELS[a.category] || a.category}</span>
+              </div>
+              <div class="p-5">
+                <h3 class="text-sm font-bold text-sva-dark leading-snug mb-2" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escapeForHtml(a.title)}</h3>
+                <p class="text-xs text-gray-400 leading-relaxed mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escapeForHtml(a.excerpt)}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-gray-400">${fmtDate(a.published_at)}</span>
+                  <span class="text-xs text-gray-400">${escapeForHtml(a.author)}</span>
+                </div>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+        <div class="text-center mt-8">
+          <a href="/column" class="inline-flex items-center justify-center px-8 py-3 border border-gray-200 text-sva-dark text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            コラム一覧を見る
+          </a>
+        </div>
+      </div>
+    </section>
+    ` : ''}
 
     <!-- Partner Recruitment -->
     <section id="partner" class="py-16 sm:py-24 partner-banner">
@@ -500,7 +607,7 @@ export function topPage(): string {
             <li><a href="#service" class="hover:text-white transition-colors">SVAが選ばれる理由</a></li>
             <li><a href="#vehicles" class="hover:text-white transition-colors">対応車両カテゴリ</a></li>
             <li><a href="#devices" class="hover:text-white transition-colors">取付対応装置</a></li>
-            <li><a href="#flow" class="hover:text-white transition-colors">ご依頼の流れ</a></li>
+            <li><a href="/column" class="hover:text-white transition-colors">コラム</a></li>
             <li><a href="#partner" class="hover:text-white transition-colors">公認パートナー募集</a></li>
             <li><a href="#faq" class="hover:text-white transition-colors">よくあるご質問</a></li>
           </ul>
