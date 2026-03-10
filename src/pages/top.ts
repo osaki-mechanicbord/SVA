@@ -189,8 +189,8 @@ export function topPage(): string {
   <header class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-100 z-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
       <div class="flex items-center justify-between h-16 sm:h-20">
-        <a href="/" class="flex items-center gap-2">
-          <img src="/static/images/sva-logo.png" alt="SVA - Special Vehicle Assist" class="h-10 sm:h-12 w-auto">
+        <a href="/" class="flex items-center gap-3">
+          <img src="/static/images/sva-logo.png" alt="SVA - Special Vehicle Assist" class="h-9 sm:h-11 w-auto object-contain">
         </a>
         <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
           <a href="#service" class="text-gray-600 hover:text-sva-red transition-colors">サービス</a>
@@ -489,7 +489,9 @@ export function topPage(): string {
     <div class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <div class="grid md:grid-cols-3 gap-10">
         <div>
-          <img src="/static/images/sva-logo.png" alt="SVA - Special Vehicle Assist" class="h-10 w-auto mb-4 brightness-200">
+          <div class="bg-white rounded-lg px-3 py-2 inline-block mb-4">
+            <img src="/static/images/sva-logo.png" alt="SVA - Special Vehicle Assist" class="h-8 w-auto object-contain">
+          </div>
           <p class="text-gray-400 text-xs leading-relaxed">特殊車両専門の装置取付プラットフォーム。<br>全国の公認パートナーネットワークで、<br>どこでも出張施工に対応します。</p>
         </div>
         <div>
@@ -506,7 +508,9 @@ export function topPage(): string {
         <div>
           <p class="text-sm font-medium mb-4">運営会社</p>
           <div class="mb-4">
-            <img src="/static/images/tci-logo.png" alt="株式会社TCIサービス" class="h-8 w-auto mb-3 brightness-200">
+            <div class="bg-white rounded px-2 py-1.5 inline-block mb-3">
+              <img src="/static/images/tci-logo.png" alt="株式会社TCIサービス" class="h-6 w-auto object-contain">
+            </div>
           </div>
           <dl class="text-xs text-gray-400 space-y-1.5">
             <div class="flex"><dt class="w-16 shrink-0">社名</dt><dd>株式会社TCIサービス</dd></div>
