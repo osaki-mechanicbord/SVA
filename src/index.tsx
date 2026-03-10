@@ -7,6 +7,7 @@ import { adminPage } from './pages/admin'
 import { columnListPage } from './pages/column-list'
 import { columnDetailPage } from './pages/column-detail'
 import { api } from './api/articles'
+import { imagesApi } from './api/images'
 
 type Bindings = { DB: D1Database }
 
@@ -34,6 +35,8 @@ app.use('/api/*', cors())
 // API Routes
 // ==========================================
 app.route('/api', api)
+app.route('/media', imagesApi)
+app.route('/api', imagesApi)
 
 // ==========================================
 // Page Routes
