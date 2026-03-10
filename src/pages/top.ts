@@ -610,6 +610,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
             <li><a href="/column" class="hover:text-white transition-colors">コラム</a></li>
             <li><a href="#partner" class="hover:text-white transition-colors">公認パートナー募集</a></li>
             <li><a href="#faq" class="hover:text-white transition-colors">よくあるご質問</a></li>
+            <li><a href="https://www.torasapo-kun.com/" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">トラサポくん</a></li>
           </ul>
         </div>
         <div>
