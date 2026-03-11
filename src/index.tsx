@@ -4,6 +4,7 @@ import { secureHeaders } from 'hono/secure-headers'
 import { topPage } from './pages/top'
 import { llmsTxt } from './pages/llms'
 import { adminPage } from './pages/admin'
+import { adminSamplePage } from './pages/admin-sample'
 import { columnListPage } from './pages/column-list'
 import { columnDetailPage } from './pages/column-detail'
 import { partnerLoginPage } from './pages/partner-login'
@@ -125,6 +126,11 @@ app.get('/column/:slug', async (c) => {
 // CMS Admin page
 app.get('/admin', (c) => {
   return c.html(adminPage())
+})
+
+// CMS Admin sample (vehicle detail management demo)
+app.get('/admin/sample', (c) => {
+  return c.html(adminSamplePage())
 })
 
 // Partner pages
