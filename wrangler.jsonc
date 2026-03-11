@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "webapp",
+  "name": "sva",
   "compatibility_date": "2026-03-10",
   "pages_build_output_dir": "./dist",
   "compatibility_flags": [
@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "sva-production",
-      "database_id": "local-dev-placeholder"
+      "database_id": "d5ca7e78-23ab-4f00-9a76-addb3b41ff31"
     }
   ]
 }
