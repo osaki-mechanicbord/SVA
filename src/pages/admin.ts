@@ -640,6 +640,7 @@ export function adminPage(): string {
       setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 2500);
     }
     function esc(str) { if (!str) return ''; var d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+    function fmtDt(d) { if (!d) return '-'; try { return new Date(d).toLocaleString('ja-JP'); } catch(e) { return d; } }
     function renderPagination(elId, pag, fn) {
       const el = document.getElementById(elId);
       if (!pag || pag.totalPages <= 1) { el.innerHTML = ''; return; }
