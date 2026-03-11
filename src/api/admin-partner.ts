@@ -141,7 +141,12 @@ adminPartnerApi.get('/jobs', async (c) => {
   if (status) { where += ' AND j.status = ?'; params.push(status); }
 
   const countQ = `SELECT COUNT(*) as total FROM jobs j WHERE ${where}`
-  const dataQ = `SELECT j.*, p.company_name, p.representative_name, p.email as partner_email FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE ${where} ORDER BY j.created_at DESC LIMIT ? OFFSET ?`
+  const dataQ = `SELECT j.*, p.company_name, p.representative_name, p.email as partner_email,
+    (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id) as vehicle_count,
+    (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id AND status = 'completed') as vehicle_done_count,
+    (SELECT COUNT(*) FROM vehicle_products vp JOIN job_vehicles jv ON vp.vehicle_id = jv.id WHERE jv.job_id = j.id) as product_count,
+    (SELECT COUNT(*) FROM job_photos WHERE job_id = j.id) as photo_count
+    FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE ${where} ORDER BY j.created_at DESC LIMIT ? OFFSET ?`
 
   const [cnt, data] = await Promise.all([
     c.env.DB.prepare(countQ).bind(...params).first<{ total: number }>(),
@@ -200,17 +205,35 @@ adminPartnerApi.put('/jobs/:id', async (c) => {
   return c.json({ success: true })
 })
 
-// Get single job detail (with photos metadata)
+// Get single job detail (with vehicles, products, photos)
 adminPartnerApi.get('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const j = await c.env.DB.prepare(
     "SELECT j.*, p.company_name, p.representative_name, p.email as partner_email FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE j.id = ?"
   ).bind(id).first()
   if (!j) return c.json({ error: 'Not found' }, 404)
-  const photos = await c.env.DB.prepare(
-    "SELECT id, job_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? ORDER BY category, created_at"
+
+  // 車両明細+商品+写真カウント
+  const vehicles = await c.env.DB.prepare(
+    "SELECT * FROM job_vehicles WHERE job_id = ? ORDER BY seq"
   ).bind(id).all()
-  return c.json({ job: j, photos: photos.results })
+
+  const vehicleDetails = await Promise.all((vehicles.results as any[]).map(async (v: any) => {
+    const [products, photoCounts] = await Promise.all([
+      c.env.DB.prepare("SELECT * FROM vehicle_products WHERE vehicle_id = ? ORDER BY id").bind(v.id).all(),
+      c.env.DB.prepare("SELECT category, COUNT(*) as cnt FROM job_photos WHERE vehicle_id = ? GROUP BY category").bind(v.id).all()
+    ])
+    const photoMap: any = {}
+    ;(photoCounts.results as any[]).forEach((r: any) => { photoMap[r.category] = r.cnt })
+    return { ...v, products: products.results, photo_counts: photoMap }
+  }))
+
+  // 案件全体の写真（vehicle_id IS NULL の旧データ）
+  const legacyPhotos = await c.env.DB.prepare(
+    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id IS NULL ORDER BY category, created_at"
+  ).bind(id).all()
+
+  return c.json({ job: j, vehicles: vehicleDetails, photos: legacyPhotos.results })
 })
 
 // Get job photo data (individual)
@@ -250,6 +273,105 @@ adminPartnerApi.delete('/jobs/:id/photos/:photoId', async (c) => {
   const r = await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
   if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
   return c.json({ success: true })
+})
+
+// ===================== Vehicle CRUD (admin) =====================
+
+// Add vehicle
+adminPartnerApi.post('/jobs/:id/vehicles', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(jobId).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    maker_name?: string; car_model?: string; car_model_code?: string; vehicle_memo?: string
+  }>()
+  const maxSeq = await c.env.DB.prepare("SELECT MAX(seq) as m FROM job_vehicles WHERE job_id = ?").bind(jobId).first<{m:number}>()
+  const seq = (maxSeq?.m || 0) + 1
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_vehicles (job_id, seq, maker_name, car_model, car_model_code, vehicle_memo) VALUES (?,?,?,?,?,?)"
+  ).bind(jobId, seq, body.maker_name||'', body.car_model||'', body.car_model_code||'', body.vehicle_memo||'').run()
+  return c.json({ id: r.meta.last_row_id, seq }, 201)
+})
+
+// Update vehicle
+adminPartnerApi.put('/jobs/:id/vehicles/:vid', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const v = await c.env.DB.prepare("SELECT * FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first<any>()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{
+    maker_name?: string; car_model?: string; car_model_code?: string;
+    vehicle_memo?: string; status?: string; work_report?: string
+  }>()
+  const validStatuses = ['pending','in_progress','completed','issue']
+  if (body.status && !validStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  await c.env.DB.prepare(
+    "UPDATE job_vehicles SET maker_name=?, car_model=?, car_model_code=?, vehicle_memo=?, status=?, work_report=?, updated_at=CURRENT_TIMESTAMP WHERE id=?"
+  ).bind(
+    body.maker_name ?? v.maker_name, body.car_model ?? v.car_model, body.car_model_code ?? v.car_model_code,
+    body.vehicle_memo ?? v.vehicle_memo, body.status ?? v.status, body.work_report ?? v.work_report, vid
+  ).run()
+  return c.json({ success: true })
+})
+
+// Delete vehicle
+adminPartnerApi.delete('/jobs/:id/vehicles/:vid', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const r = await c.env.DB.prepare("DELETE FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// ===================== Vehicle Product CRUD (admin) =====================
+
+adminPartnerApi.post('/jobs/:id/vehicles/:vid/products', async (c) => {
+  const vid = Number(c.req.param('vid'))
+  const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ?").bind(vid).first()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{ product_name: string; quantity?: number; serial_number?: string; memo?: string }>()
+  if (!body.product_name) return c.json({ error: 'product_name required' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO vehicle_products (vehicle_id, product_name, quantity, serial_number, memo) VALUES (?,?,?,?,?)"
+  ).bind(vid, body.product_name, body.quantity||1, body.serial_number||'', body.memo||'').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+adminPartnerApi.put('/jobs/:id/vehicles/:vid/products/:pid', async (c) => {
+  const prodId = Number(c.req.param('pid'))
+  const vid = Number(c.req.param('vid'))
+  const p = await c.env.DB.prepare("SELECT * FROM vehicle_products WHERE id = ? AND vehicle_id = ?").bind(prodId, vid).first<any>()
+  if (!p) return c.json({ error: 'Product not found' }, 404)
+
+  const body = await c.req.json<{ product_name?: string; quantity?: number; serial_number?: string; memo?: string }>()
+  await c.env.DB.prepare(
+    "UPDATE vehicle_products SET product_name=?, quantity=?, serial_number=?, memo=? WHERE id=?"
+  ).bind(body.product_name??p.product_name, body.quantity??p.quantity, body.serial_number??p.serial_number, body.memo??p.memo, prodId).run()
+  return c.json({ success: true })
+})
+
+adminPartnerApi.delete('/jobs/:id/vehicles/:vid/products/:pid', async (c) => {
+  const prodId = Number(c.req.param('pid'))
+  const vid = Number(c.req.param('vid'))
+  const r = await c.env.DB.prepare("DELETE FROM vehicle_products WHERE id = ? AND vehicle_id = ?").bind(prodId, vid).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// Get vehicle photos (admin)
+adminPartnerApi.get('/jobs/:id/vehicles/:vid/photos', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const photos = await c.env.DB.prepare(
+    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id = ? ORDER BY category, created_at"
+  ).bind(jobId, vid).all()
+  return c.json({ photos: photos.results })
 })
 
 // Update job tracking statuses (shared between admin & partner)

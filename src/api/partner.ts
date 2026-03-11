@@ -207,14 +207,190 @@ partnerApi.get('/me/jobs', async (c) => {
   return c.json({ jobs: data.results, pagination: { page, limit, total: cnt?.total || 0, totalPages: Math.ceil((cnt?.total || 0) / limit) } })
 })
 
-// 案件詳細
+// 案件詳細（車両数・商品数・写真数の集計付き）
 partnerApi.get('/me/jobs/:id', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
   const id = Number(c.req.param('id'))
   const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
-  return c.json({ job })
+
+  // 車両明細+集計
+  const vehicles = await c.env.DB.prepare(
+    "SELECT * FROM job_vehicles WHERE job_id = ? ORDER BY seq"
+  ).bind(id).all()
+
+  // 各車両の商品・写真数を取得
+  const vehicleDetails = await Promise.all((vehicles.results as any[]).map(async (v: any) => {
+    const [products, photoCounts] = await Promise.all([
+      c.env.DB.prepare("SELECT * FROM vehicle_products WHERE vehicle_id = ? ORDER BY id").bind(v.id).all(),
+      c.env.DB.prepare("SELECT category, COUNT(*) as cnt FROM job_photos WHERE vehicle_id = ? GROUP BY category").bind(v.id).all()
+    ])
+    const photoMap: any = {}
+    ;(photoCounts.results as any[]).forEach((r: any) => { photoMap[r.category] = r.cnt })
+    return { ...v, products: products.results, photo_counts: photoMap }
+  }))
+
+  return c.json({ job, vehicles: vehicleDetails })
+})
+
+// ========== 車両明細 CRUD ==========
+
+// 車両追加
+partnerApi.post('/me/jobs/:id/vehicles', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    maker_name?: string; car_model?: string; car_model_code?: string; vehicle_memo?: string
+  }>()
+
+  // 次のseq番号を取得
+  const maxSeq = await c.env.DB.prepare("SELECT MAX(seq) as m FROM job_vehicles WHERE job_id = ?").bind(jobId).first<{m:number}>()
+  const seq = (maxSeq?.m || 0) + 1
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_vehicles (job_id, seq, maker_name, car_model, car_model_code, vehicle_memo) VALUES (?,?,?,?,?,?)"
+  ).bind(jobId, seq, body.maker_name||'', body.car_model||'', body.car_model_code||'', body.vehicle_memo||'').run()
+  return c.json({ id: r.meta.last_row_id, seq }, 201)
+})
+
+// 車両更新（情報・ステータス・作業報告）
+partnerApi.put('/me/jobs/:id/vehicles/:vid', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const v = await c.env.DB.prepare("SELECT * FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first<any>()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{
+    maker_name?: string; car_model?: string; car_model_code?: string;
+    vehicle_memo?: string; status?: string; work_report?: string
+  }>()
+
+  const validStatuses = ['pending','in_progress','completed','issue']
+  if (body.status && !validStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  await c.env.DB.prepare(
+    "UPDATE job_vehicles SET maker_name=?, car_model=?, car_model_code=?, vehicle_memo=?, status=?, work_report=?, updated_at=CURRENT_TIMESTAMP WHERE id=?"
+  ).bind(
+    body.maker_name ?? v.maker_name, body.car_model ?? v.car_model, body.car_model_code ?? v.car_model_code,
+    body.vehicle_memo ?? v.vehicle_memo, body.status ?? v.status, body.work_report ?? v.work_report, vid
+  ).run()
+  return c.json({ success: true })
+})
+
+// 車両削除
+partnerApi.delete('/me/jobs/:id/vehicles/:vid', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const r = await c.env.DB.prepare("DELETE FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// ========== 車両商品 CRUD ==========
+
+// 商品追加
+partnerApi.post('/me/jobs/:id/vehicles/:vid/products', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{ product_name: string; quantity?: number; serial_number?: string; memo?: string }>()
+  if (!body.product_name) return c.json({ error: 'product_name required' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO vehicle_products (vehicle_id, product_name, quantity, serial_number, memo) VALUES (?,?,?,?,?)"
+  ).bind(vid, body.product_name, body.quantity||1, body.serial_number||'', body.memo||'').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// 商品更新
+partnerApi.put('/me/jobs/:id/vehicles/:vid/products/:pid2', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const prodId = Number(c.req.param('pid2'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const p = await c.env.DB.prepare("SELECT * FROM vehicle_products WHERE id = ? AND vehicle_id = ?").bind(prodId, vid).first<any>()
+  if (!p) return c.json({ error: 'Product not found' }, 404)
+
+  const body = await c.req.json<{ product_name?: string; quantity?: number; serial_number?: string; memo?: string }>()
+  await c.env.DB.prepare(
+    "UPDATE vehicle_products SET product_name=?, quantity=?, serial_number=?, memo=? WHERE id=?"
+  ).bind(body.product_name??p.product_name, body.quantity??p.quantity, body.serial_number??p.serial_number, body.memo??p.memo, prodId).run()
+  return c.json({ success: true })
+})
+
+// 商品削除
+partnerApi.delete('/me/jobs/:id/vehicles/:vid/products/:pid2', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const prodId = Number(c.req.param('pid2'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const r = await c.env.DB.prepare("DELETE FROM vehicle_products WHERE id = ? AND vehicle_id = ?").bind(prodId, vid).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// ========== 車両単位の写真 ==========
+
+// 車両写真アップロード
+partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{ category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string }>()
+  const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
+  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
+  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?,?)"
+  ).bind(jobId, vid, body.category, body.photo_data, body.mime_type||'image/jpeg', body.file_name||'', body.caption||'', 'partner').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// 車両写真一覧
+partnerApi.get('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const photos = await c.env.DB.prepare(
+    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id = ? ORDER BY category, created_at"
+  ).bind(jobId, vid).all()
+  return c.json({ photos: photos.results })
 })
 
 // 案件ステータス更新 (パートナー側: accept / decline / メモ)

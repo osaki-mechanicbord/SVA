@@ -561,6 +561,7 @@ export function partnerMypagePage(): string {
 
     // Current job detail tab
     var currentJobTab = 'info';
+    var currentJobVehicles = [];
 
     async function openJobDetail(id) {
       var modal = document.getElementById('jobDetailModal');
@@ -568,10 +569,12 @@ export function partnerMypagePage(): string {
       modal.classList.remove('hidden');
       content.innerHTML = '<div class="flex items-center justify-center py-8"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       currentJobTab = 'info';
+      currentJobVehicles = [];
       try {
         var res = await fetch('/api/partner/me/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
         var data = await res.json(); var j = data.job;
-        // Also load photos metadata
+        currentJobVehicles = data.vehicles || [];
+        // Also load legacy photos (job-level, no vehicle_id)
         var pRes = await fetch('/api/partner/me/jobs/' + id + '/photos', { headers: { 'Authorization': 'Bearer ' + token } });
         var pData = await pRes.json();
         var photos = pData.photos || [];
@@ -579,9 +582,16 @@ export function partnerMypagePage(): string {
       } catch(e) { content.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
     }
 
+    var VEH_STATUS = { 'pending': ['未着手','bg-gray-100 text-gray-500 border-gray-200'], 'in_progress': ['作業中','bg-blue-50 text-blue-700 border-blue-200'], 'completed': ['完了','bg-green-50 text-green-700 border-green-200'], 'issue': ['問題あり','bg-red-50 text-red-600 border-red-200'] };
+    var PHOTO_CATS_ARR = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
+
     function renderJobDetail(j, photos) {
       var content = document.getElementById('jobDetailContent');
       var s = JOB_S[j.status] || JOB_S.pending;
+
+      var vCount = currentJobVehicles.length;
+      var vDone = currentJobVehicles.filter(function(v){return v.status==='completed'}).length;
+      var totalProducts = 0; currentJobVehicles.forEach(function(v){totalProducts += (v.products||[]).length;});
 
       var statusBtns = '';
       if (j.status === 'pending') {
@@ -595,14 +605,33 @@ export function partnerMypagePage(): string {
       // Build tab navigation
       var tabNav = '<div class="flex border-b border-gray-200 mb-4 -mx-6 px-6">'
         + '<button onclick="switchJobTab(\\'info\\',' + j.id + ')" id="jt_tab_info" class="px-4 py-2 text-sm font-medium border-b-2 border-sva-red text-sva-red">基本情報</button>'
-        + '<button onclick="switchJobTab(\\'details\\',' + j.id + ')" id="jt_tab_details" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">詳細・車両</button>'
+        + (vCount > 0 ? '<button onclick="switchJobTab(\\'vehicles\\',' + j.id + ')" id="jt_tab_vehicles" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">車両 <span class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">' + vDone + '/' + vCount + '</span></button>' : '')
+        + '<button onclick="switchJobTab(\\'details\\',' + j.id + ')" id="jt_tab_details" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">詳細</button>'
         + '<button onclick="switchJobTab(\\'tracking\\',' + j.id + ')" id="jt_tab_tracking" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">トラッキング</button>'
         + '<button onclick="switchJobTab(\\'photos\\',' + j.id + ')" id="jt_tab_photos" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 relative">写真<span id="photoBadge" class="' + (photos.length > 0 ? '' : 'hidden') + ' ml-1 px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full">' + photos.length + '</span></button>'
         + '<button onclick="switchJobTab(\\'report\\',' + j.id + ')" id="jt_tab_report" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">作業報告</button>'
         + '</div>';
 
       // ===== TAB: 基本情報 =====
+      var vehicleSummary = '';
+      if (vCount > 0) {
+        var progress = vCount > 0 ? Math.round(vDone/vCount*100) : 0;
+        vehicleSummary = '<div class="mb-4 bg-blue-50 rounded-xl p-4 border border-blue-100">'
+          + '<div class="flex items-center justify-between mb-2"><span class="text-sm font-bold text-sva-dark">車両進捗</span><span class="text-xs text-gray-500">' + vDone + '/' + vCount + '台完了 (' + progress + '%)</span></div>'
+          + '<div class="w-full bg-blue-200 rounded-full h-2 mb-3"><div class="bg-blue-600 h-2 rounded-full" style="width:' + progress + '%"></div></div>'
+          + '<div class="grid grid-cols-' + Math.min(vCount,4) + ' gap-2">' + currentJobVehicles.map(function(v){
+            var vs = VEH_STATUS[v.status]||VEH_STATUS.pending;
+            var pc = v.photo_counts||{}; var photoCount=0; Object.values(pc).forEach(function(n){photoCount+=n;});
+            return '<div class="bg-white rounded-lg p-2.5 border border-white shadow-sm cursor-pointer hover:border-blue-200" onclick="switchJobTab(\\'vehicles\\','+j.id+')">'
+              + '<p class="text-[10px] text-gray-400">#' + v.seq + '</p>'
+              + '<p class="text-xs font-bold text-gray-800 truncate">' + escH(v.maker_name) + ' ' + escH(v.car_model) + '</p>'
+              + '<div class="flex items-center gap-1 mt-1"><span class="px-1 py-0.5 text-[9px] rounded font-medium border ' + vs[1] + '">' + vs[0] + '</span>'
+              + '<span class="text-[9px] text-gray-400 ml-auto">' + (v.products||[]).length + '品 ' + photoCount + '写</span></div></div>';
+          }).join('') + '</div></div>';
+      }
+
       var infoTab = '<div id="jt_panel_info">'
+        + vehicleSummary
         + '<div class="grid grid-cols-2 gap-3 text-sm mb-4">'
         + '<div><p class="text-xs text-gray-400">車両タイプ</p><p class="font-medium">' + escH(j.vehicle_type || '-') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">取付装置</p><p class="font-medium">' + escH(j.device_type || '-') + '</p></div>'
@@ -616,7 +645,68 @@ export function partnerMypagePage(): string {
         + '<div class="mb-3"><label class="text-xs text-gray-400 mb-1 block">メモ（自分用）</label><textarea id="jobMemoInput" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red">' + escH(j.partner_memo || '') + '</textarea><button onclick="saveJobMemo(' + j.id + ')" class="mt-1 px-3 py-1 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">メモ保存</button></div>'
         + statusBtns + '</div></div>';
 
-      // ===== TAB: 詳細・車両情報 =====
+      // ===== TAB: 車両明細 =====
+      var vehiclesTab = '';
+      if (vCount > 0) {
+        var vProgress = vCount > 0 ? Math.round(vDone/vCount*100) : 0;
+        vehiclesTab = '<div id="jt_panel_vehicles" class="hidden">'
+          + '<div class="flex items-center justify-between mb-4"><div><span class="text-sm font-bold text-sva-dark">車両一覧</span><span class="text-xs text-gray-500 ml-2">' + vDone + '/' + vCount + '台完了 (' + vProgress + '%)</span></div></div>'
+          + '<div class="space-y-3">' + currentJobVehicles.map(function(v) {
+            var vs = VEH_STATUS[v.status]||VEH_STATUS.pending;
+            var pc = v.photo_counts||{}; var photoCount=0; Object.values(pc).forEach(function(n){photoCount+=n;});
+            var photoTotal = PHOTO_CATS_ARR.length;
+            var photoDone = 0; PHOTO_CATS_ARR.forEach(function(c){if(pc[c[0]]>0) photoDone++;});
+            return '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">'
+              + '<div class="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50" onclick="toggleVehiclePanel('+v.id+')">'
+              + '<div class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ' + (v.status==='completed'?'bg-green-50 text-green-600':v.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400') + '">#' + v.seq + '</div>'
+              + '<div class="min-w-0 flex-1">'
+              + '<div class="flex items-center gap-2 mb-0.5"><span class="px-1.5 py-0.5 text-[10px] rounded font-medium border ' + vs[1] + '">' + vs[0] + '</span><span class="text-xs text-gray-400">' + escH(v.car_model_code) + '</span></div>'
+              + '<p class="text-sm font-bold text-gray-800">' + escH(v.maker_name) + ' ' + escH(v.car_model) + '</p>'
+              + '<div class="flex items-center gap-3 mt-1 text-[10px] text-gray-500">'
+              + '<span>商品 ' + (v.products||[]).length + '点</span>'
+              + '<span>写真 ' + photoDone + '/' + photoTotal + 'カテゴリ</span>'
+              + (v.work_report ? '<span class="text-green-600 font-medium">報告済</span>' : '<span class="text-amber-600">報告待ち</span>')
+              + '</div></div>'
+              + '<svg class="w-4 h-4 text-gray-300 shrink-0 transition-transform" id="vchev_'+v.id+'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+              + '</div>'
+              // 展開パネル
+              + '<div id="vpanel_'+v.id+'" class="hidden border-t border-gray-100">'
+              + '<div class="p-4 space-y-4">'
+              // 商品一覧
+              + '<div><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">取付商品</p>'
+              + ((v.products||[]).length > 0
+                ? '<div class="space-y-1.5">' + (v.products||[]).map(function(p){
+                  return '<div class="flex items-center gap-2 text-sm"><span class="w-5 h-5 bg-gray-100 rounded text-[10px] flex items-center justify-center font-medium text-gray-500">' + p.quantity + '</span><span class="font-medium text-gray-800">' + escH(p.product_name) + '</span>' + (p.serial_number ? '<span class="text-[10px] text-gray-400 font-mono ml-auto">' + escH(p.serial_number) + '</span>' : '') + '</div>';
+                }).join('') + '</div>'
+                : '<p class="text-xs text-gray-400">商品未登録</p>')
+              + '</div>'
+              // 写真撮影スロット
+              + '<div><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">写真撮影</p>'
+              + '<div class="grid grid-cols-3 gap-2">' + PHOTO_CATS_ARR.map(function(c){
+                var cnt = pc[c[0]]||0;
+                return '<div class="rounded-lg border ' + (cnt>0?'border-green-200 bg-green-50':'border-gray-200 bg-gray-50') + ' p-2 text-center">'
+                  + (cnt>0
+                    ? '<svg class="w-4 h-4 text-green-500 mx-auto mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg><p class="text-[9px] font-medium text-green-700">' + c[1] + '</p><p class="text-[8px] text-green-500">' + cnt + '枚</p>'
+                    : '<label class="cursor-pointer block"><svg class="w-4 h-4 text-gray-300 mx-auto mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-[9px] text-gray-500">' + c[1] + '</p><p class="text-[8px] text-gray-400">撮影</p><input type="file" accept="image/*" capture="environment" class="hidden" onchange="uploadVehiclePhoto('+j.id+','+v.id+',\\''+c[0]+'\\',this)"></label>')
+                  + '</div>';
+              }).join('') + '</div>'
+              + '</div>'
+              // 作業報告
+              + '<div><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">作業報告</p>'
+              + '<textarea id="vr_'+v.id+'" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs resize-none focus:outline-none focus:border-sva-red" placeholder="配線経路・電源取得箇所・動作確認結果などを記載...">' + escH(v.work_report||'') + '</textarea>'
+              + '<div class="flex items-center gap-2 mt-2">'
+              + '<button onclick="saveVehicleReport('+j.id+','+v.id+')" class="px-4 py-1.5 bg-sva-red text-white text-[10px] font-medium rounded-lg hover:bg-red-800">報告を保存</button>'
+              + '<select id="vs_'+v.id+'" class="px-2 py-1.5 border border-gray-200 rounded-lg text-[10px] bg-white">'
+              + [['pending','未着手'],['in_progress','作業中'],['completed','完了'],['issue','問題あり']].map(function(o){return '<option value="'+o[0]+'"'+(v.status===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')
+              + '</select>'
+              + '<button onclick="saveVehicleStatus('+j.id+','+v.id+')" class="px-3 py-1.5 text-[10px] bg-gray-100 rounded-lg hover:bg-gray-200">ステータス更新</button>'
+              + '<span id="vrMsg_'+v.id+'" class="text-[10px]"></span>'
+              + '</div></div>'
+              + '</div></div></div>';
+          }).join('') + '</div></div>';
+      }
+
+      // ===== TAB: 詳細情報 =====
       var detailsTab = '<div id="jt_panel_details" class="hidden">'
         + '<p class="text-xs text-gray-400 mb-3">車両情報・送り状NO・作業メモを入力してください</p>'
         + '<div class="space-y-3">'
@@ -712,13 +802,16 @@ export function partnerMypagePage(): string {
         + '<div class="flex items-center gap-2 mt-3"><button onclick="saveJobReport(' + j.id + ')" class="px-5 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">作業報告を保存</button><span id="jrMsg" class="text-xs"></span></div>'
         + '</div>';
 
-      content.innerHTML = '<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><h3 class="text-base font-bold text-sva-dark">' + escH(j.title) + '</h3></div><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
-        + tabNav + infoTab + detailsTab + trackingTab + photosTab + reportTab;
+      content.innerHTML = '<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><h3 class="text-base font-bold text-sva-dark">' + escH(j.title) + '</h3>'
+        + (vCount > 0 ? '<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">車両 ' + vDone + '/' + vCount + '台</span>' : '')
+        + (totalProducts > 0 ? '<span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full font-medium">商品 ' + totalProducts + '点</span>' : '')
+        + '</div><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
+        + tabNav + infoTab + vehiclesTab + detailsTab + trackingTab + photosTab + reportTab;
     }
 
     function switchJobTab(tab, jobId) {
       currentJobTab = tab;
-      ['info','details','tracking','photos','report'].forEach(function(t) {
+      ['info','vehicles','details','tracking','photos','report'].forEach(function(t) {
         var panel = document.getElementById('jt_panel_' + t);
         var tabBtn = document.getElementById('jt_tab_' + t);
         if (panel) panel.classList.toggle('hidden', t !== tab);
@@ -726,6 +819,67 @@ export function partnerMypagePage(): string {
       });
     }
     window.switchJobTab = switchJobTab;
+
+    function toggleVehiclePanel(vid) {
+      var panel = document.getElementById('vpanel_' + vid);
+      var chev = document.getElementById('vchev_' + vid);
+      if (panel) {
+        var isHidden = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden');
+        if (chev) chev.style.transform = isHidden ? 'rotate(180deg)' : '';
+      }
+    }
+    window.toggleVehiclePanel = toggleVehiclePanel;
+
+    async function uploadVehiclePhoto(jobId, vid, category, input) {
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      if (file.size > 5 * 1024 * 1024) { showToast('5MB以下の画像を選択してください', true); input.value = ''; return; }
+      showToast('写真をアップロード中...');
+      try {
+        var reader = new FileReader();
+        reader.onload = async function(e) {
+          var base64 = e.target.result.split(',')[1];
+          var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ category: category, photo_data: base64, mime_type: file.type, file_name: file.name })
+          });
+          if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
+          else { var d = await res.json(); showToast(d.error || 'アップロード失敗', true); }
+        };
+        reader.readAsDataURL(file);
+      } catch(e) { showToast('アップロード失敗', true); }
+      input.value = '';
+    }
+    window.uploadVehiclePhoto = uploadVehiclePhoto;
+
+    async function saveVehicleReport(jobId, vid) {
+      var report = document.getElementById('vr_' + vid).value;
+      var msgEl = document.getElementById('vrMsg_' + vid);
+      try {
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ work_report: report })
+        });
+        if (res.ok) { msgEl.textContent = '保存しました'; msgEl.className = 'text-[10px] text-green-600'; showToast('作業報告を保存しました'); }
+        else { msgEl.textContent = '保存失敗'; msgEl.className = 'text-[10px] text-red-600'; }
+      } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-[10px] text-red-600'; }
+    }
+    window.saveVehicleReport = saveVehicleReport;
+
+    async function saveVehicleStatus(jobId, vid) {
+      var status = document.getElementById('vs_' + vid).value;
+      var msgEl = document.getElementById('vrMsg_' + vid);
+      try {
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ status: status })
+        });
+        if (res.ok) { msgEl.textContent = '更新しました'; msgEl.className = 'text-[10px] text-green-600'; showToast('ステータスを更新しました'); }
+        else { msgEl.textContent = '更新失敗'; msgEl.className = 'text-[10px] text-red-600'; }
+      } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-[10px] text-red-600'; }
+    }
+    window.saveVehicleStatus = saveVehicleStatus;
 
     async function saveJobDetails(jobId) {
       var msgEl = document.getElementById('jdMsg');
