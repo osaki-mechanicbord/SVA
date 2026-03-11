@@ -273,6 +273,7 @@ export function adminPage(): string {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">案件一覧</div>
           <div class="flex items-center gap-2">
+            <div class="relative"><input id="jobSearchInput" type="text" placeholder="案件No・案件名・会社名で検索" class="w-56 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
             <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
               <option value="">全ステータス</option>
               <option value="pending">未対応</option>
@@ -854,8 +855,10 @@ export function adminPage(): string {
       document.getElementById('backToJobListBtn').classList.add('hidden');
       document.getElementById('jobViewTitle').textContent = '案件一覧';
       var status = document.getElementById('jobStatusFilter').value;
+      var search = document.getElementById('jobSearchInput').value.trim();
       var url = API + '/admin/jobs?page=' + page;
       if (status) url += '&status=' + status;
+      if (search) url += '&search=' + encodeURIComponent(search);
       try {
         var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
         var data = await res.json();
@@ -875,7 +878,9 @@ export function adminPage(): string {
         return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-gray-300 cursor-pointer" onclick="viewJob(' + j.id + ')">'
           + '<div class="flex items-center gap-4">'
           + '<div class="min-w-0 flex-1">'
-          + '<div class="flex items-center gap-2 mb-1.5 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><span class="text-xs text-gray-400">' + esc(j.company_name || '-') + '</span></div>'
+          + '<div class="flex items-center gap-2 mb-1.5 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
+          + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '')
+          + '<span class="text-xs text-gray-400">' + esc(j.company_name || '-') + '</span></div>'
           + '<p class="text-sm font-medium text-gray-800 truncate mb-1.5">' + esc(j.title) + '</p>'
           + '<div class="flex items-center gap-1.5 flex-wrap"><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sh[1] + '">製品:' + sh[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sc[1] + '">日程:' + sc[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + wk[1] + '">作業:' + wk[0] + '</span>'
           + (j.vehicle_count > 0 ? '<span class="px-1.5 py-0.5 text-[10px] rounded font-medium bg-blue-50 text-blue-700">車両 ' + (j.vehicle_done_count||0) + '/' + j.vehicle_count + '台</span>' : '')
@@ -902,7 +907,10 @@ export function adminPage(): string {
         + '<input type="hidden" id="nj_partner_id" value="">'
         + '<p id="njSelectedPartner" class="text-sm text-sva-red font-medium mt-2"></p></div>'
         + '<div class="space-y-4">'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件名 <span class="text-red-500">*</span></label><input id="nj_title" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="例: フォークリフトAIカメラ取付 10台"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件No</label><input id="nj_job_number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-sva-red" placeholder="例: SVA-2026-0003"></div>'
+        + '</div>'
         + '<div class="grid sm:grid-cols-2 gap-4">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両タイプ</label><input id="nj_vehicle" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="フォークリフト"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">取付装置</label><input id="nj_device" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="人検知AIカメラ"></div>'
@@ -939,7 +947,7 @@ export function adminPage(): string {
       if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと案件名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
       try {
         var res = await fetch(API + '/admin/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value })
+          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value, job_number: document.getElementById('nj_job_number').value })
         });
         var data = await res.json();
         if (!res.ok) { document.getElementById('njMsg').textContent = data.error || '作成失敗'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
@@ -951,6 +959,7 @@ export function adminPage(): string {
     var currentJobData = null;
     var currentJobVehicles = [];
     var currentVehicleId = null;
+    var currentJobAttachments = [];
 
     async function viewJob(id) {
       document.getElementById('jobListView').classList.add('hidden');
@@ -965,6 +974,7 @@ export function adminPage(): string {
         if (!data.job) { dv.innerHTML = '<p class="text-sm text-red-500">案件が見つかりません</p>'; return; }
         currentJobData = data.job;
         currentJobVehicles = data.vehicles || [];
+        currentJobAttachments = data.attachments || [];
         currentVehicleId = null;
         renderJobDetail(data.job, data.vehicles || [], data.photos || []);
       } catch(e) { dv.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
@@ -991,7 +1001,9 @@ export function adminPage(): string {
       dv.innerHTML = ''
         // Header
         + '<div class="bg-white rounded-xl border border-gray-200 p-5 mb-0">'
-        + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><span class="text-xs text-gray-400">ID: ' + j.id + '</span></div>'
+        + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
+        + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '<span class="px-2 py-0.5 text-[10px] rounded bg-gray-50 text-gray-400 border border-gray-200">案件No未設定</span>')
+        + '<span class="text-xs text-gray-400">ID: ' + j.id + '</span></div>'
         + '<h3 class="text-lg font-bold text-sva-dark">' + esc(j.title) + '</h3>'
         + '<p class="text-sm text-gray-500 mt-1">' + esc(j.company_name||'-') + ' / ' + esc(j.representative_name||'-') + '</p>'
         + '<div class="flex items-center gap-2 mt-3 flex-wrap">'
@@ -1029,6 +1041,7 @@ export function adminPage(): string {
     function renderOverviewTab(ct) {
       var j = currentJobData;
       ct.innerHTML = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-5">'
+        + '<div><p class="text-xs text-gray-400">案件No</p><p class="font-bold font-mono text-indigo-700">' + esc(j.job_number||'未設定') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">作業場所</p><p class="font-medium">' + esc(j.location||'-') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">希望日程</p><p class="font-medium">' + esc(j.preferred_date||'-') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">予算</p><p class="font-medium">' + esc(j.budget||'-') + '</p></div>'
@@ -1038,9 +1051,10 @@ export function adminPage(): string {
         + '<div><p class="text-xs text-gray-400">作成日</p><p class="font-medium">' + fmtDt(j.created_at) + '</p></div>'
         + '</div>'
         + (j.description ? '<div class="mb-5"><p class="text-xs text-gray-400 mb-1">詳細説明</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line">' + esc(j.description) + '</div></div>' : '')
-        // 案件詳細フィールド（送り状・車両情報など - 既存）
+        // 案件詳細フィールド（案件No + 送り状・車両情報など）
         + '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">'
-        + '<div><p class="text-xs text-gray-400 mb-1">送り状NO</p><input id="aj_tracking" type="text" value="' + esc(j.tracking_number||'') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="追跡番号"></div>'
+        + '<div class="sm:col-span-2"><p class="text-xs text-gray-400 mb-1">案件No <span class="text-indigo-500 font-bold">*請求管理用</span></p><input id="aj_job_number" type="text" value="' + esc(j.job_number||'') + '" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-sva-red bg-indigo-50/50" placeholder="例: SVA-2026-0001"></div>'
+        + '<div class="sm:col-span-2"><p class="text-xs text-gray-400 mb-1">送り状NO</p><input id="aj_tracking" type="text" value="' + esc(j.tracking_number||'') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="追跡番号"></div>'
         + '<div><p class="text-xs text-gray-400 mb-1">メーカー名</p><input id="aj_maker" type="text" value="' + esc(j.maker_name||'') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
         + '<div><p class="text-xs text-gray-400 mb-1">車種</p><input id="aj_car_model" type="text" value="' + esc(j.car_model||'') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
         + '<div><p class="text-xs text-gray-400 mb-1">車両型式</p><input id="aj_car_code" type="text" value="' + esc(j.car_model_code||'') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
@@ -1048,6 +1062,11 @@ export function adminPage(): string {
         + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">作業報告（パートナー記入）</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[40px]">' + esc(j.work_report||'未記入') + '</div></div>'
         + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">メモ</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[30px]">' + esc(j.general_memo||'未記入') + '</div></div>'
         + '<div class="flex items-center gap-3"><button onclick="saveJobDetails(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">詳細情報を保存</button><span id="ajdMsg" class="text-sm"></span></div>'
+        // 添付ファイル（PDF等）セクション
+        + '<div class="mt-6 rounded-xl border border-gray-200 p-5">'
+        + '<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-sva-dark"><svg class="w-4 h-4 inline mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>添付ファイル（取付マニュアル等）</h4>'
+        + '<label class="px-3 py-1.5 bg-sva-red text-white text-xs font-medium rounded-lg hover:bg-red-800 cursor-pointer"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>PDF添付<input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" class="hidden" onchange="uploadJobAttachment(' + j.id + ',this)"></label></div>'
+        + '<div id="attachmentsList">' + renderAttachmentsList(currentJobAttachments) + '</div></div>'
         // 車両サマリー
         + (currentJobVehicles.length > 0
           ? '<div class="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-100"><h4 class="text-sm font-bold text-sva-dark mb-3">車両進捗サマリー</h4>'
@@ -1251,6 +1270,7 @@ export function adminPage(): string {
         var res = await fetch(API + '/admin/jobs/' + jobId, {
           method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
           body: JSON.stringify({
+            job_number: document.getElementById('aj_job_number').value,
             tracking_number: document.getElementById('aj_tracking').value,
             maker_name: document.getElementById('aj_maker').value,
             car_model: document.getElementById('aj_car_model').value,
@@ -1271,6 +1291,70 @@ export function adminPage(): string {
           w.document.write('<html><head><title>写真プレビュー</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#111;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="data:' + (data.photo.mime_type || 'image/jpeg') + ';base64,' + data.photo.photo_data + '"></body></html>');
         }
       } catch(e) { showToast('写真の読み込みに失敗しました'); }
+    }
+
+    // ===== Attachment helpers =====
+    function renderAttachmentsList(atts) {
+      if (!atts || !atts.length) return '<p class="text-sm text-gray-400 py-2">添付ファイルはありません</p>';
+      return '<div class="space-y-2">' + atts.map(function(a) {
+        var size = a.file_size > 1048576 ? (a.file_size/1048576).toFixed(1) + 'MB' : (a.file_size/1024).toFixed(0) + 'KB';
+        var isPdf = (a.mime_type||'').includes('pdf');
+        var date = a.created_at ? new Date(a.created_at).toLocaleDateString('ja-JP') : '';
+        return '<div class="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-gray-200">'
+          + '<div class="w-8 h-8 rounded flex items-center justify-center shrink-0 ' + (isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500') + '">'
+          + (isPdf ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>' : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>')
+          + '</div>'
+          + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800 truncate">' + esc(a.file_name) + '</p>'
+          + '<p class="text-[10px] text-gray-400">' + size + ' ・ ' + date + (a.description ? ' ・ ' + esc(a.description) : '') + '</p></div>'
+          + '<button onclick="downloadAttachment(' + a.job_id + ',' + a.id + ',\\'' + esc(a.file_name) + '\\')" class="px-2.5 py-1 text-[10px] font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 shrink-0">DL</button>'
+          + '<button onclick="deleteAttachment(' + a.job_id + ',' + a.id + ')" class="px-2 py-1 text-[10px] text-red-400 hover:text-red-600 shrink-0">削除</button></div>';
+      }).join('') + '</div>';
+    }
+
+    async function uploadJobAttachment(jobId, input) {
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      if (file.size > 10 * 1024 * 1024) { showToast('ファイルサイズが10MBを超えています'); input.value = ''; return; }
+      var desc = prompt('ファイルの説明（任意）', '') || '';
+      showToast('アップロード中...');
+      var reader = new FileReader();
+      reader.onload = async function(e) {
+        var base64 = e.target.result.split(',')[1];
+        try {
+          var res = await fetch(API + '/admin/jobs/' + jobId + '/attachments', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+            body: JSON.stringify({ file_name: file.name, file_data: base64, mime_type: file.type || 'application/pdf', description: desc })
+          });
+          if (res.ok) { showToast('添付ファイルをアップロードしました'); viewJob(jobId); }
+          else { var d = await res.json(); showToast(d.error || 'アップロード失敗'); }
+        } catch(e) { showToast('アップロードエラー'); }
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+    }
+
+    async function downloadAttachment(jobId, attId, fileName) {
+      try {
+        showToast('ダウンロード中...');
+        var res = await fetch(API + '/admin/jobs/' + jobId + '/attachments/' + attId, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        if (data.attachment && data.attachment.file_data) {
+          var a = document.createElement('a');
+          a.href = 'data:' + (data.attachment.mime_type||'application/pdf') + ';base64,' + data.attachment.file_data;
+          a.download = fileName || 'attachment';
+          a.click();
+          showToast('ダウンロード完了');
+        }
+      } catch(e) { showToast('ダウンロード失敗'); }
+    }
+
+    async function deleteAttachment(jobId, attId) {
+      if (!confirm('この添付ファイルを削除しますか？')) return;
+      try {
+        var res = await fetch(API + '/admin/jobs/' + jobId + '/attachments/' + attId, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.ok) { showToast('添付ファイルを削除しました'); viewJob(jobId); }
+        else { showToast('削除失敗'); }
+      } catch(e) { showToast('エラー'); }
     }
 
     async function saveJobTracking(jobId) {

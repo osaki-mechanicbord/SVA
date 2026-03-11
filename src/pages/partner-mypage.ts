@@ -546,6 +546,7 @@ export function partnerMypagePage(): string {
           var date = j.created_at ? new Date(j.created_at).toLocaleDateString('ja-JP') : '';
           return '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-5 cursor-pointer hover:border-gray-200 transition-colors" onclick="openJobDetail(' + j.id + ')">'
             + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
+            + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + escH(j.job_number) + '</span>' : '')
             + (j.tracking_number ? '<span class="text-[10px] text-gray-400"><svg class="w-3 h-3 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4"/></svg>送り状有</span>' : '')
             + '<span class="text-xs text-gray-400 ml-auto">' + date + '</span></div>'
             + '<p class="text-sm font-bold text-sva-dark mb-2">' + escH(j.title) + '</p>'
@@ -562,6 +563,7 @@ export function partnerMypagePage(): string {
     // Current job detail tab
     var currentJobTab = 'info';
     var currentJobVehicles = [];
+    var currentJobAttachments = [];
 
     async function openJobDetail(id) {
       var modal = document.getElementById('jobDetailModal');
@@ -570,10 +572,11 @@ export function partnerMypagePage(): string {
       content.innerHTML = '<div class="flex items-center justify-center py-8"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       currentJobTab = 'info';
       currentJobVehicles = [];
-      try {
+      currentJobAttachments = [];      try {
         var res = await fetch('/api/partner/me/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
         var data = await res.json(); var j = data.job;
         currentJobVehicles = data.vehicles || [];
+        currentJobAttachments = data.attachments || [];
         // Also load legacy photos (job-level, no vehicle_id)
         var pRes = await fetch('/api/partner/me/jobs/' + id + '/photos', { headers: { 'Authorization': 'Bearer ' + token } });
         var pData = await pRes.json();
@@ -633,6 +636,7 @@ export function partnerMypagePage(): string {
       var infoTab = '<div id="jt_panel_info">'
         + vehicleSummary
         + '<div class="grid grid-cols-2 gap-3 text-sm mb-4">'
+        + (j.job_number ? '<div><p class="text-xs text-gray-400">案件No</p><p class="font-bold font-mono text-indigo-700">' + escH(j.job_number) + '</p></div>' : '')
         + '<div><p class="text-xs text-gray-400">車両タイプ</p><p class="font-medium">' + escH(j.vehicle_type || '-') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">取付装置</p><p class="font-medium">' + escH(j.device_type || '-') + '</p></div>'
         + '<div><p class="text-xs text-gray-400">作業場所</p><p class="font-medium">' + escH(j.location || '-') + '</p></div>'
@@ -641,6 +645,21 @@ export function partnerMypagePage(): string {
         + '<div><p class="text-xs text-gray-400">送り状NO</p><p class="font-medium ' + (j.tracking_number ? 'text-blue-700' : '') + '">' + escH(j.tracking_number || '未登録') + '</p></div>'
         + '</div>'
         + (j.description ? '<div class="mb-4"><p class="text-xs text-gray-400 mb-1">詳細</p><p class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 rounded-lg p-3">' + escH(j.description) + '</p></div>' : '')
+        // 添付ファイル（取付マニュアル等 - パートナーダウンロード用）
+        + (currentJobAttachments.length > 0
+          ? '<div class="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg><span class="text-sm font-bold text-sva-dark">添付ファイル（取付マニュアル等）</span></div>'
+            + '<div class="space-y-2">' + currentJobAttachments.map(function(a) {
+              var size = a.file_size > 1048576 ? (a.file_size/1048576).toFixed(1) + 'MB' : (a.file_size/1024).toFixed(0) + 'KB';
+              var isPdf = (a.mime_type||'').includes('pdf');
+              return '<div class="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-100">'
+                + '<div class="w-8 h-8 rounded flex items-center justify-center shrink-0 ' + (isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500') + '">'
+                + (isPdf ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>' : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>')
+                + '</div>'
+                + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800 truncate">' + escH(a.file_name) + '</p>'
+                + '<p class="text-[10px] text-gray-400">' + size + (a.description ? ' ・ ' + escH(a.description) : '') + '</p></div>'
+                + '<button onclick="downloadPartnerAttachment(' + j.id + ',' + a.id + ',\\'' + escH(a.file_name).replace(/'/g,"\\\\'") + '\\')" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shrink-0"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>ダウンロード</button></div>';
+            }).join('') + '</div></div>'
+          : '')
         + '<div class="border-t border-gray-100 pt-4">'
         + '<div class="mb-3"><label class="text-xs text-gray-400 mb-1 block">メモ（自分用）</label><textarea id="jobMemoInput" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red">' + escH(j.partner_memo || '') + '</textarea><button onclick="saveJobMemo(' + j.id + ')" class="mt-1 px-3 py-1 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">メモ保存</button></div>'
         + statusBtns + '</div></div>';
@@ -802,7 +821,9 @@ export function partnerMypagePage(): string {
         + '<div class="flex items-center gap-2 mt-3"><button onclick="saveJobReport(' + j.id + ')" class="px-5 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">作業報告を保存</button><span id="jrMsg" class="text-xs"></span></div>'
         + '</div>';
 
-      content.innerHTML = '<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><h3 class="text-base font-bold text-sva-dark">' + escH(j.title) + '</h3>'
+      content.innerHTML = '<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
+        + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + escH(j.job_number) + '</span>' : '')
+        + '<h3 class="text-base font-bold text-sva-dark">' + escH(j.title) + '</h3>'
         + (vCount > 0 ? '<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">車両 ' + vDone + '/' + vCount + '台</span>' : '')
         + (totalProducts > 0 ? '<span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full font-medium">商品 ' + totalProducts + '点</span>' : '')
         + '</div><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
@@ -830,6 +851,24 @@ export function partnerMypagePage(): string {
       }
     }
     window.toggleVehiclePanel = toggleVehiclePanel;
+
+    async function downloadPartnerAttachment(jobId, attId, fileName) {
+      try {
+        showToast('ダウンロード中...');
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/attachments/' + attId, { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        if (data.attachment && data.attachment.file_data) {
+          var a = document.createElement('a');
+          a.href = 'data:' + (data.attachment.mime_type||'application/pdf') + ';base64,' + data.attachment.file_data;
+          a.download = fileName || 'attachment';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('ダウンロード完了');
+        } else { showToast('ダウンロード失敗', true); }
+      } catch(e) { showToast('ダウンロードエラー', true); }
+    }
+    window.downloadPartnerAttachment = downloadPartnerAttachment;
 
     async function uploadVehiclePhoto(jobId, vid, category, input) {
       if (!input.files || !input.files[0]) return;

@@ -231,7 +231,12 @@ partnerApi.get('/me/jobs/:id', async (c) => {
     return { ...v, products: products.results, photo_counts: photoMap }
   }))
 
-  return c.json({ job, vehicles: vehicleDetails })
+  // 添付ファイル一覧（メタデータのみ）
+  const attachments = await c.env.DB.prepare(
+    "SELECT id, job_id, file_name, mime_type, file_size, description, uploaded_by, created_at FROM job_attachments WHERE job_id = ? ORDER BY created_at DESC"
+  ).bind(id).all()
+
+  return c.json({ job, vehicles: vehicleDetails, attachments: attachments.results })
 })
 
 // ========== 車両明細 CRUD ==========
@@ -391,6 +396,19 @@ partnerApi.get('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
     "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id = ? ORDER BY category, created_at"
   ).bind(jobId, vid).all()
   return c.json({ photos: photos.results })
+})
+
+// 添付ファイルダウンロード（パートナーが現地で確認・ダウンロード）
+partnerApi.get('/me/jobs/:id/attachments/:aid', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const aid = Number(c.req.param('aid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const att = await c.env.DB.prepare("SELECT * FROM job_attachments WHERE id = ? AND job_id = ?").bind(aid, id).first<any>()
+  if (!att) return c.json({ error: 'Not found' }, 404)
+  return c.json({ attachment: att })
 })
 
 // 案件ステータス更新 (パートナー側: accept / decline / メモ)

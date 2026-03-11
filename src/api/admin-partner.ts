@@ -127,20 +127,22 @@ adminPartnerApi.post('/partners/:id/messages', async (c) => {
 
 // ===================== Jobs (案件依頼) =====================
 
-// List jobs (all or by partner)
+// List jobs (all or by partner) - supports job_number search
 adminPartnerApi.get('/jobs', async (c) => {
   const page = Math.max(1, Number(c.req.query('page')) || 1)
   const limit = 20
   const offset = (page - 1) * limit
   const partnerId = c.req.query('partner_id') || ''
   const status = c.req.query('status') || ''
+  const search = c.req.query('search') || ''
 
   let where = '1=1'
   const params: any[] = []
   if (partnerId) { where += ' AND j.partner_id = ?'; params.push(Number(partnerId)); }
   if (status) { where += ' AND j.status = ?'; params.push(status); }
+  if (search) { where += ' AND (j.job_number LIKE ? OR j.title LIKE ? OR p.company_name LIKE ?)'; const s = '%' + search + '%'; params.push(s, s, s); }
 
-  const countQ = `SELECT COUNT(*) as total FROM jobs j WHERE ${where}`
+  const countQ = `SELECT COUNT(*) as total FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE ${where}`
   const dataQ = `SELECT j.*, p.company_name, p.representative_name, p.email as partner_email,
     (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id) as vehicle_count,
     (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id AND status = 'completed') as vehicle_done_count,
@@ -159,7 +161,8 @@ adminPartnerApi.get('/jobs', async (c) => {
 adminPartnerApi.post('/jobs', async (c) => {
   const body = await c.req.json<{
     partner_id: number; title: string; description?: string; vehicle_type?: string;
-    device_type?: string; location?: string; preferred_date?: string; budget?: string
+    device_type?: string; location?: string; preferred_date?: string; budget?: string;
+    job_number?: string
   }>()
   if (!body.partner_id || !body.title) return c.json({ error: 'partner_id and title required' }, 400)
 
@@ -167,8 +170,8 @@ adminPartnerApi.post('/jobs', async (c) => {
   if (!p) return c.json({ error: 'Partner not found' }, 404)
 
   const r = await c.env.DB.prepare(
-    `INSERT INTO jobs (partner_id, title, description, vehicle_type, device_type, location, preferred_date, budget) VALUES (?,?,?,?,?,?,?,?)`
-  ).bind(body.partner_id, body.title, body.description || '', body.vehicle_type || '', body.device_type || '', body.location || '', body.preferred_date || '', body.budget || '').run()
+    `INSERT INTO jobs (partner_id, title, description, vehicle_type, device_type, location, preferred_date, budget, job_number) VALUES (?,?,?,?,?,?,?,?,?)`
+  ).bind(body.partner_id, body.title, body.description || '', body.vehicle_type || '', body.device_type || '', body.location || '', body.preferred_date || '', body.budget || '', body.job_number || '').run()
 
   // Auto-send notification message
   await c.env.DB.prepare(
@@ -180,27 +183,28 @@ adminPartnerApi.post('/jobs', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// Update job (basic fields + new detail fields)
+// Update job (basic fields + new detail fields + job_number)
 adminPartnerApi.put('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const body = await c.req.json<{
     status?: string; title?: string; description?: string; vehicle_type?: string;
     device_type?: string; location?: string; preferred_date?: string; budget?: string;
     tracking_number?: string; maker_name?: string; car_model?: string; car_model_code?: string;
-    work_report?: string; general_memo?: string
+    work_report?: string; general_memo?: string; job_number?: string
   }>()
   const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ?").bind(id).first<any>()
   if (!j) return c.json({ error: 'Not found' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, job_number=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
   ).bind(
     body.title ?? j.title, body.description ?? j.description, body.vehicle_type ?? j.vehicle_type,
     body.device_type ?? j.device_type, body.location ?? j.location, body.preferred_date ?? j.preferred_date,
     body.budget ?? j.budget, body.status ?? j.status,
     body.tracking_number ?? j.tracking_number, body.maker_name ?? j.maker_name,
     body.car_model ?? j.car_model, body.car_model_code ?? j.car_model_code,
-    body.work_report ?? j.work_report, body.general_memo ?? j.general_memo, id
+    body.work_report ?? j.work_report, body.general_memo ?? j.general_memo,
+    body.job_number ?? j.job_number, id
   ).run()
   return c.json({ success: true })
 })
@@ -233,7 +237,12 @@ adminPartnerApi.get('/jobs/:id', async (c) => {
     "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id IS NULL ORDER BY category, created_at"
   ).bind(id).all()
 
-  return c.json({ job: j, vehicles: vehicleDetails, photos: legacyPhotos.results })
+  // 添付ファイル一覧（メタデータのみ）
+  const attachments = await c.env.DB.prepare(
+    "SELECT id, job_id, file_name, mime_type, file_size, description, uploaded_by, created_at FROM job_attachments WHERE job_id = ? ORDER BY created_at DESC"
+  ).bind(id).all()
+
+  return c.json({ job: j, vehicles: vehicleDetails, photos: legacyPhotos.results, attachments: attachments.results })
 })
 
 // Get job photo data (individual)
@@ -410,6 +419,56 @@ adminPartnerApi.put('/jobs/:id/tracking', async (c) => {
     body.work_status ?? j.work_status, workCompletedAt,
     body.status_note ?? j.status_note, id
   ).run()
+  return c.json({ success: true })
+})
+
+// ===================== Job Attachments (PDF等) =====================
+
+// Upload attachment (admin)
+adminPartnerApi.post('/jobs/:id/attachments', async (c) => {
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(id).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    file_name: string; file_data: string; mime_type?: string; description?: string
+  }>()
+  if (!body.file_name || !body.file_data) return c.json({ error: 'file_name and file_data required' }, 400)
+
+  // Limit ~10MB base64
+  if (body.file_data.length > 14_000_000) return c.json({ error: 'ファイルサイズが大きすぎます（10MB以下にしてください）' }, 400)
+
+  const fileSize = Math.round(body.file_data.length * 3 / 4)
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_attachments (job_id, file_name, file_data, mime_type, file_size, description, uploaded_by) VALUES (?,?,?,?,?,?,?)"
+  ).bind(id, body.file_name, body.file_data, body.mime_type || 'application/pdf', fileSize, body.description || '', 'admin').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// List attachments
+adminPartnerApi.get('/jobs/:id/attachments', async (c) => {
+  const id = Number(c.req.param('id'))
+  const attachments = await c.env.DB.prepare(
+    "SELECT id, job_id, file_name, mime_type, file_size, description, uploaded_by, created_at FROM job_attachments WHERE job_id = ? ORDER BY created_at DESC"
+  ).bind(id).all()
+  return c.json({ attachments: attachments.results })
+})
+
+// Download attachment (get file data)
+adminPartnerApi.get('/jobs/:id/attachments/:aid', async (c) => {
+  const id = Number(c.req.param('id'))
+  const aid = Number(c.req.param('aid'))
+  const att = await c.env.DB.prepare("SELECT * FROM job_attachments WHERE id = ? AND job_id = ?").bind(aid, id).first<any>()
+  if (!att) return c.json({ error: 'Not found' }, 404)
+  return c.json({ attachment: att })
+})
+
+// Delete attachment
+adminPartnerApi.delete('/jobs/:id/attachments/:aid', async (c) => {
+  const id = Number(c.req.param('id'))
+  const aid = Number(c.req.param('aid'))
+  const r = await c.env.DB.prepare("DELETE FROM job_attachments WHERE id = ? AND job_id = ?").bind(aid, id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
   return c.json({ success: true })
 })
 
