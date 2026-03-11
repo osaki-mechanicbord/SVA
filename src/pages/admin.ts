@@ -69,6 +69,8 @@ export function adminPage(): string {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-0">
         <button id="tabArticles" onclick="switchTab('articles')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red">記事管理</button>
         <button id="tabImages" onclick="switchTab('images')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">画像管理</button>
+        <button id="tabPartners" onclick="switchTab('partners')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">パートナー管理</button>
+        <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
       </div>
     </div>
 
@@ -235,6 +237,63 @@ export function adminPage(): string {
     </div>
 
     <!-- ============================================ -->
+    <!-- PARTNERS TAB -->
+    <!-- ============================================ -->
+    <div id="partnersTab" class="hidden">
+      <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div id="partnerViewTitle" class="text-lg font-bold text-sva-dark">パートナー一覧</div>
+          <div class="flex items-center gap-2">
+            <input id="partnerSearch" type="text" placeholder="検索..." class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red w-40">
+            <select id="partnerRankFilter" onchange="loadPartners(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全ランク</option>
+              <option value="standard">スタンダード</option>
+              <option value="silver">シルバー</option>
+              <option value="gold">ゴールド</option>
+              <option value="platinum">プラチナ</option>
+            </select>
+            <button id="backToPartnerListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadPartners(1)">一覧に戻る</button>
+            <button onclick="showNewPartnerForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規登録</button>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <!-- Partner List -->
+        <div id="partnerListView"><div id="partnerList" class="space-y-2"></div><div id="partnerPagination" class="mt-6 flex justify-center gap-2"></div></div>
+        <!-- Partner Detail/Edit -->
+        <div id="partnerDetailView" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- JOBS TAB -->
+    <!-- ============================================ -->
+    <div id="jobsTab" class="hidden">
+      <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">案件一覧</div>
+          <div class="flex items-center gap-2">
+            <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全ステータス</option>
+              <option value="pending">未対応</option>
+              <option value="accepted">受諾</option>
+              <option value="in_progress">対応中</option>
+              <option value="completed">完了</option>
+              <option value="declined">辞退</option>
+              <option value="cancelled">キャンセル</option>
+            </select>
+            <button id="backToJobListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadJobs(1)">一覧に戻る</button>
+            <button onclick="showNewJobForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規案件作成</button>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div id="jobListView"><div id="jobList" class="space-y-2"></div><div id="jobPagination" class="mt-6 flex justify-center gap-2"></div></div>
+        <div id="jobDetailView" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- IMAGE PICKER MODAL -->
     <!-- ============================================ -->
     <div id="imagePickerModal" class="fixed inset-0 bg-black/40 z-[100] hidden flex items-center justify-center p-4">
@@ -299,19 +358,16 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
+    const TABS = ['articles','images','partners','jobs'];
     function switchTab(tab) {
-      const isArticles = tab === 'articles';
-      document.getElementById('articlesTab').classList.toggle('hidden', !isArticles);
-      document.getElementById('imagesTab').classList.toggle('hidden', isArticles);
-      document.getElementById('tabArticles').classList.toggle('border-sva-red', isArticles);
-      document.getElementById('tabArticles').classList.toggle('text-sva-red', isArticles);
-      document.getElementById('tabArticles').classList.toggle('border-transparent', !isArticles);
-      document.getElementById('tabArticles').classList.toggle('text-gray-500', !isArticles);
-      document.getElementById('tabImages').classList.toggle('border-sva-red', !isArticles);
-      document.getElementById('tabImages').classList.toggle('text-sva-red', !isArticles);
-      document.getElementById('tabImages').classList.toggle('border-transparent', isArticles);
-      document.getElementById('tabImages').classList.toggle('text-gray-500', isArticles);
-      if (!isArticles) loadImages(1);
+      TABS.forEach(function(t) {
+        var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
+        var btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) { btn.classList.toggle('border-sva-red', t === tab); btn.classList.toggle('text-sva-red', t === tab); btn.classList.toggle('border-transparent', t !== tab); btn.classList.toggle('text-gray-500', t !== tab); }
+      });
+      if (tab === 'images') loadImages(1);
+      if (tab === 'partners') loadPartners(1);
+      if (tab === 'jobs') loadJobs(1);
     }
 
     // ===== Article List =====
@@ -600,6 +656,293 @@ export function adminPage(): string {
       var s = this.value.toLowerCase().replace(/[\\s\\u3000]+/g, '-').replace(/[^a-z0-9\\u3040-\\u309f\\u30a0-\\u30ff\\u4e00-\\u9faf-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').substring(0, 80);
       document.getElementById('artSlug').value = s;
     });
+
+    // Search debounce for partners
+    var partnerSearchTimer;
+    document.getElementById('partnerSearch').addEventListener('input', function() {
+      clearTimeout(partnerSearchTimer);
+      partnerSearchTimer = setTimeout(function() { loadPartners(1); }, 300);
+    });
+
+    // =====================================================
+    // PARTNER MANAGEMENT
+    // =====================================================
+    const RANK_LABELS = { 'standard': 'スタンダード', 'silver': 'シルバー', 'gold': 'ゴールド', 'platinum': 'プラチナ' };
+    const RANK_COLORS = { 'standard': 'bg-gray-100 text-gray-600', 'silver': 'bg-slate-100 text-slate-700', 'gold': 'bg-amber-50 text-amber-700', 'platinum': 'bg-purple-50 text-purple-700' };
+    const STATUS_P = { 'active': '<span class="px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded font-medium">有効</span>', 'suspended': '<span class="px-2 py-0.5 bg-red-50 text-red-600 text-xs rounded font-medium">停止</span>' };
+    let pPage = 1;
+
+    async function loadPartners(page) {
+      pPage = page;
+      document.getElementById('partnerListView').classList.remove('hidden');
+      document.getElementById('partnerDetailView').classList.add('hidden');
+      document.getElementById('backToPartnerListBtn').classList.add('hidden');
+      document.getElementById('partnerViewTitle').textContent = 'パートナー一覧';
+      const search = document.getElementById('partnerSearch').value;
+      const rank = document.getElementById('partnerRankFilter').value;
+      let url = API + '/admin/partners?page=' + page;
+      if (search) url += '&search=' + encodeURIComponent(search);
+      if (rank) url += '&rank=' + rank;
+      try {
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        const data = await res.json();
+        renderPartnerList(data.partners, data.pagination);
+      } catch(e) { document.getElementById('partnerList').innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    function renderPartnerList(partners, pag) {
+      const el = document.getElementById('partnerList');
+      if (!partners || !partners.length) { el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">パートナーが登録されていません</div>'; return; }
+      el.innerHTML = partners.map(function(p) {
+        var rankBadge = '<span class="px-2 py-0.5 text-xs rounded font-medium ' + (RANK_COLORS[p.rank] || RANK_COLORS.standard) + '">' + (RANK_LABELS[p.rank] || p.rank) + '</span>';
+        var statusBadge = STATUS_P[p.status] || '';
+        var date = p.created_at ? new Date(p.created_at).toLocaleDateString('ja-JP') : '-';
+        return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-4 hover:border-gray-300 cursor-pointer" onclick="viewPartner(' + p.id + ')">'
+          + '<div class="w-10 h-10 bg-gradient-to-br from-sva-red to-red-700 text-white rounded-full flex items-center justify-center text-sm font-bold shrink-0">' + esc(p.representative_name || p.email).charAt(0).toUpperCase() + '</div>'
+          + '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 mb-1">' + statusBadge + rankBadge + '</div>'
+          + '<p class="text-sm font-medium text-gray-800 truncate">' + esc(p.company_name || '-') + ' <span class="text-gray-400 font-normal">/ ' + esc(p.representative_name || '-') + '</span></p>'
+          + '<p class="text-xs text-gray-400 mt-0.5">' + esc(p.email) + ' ・ ' + esc(p.region || '-') + ' ・ 登録 ' + date + '</p></div>'
+          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>';
+      }).join('');
+      renderPagination('partnerPagination', pag, 'loadPartners');
+    }
+
+    async function viewPartner(id) {
+      document.getElementById('partnerListView').classList.add('hidden');
+      document.getElementById('partnerDetailView').classList.remove('hidden');
+      document.getElementById('backToPartnerListBtn').classList.remove('hidden');
+      document.getElementById('partnerViewTitle').textContent = 'パートナー詳細';
+      try {
+        const res = await fetch(API + '/admin/partners/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        const data = await res.json();
+        const p = data.partner; const st = data.stats;
+        const msgRes = await fetch(API + '/admin/partners/' + id + '/messages', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        const msgData = await msgRes.json();
+        renderPartnerDetail(p, st, msgData.messages || []);
+      } catch(e) { document.getElementById('partnerDetailView').innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    function renderPartnerDetail(p, stats, messages) {
+      var rankOpts = ['standard','silver','gold','platinum'].map(function(r) { return '<option value="' + r + '"' + (p.rank === r ? ' selected' : '') + '>' + RANK_LABELS[r] + '</option>'; }).join('');
+      var statusOpts = '<option value="active"' + (p.status === 'active' ? ' selected' : '') + '>有効</option><option value="suspended"' + (p.status === 'suspended' ? ' selected' : '') + '>利用停止</option>';
+      var msgHtml = messages.length === 0 ? '<p class="text-sm text-gray-400 py-4 text-center">メッセージはありません</p>' : messages.map(function(m) {
+        var dir = m.direction === 'to_partner';
+        var readBadge = dir && !m.is_read ? ' <span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">未読</span>' : '';
+        var time = m.created_at ? new Date(m.created_at).toLocaleString('ja-JP') : '';
+        return '<div class="p-3 rounded-lg ' + (dir ? 'bg-blue-50 border border-blue-100' : 'bg-gray-50 border border-gray-100') + ' text-sm">'
+          + '<div class="flex items-center gap-2 mb-1"><span class="text-xs font-medium ' + (dir ? 'text-blue-700' : 'text-green-700') + '">' + (dir ? 'SVA → パートナー' : 'パートナー → SVA') + '</span>' + readBadge + '<span class="text-[10px] text-gray-400 ml-auto">' + time + '</span></div>'
+          + '<p class="font-medium text-gray-800 text-xs mb-0.5">' + esc(m.subject) + '</p>'
+          + '<p class="text-gray-600 text-xs whitespace-pre-line">' + esc(m.body) + '</p></div>';
+      }).join('');
+
+      document.getElementById('partnerDetailView').innerHTML = '<div class="grid lg:grid-cols-3 gap-6">'
+        + '<div class="lg:col-span-2 space-y-6">'
+        // Edit form
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6"><h3 class="font-bold text-sva-dark text-base mb-4">プロフィール編集</h3>'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">会社名</label><input id="ep_company" value="' + esc(p.company_name) + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">担当者名</label><input id="ep_name" value="' + esc(p.representative_name) + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メール</label><input id="ep_email" value="' + esc(p.email) + '" disabled class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">電話</label><input id="ep_phone" value="' + esc(p.phone) + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">対応エリア</label><input id="ep_region" value="' + esc(p.region) + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">専門分野</label><input id="ep_specialties" value="' + esc(p.specialties) + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ランク</label><select id="ep_rank" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + rankOpts + '</select></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータス</label><select id="ep_status" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + statusOpts + '</select></div>'
+        + '</div>'
+        + '<div class="mt-4"><label class="block text-xs font-medium text-gray-600 mb-1">管理メモ</label><textarea id="ep_notes" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red resize-none">' + esc(p.notes) + '</textarea></div>'
+        + '<div class="flex items-center gap-3 mt-4">'
+        + '<button onclick="savePartner(' + p.id + ')" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">保存</button>'
+        + '<button onclick="if(confirm(\\'このパートナーを削除しますか？\\n関連する案件・メッセージもすべて削除されます。\\'))deletePartner(' + p.id + ')" class="px-4 py-2 border border-red-200 text-red-600 text-sm rounded-lg hover:bg-red-50">アカウント削除</button>'
+        + '<span id="epMsg" class="text-sm"></span>'
+        + '</div></div>'
+        // Messages
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6"><h3 class="font-bold text-sva-dark text-base mb-4">メッセージ履歴</h3>'
+        + '<div class="mb-4 p-4 bg-gray-50 rounded-lg"><p class="text-xs font-medium text-gray-600 mb-2">新規メッセージ送信</p>'
+        + '<input id="msgSubject" placeholder="件名" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-sva-red">'
+        + '<textarea id="msgBody" rows="3" placeholder="本文" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-sva-red resize-none"></textarea>'
+        + '<button onclick="sendMessage(' + p.id + ')" class="px-4 py-1.5 bg-sva-dark text-white text-sm rounded-lg hover:bg-gray-800">送信</button></div>'
+        + '<div class="space-y-2 max-h-96 overflow-y-auto">' + msgHtml + '</div></div>'
+        + '</div>'
+        // Sidebar stats
+        + '<div class="space-y-4">'
+        + '<div class="bg-white rounded-xl border border-gray-200 p-5"><h4 class="text-sm font-bold text-sva-dark mb-3">統計</h4>'
+        + '<div class="space-y-2 text-sm"><div class="flex justify-between"><span class="text-gray-500">案件数</span><span class="font-bold">' + stats.jobs + '件</span></div>'
+        + '<div class="flex justify-between"><span class="text-gray-500">メッセージ数</span><span class="font-bold">' + stats.messages + '件</span></div>'
+        + '<div class="flex justify-between"><span class="text-gray-500">最終ログイン</span><span class="text-xs text-gray-600">' + (p.last_login_at ? new Date(p.last_login_at).toLocaleString('ja-JP') : '未ログイン') + '</span></div>'
+        + '<div class="flex justify-between"><span class="text-gray-500">登録日</span><span class="text-xs text-gray-600">' + (p.created_at ? new Date(p.created_at).toLocaleDateString('ja-JP') : '-') + '</span></div></div></div>'
+        + '<div class="bg-white rounded-xl border border-gray-200 p-5"><h4 class="text-sm font-bold text-sva-dark mb-3">クイック操作</h4>'
+        + '<button onclick="switchTab(\\'jobs\\');setTimeout(function(){document.getElementById(\\'jobStatusFilter\\').value=\\'\\';loadJobs(1)},100)" class="w-full text-left px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 mb-1">このパートナーに案件を送信 →</button></div>'
+        + '</div></div>';
+    }
+
+    async function savePartner(id) {
+      try {
+        const res = await fetch(API + '/admin/partners/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ company_name: document.getElementById('ep_company').value, representative_name: document.getElementById('ep_name').value, phone: document.getElementById('ep_phone').value, region: document.getElementById('ep_region').value, specialties: document.getElementById('ep_specialties').value, rank: document.getElementById('ep_rank').value, status: document.getElementById('ep_status').value, notes: document.getElementById('ep_notes').value })
+        });
+        if (res.ok) { document.getElementById('epMsg').textContent = '保存しました'; document.getElementById('epMsg').className = 'text-sm text-green-600'; }
+        else { var d = await res.json(); document.getElementById('epMsg').textContent = d.error || '失敗'; document.getElementById('epMsg').className = 'text-sm text-red-600'; }
+      } catch(e) { document.getElementById('epMsg').textContent = 'エラー'; document.getElementById('epMsg').className = 'text-sm text-red-600'; }
+      setTimeout(function() { var m = document.getElementById('epMsg'); if(m) m.textContent = ''; }, 3000);
+    }
+
+    async function deletePartner(id) {
+      await fetch(API + '/admin/partners/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } });
+      loadPartners(1);
+    }
+
+    async function sendMessage(partnerId) {
+      var subj = document.getElementById('msgSubject').value;
+      var body = document.getElementById('msgBody').value;
+      if (!subj || !body) { showToast('件名と本文を入力してください'); return; }
+      try {
+        await fetch(API + '/admin/partners/' + partnerId + '/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken }, body: JSON.stringify({ subject: subj, body: body }) });
+        showToast('メッセージを送信しました');
+        viewPartner(partnerId); // refresh
+      } catch(e) { showToast('送信失敗'); }
+    }
+
+    function showNewPartnerForm() {
+      document.getElementById('partnerListView').classList.add('hidden');
+      document.getElementById('partnerDetailView').classList.remove('hidden');
+      document.getElementById('backToPartnerListBtn').classList.remove('hidden');
+      document.getElementById('partnerViewTitle').textContent = '新規パートナー登録';
+      document.getElementById('partnerDetailView').innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">'
+        + '<h3 class="font-bold text-sva-dark text-base mb-4">新規パートナーアカウント作成</h3>'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メールアドレス <span class="text-red-500">*</span></label><input id="np_email" type="email" required class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">パスワード <span class="text-red-500">*</span></label><input id="np_password" type="text" required class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="8文字以上"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">会社名</label><input id="np_company" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">担当者名</label><input id="np_name" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">電話</label><input id="np_phone" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">対応エリア</label><input id="np_region" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">専門分野</label><input id="np_specialties" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ランク</label><select id="np_rank" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"><option value="standard">スタンダード</option><option value="silver">シルバー</option><option value="gold">ゴールド</option><option value="platinum">プラチナ</option></select></div>'
+        + '</div>'
+        + '<div class="flex items-center gap-3 mt-5"><button onclick="createPartner()" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">登録する</button><span id="npMsg" class="text-sm"></span></div></div>';
+    }
+
+    async function createPartner() {
+      var email = document.getElementById('np_email').value;
+      var pw = document.getElementById('np_password').value;
+      if (!email || !pw) { document.getElementById('npMsg').textContent = 'メールとパスワードは必須です'; document.getElementById('npMsg').className = 'text-sm text-red-600'; return; }
+      try {
+        var res = await fetch(API + '/admin/partners', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ email: email, password: pw, company_name: document.getElementById('np_company').value, representative_name: document.getElementById('np_name').value, phone: document.getElementById('np_phone').value, region: document.getElementById('np_region').value, specialties: document.getElementById('np_specialties').value, rank: document.getElementById('np_rank').value })
+        });
+        var data = await res.json();
+        if (!res.ok) { document.getElementById('npMsg').textContent = data.error || '登録失敗'; document.getElementById('npMsg').className = 'text-sm text-red-600'; return; }
+        showToast('パートナーを登録しました');
+        loadPartners(1);
+      } catch(e) { document.getElementById('npMsg').textContent = 'エラー'; document.getElementById('npMsg').className = 'text-sm text-red-600'; }
+    }
+
+    // =====================================================
+    // JOBS MANAGEMENT
+    // =====================================================
+    const JOB_STATUS = { 'pending': ['未対応','bg-yellow-50 text-yellow-700'], 'accepted': ['受諾','bg-blue-50 text-blue-700'], 'in_progress': ['対応中','bg-indigo-50 text-indigo-700'], 'completed': ['完了','bg-green-50 text-green-700'], 'declined': ['辞退','bg-gray-100 text-gray-500'], 'cancelled': ['キャンセル','bg-red-50 text-red-600'] };
+    let jPage = 1;
+
+    async function loadJobs(page) {
+      jPage = page;
+      document.getElementById('jobListView').classList.remove('hidden');
+      document.getElementById('jobDetailView').classList.add('hidden');
+      document.getElementById('backToJobListBtn').classList.add('hidden');
+      document.getElementById('jobViewTitle').textContent = '案件一覧';
+      var status = document.getElementById('jobStatusFilter').value;
+      var url = API + '/admin/jobs?page=' + page;
+      if (status) url += '&status=' + status;
+      try {
+        var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        renderJobList(data.jobs, data.pagination);
+      } catch(e) { document.getElementById('jobList').innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    function renderJobList(jobs, pag) {
+      var el = document.getElementById('jobList');
+      if (!jobs || !jobs.length) { el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">案件がまだありません</div>'; return; }
+      el.innerHTML = jobs.map(function(j) {
+        var s = JOB_STATUS[j.status] || ['不明','bg-gray-100 text-gray-500'];
+        var date = j.created_at ? new Date(j.created_at).toLocaleDateString('ja-JP') : '-';
+        return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-4 hover:border-gray-300 cursor-pointer" onclick="viewJob(' + j.id + ')">'
+          + '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 text-xs rounded font-medium ' + s[1] + '">' + s[0] + '</span><span class="text-xs text-gray-400">' + esc(j.company_name || '-') + '</span></div>'
+          + '<p class="text-sm font-medium text-gray-800 truncate">' + esc(j.title) + '</p>'
+          + '<p class="text-xs text-gray-400 mt-0.5">' + esc(j.location || '-') + ' ・ ' + esc(j.vehicle_type || '-') + ' ・ ' + date + '</p></div>'
+          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>';
+      }).join('');
+      renderPagination('jobPagination', pag, 'loadJobs');
+    }
+
+    function showNewJobForm() {
+      document.getElementById('jobListView').classList.add('hidden');
+      document.getElementById('jobDetailView').classList.remove('hidden');
+      document.getElementById('backToJobListBtn').classList.remove('hidden');
+      document.getElementById('jobViewTitle').textContent = '新規案件作成';
+      document.getElementById('jobDetailView').innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">'
+        + '<h3 class="font-bold text-sva-dark text-base mb-4">案件依頼を作成</h3>'
+        + '<div class="mb-4"><label class="block text-xs font-medium text-gray-600 mb-1">送信先パートナー <span class="text-red-500">*</span></label>'
+        + '<div class="flex gap-2"><input id="nj_partner_search" placeholder="会社名・名前で検索..." class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red">'
+        + '<button onclick="searchJobPartner()" class="px-4 py-2 bg-gray-100 text-sm rounded-lg hover:bg-gray-200">検索</button></div>'
+        + '<div id="njPartnerResults" class="mt-2 space-y-1"></div>'
+        + '<input type="hidden" id="nj_partner_id" value="">'
+        + '<p id="njSelectedPartner" class="text-sm text-sva-red font-medium mt-2"></p></div>'
+        + '<div class="space-y-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件名 <span class="text-red-500">*</span></label><input id="nj_title" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="例: フォークリフトAIカメラ取付 10台"></div>'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両タイプ</label><input id="nj_vehicle" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="フォークリフト"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">取付装置</label><input id="nj_device" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="人検知AIカメラ"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業場所</label><input id="nj_location" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="大阪府大阪市"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">希望日程</label><input id="nj_date" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="2026年4月中旬希望"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">予算</label><input id="nj_budget" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="¥500,000"></div>'
+        + '</div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="案件の詳細..."></textarea></div>'
+        + '</div>'
+        + '<div class="flex items-center gap-3 mt-5"><button onclick="createJob()" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">案件を送信</button><span id="njMsg" class="text-sm"></span></div></div>';
+    }
+
+    async function searchJobPartner() {
+      var q = document.getElementById('nj_partner_search').value;
+      if (!q) return;
+      var res = await fetch(API + '/admin/partners?search=' + encodeURIComponent(q), { headers: { 'Authorization': 'Bearer ' + authToken } });
+      var data = await res.json();
+      var el = document.getElementById('njPartnerResults');
+      if (!data.partners || !data.partners.length) { el.innerHTML = '<p class="text-xs text-gray-400">見つかりません</p>'; return; }
+      el.innerHTML = data.partners.slice(0, 5).map(function(p) {
+        return '<button onclick="selectJobPartner(' + p.id + ',\\'' + esc(p.company_name || p.representative_name) + '\\')" class="w-full text-left px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">' + esc(p.company_name || '-') + ' / ' + esc(p.representative_name) + ' <span class="text-gray-400">(' + esc(p.email) + ')</span></button>';
+      }).join('');
+    }
+
+    function selectJobPartner(id, name) {
+      document.getElementById('nj_partner_id').value = id;
+      document.getElementById('njSelectedPartner').textContent = '選択: ' + name;
+      document.getElementById('njPartnerResults').innerHTML = '';
+    }
+
+    async function createJob() {
+      var pid = document.getElementById('nj_partner_id').value;
+      var title = document.getElementById('nj_title').value;
+      if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと案件名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
+      try {
+        var res = await fetch(API + '/admin/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value })
+        });
+        var data = await res.json();
+        if (!res.ok) { document.getElementById('njMsg').textContent = data.error || '作成失敗'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
+        showToast('案件を送信しました（パートナーに通知済み）');
+        loadJobs(1);
+      } catch(e) { document.getElementById('njMsg').textContent = 'エラー'; document.getElementById('njMsg').className = 'text-sm text-red-600'; }
+    }
+
+    async function viewJob(id) {
+      document.getElementById('jobListView').classList.add('hidden');
+      document.getElementById('jobDetailView').classList.remove('hidden');
+      document.getElementById('backToJobListBtn').classList.remove('hidden');
+      document.getElementById('jobViewTitle').textContent = '案件詳細';
+      // For simplicity, reload via loadJobs flow or show summary
+      showToast('案件詳細 #' + id + ' (パートナー詳細から確認可能)');
+      loadJobs(jPage);
+    }
   </script>
 </body>
 </html>`

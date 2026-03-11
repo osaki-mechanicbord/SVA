@@ -11,6 +11,7 @@ import { partnerMypagePage } from './pages/partner-mypage'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
+import { adminPartnerApi } from './api/admin-partner'
 
 type Bindings = { DB: D1Database }
 
@@ -39,6 +40,7 @@ app.use('/api/*', cors())
 // ==========================================
 app.route('/api', api)
 app.route('/api/partner', partnerApi)
+app.route('/api/admin', adminPartnerApi)
 app.route('/media', imagesApi)
 app.route('/api', imagesApi)
 

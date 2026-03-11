@@ -89,6 +89,16 @@ export function partnerMypagePage(): string {
               <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
               プロフィール設定
             </button>
+            <button data-page="jobs" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 text-left">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              案件一覧
+              <span id="sidebarJobBadge" class="hidden ml-auto px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full font-bold"></span>
+            </button>
+            <button data-page="messages" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 text-left">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              メッセージ
+              <span id="sidebarMsgBadge" class="hidden ml-auto px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full font-bold"></span>
+            </button>
             <button data-page="password" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 text-left">
               <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               パスワード変更
@@ -117,42 +127,38 @@ export function partnerMypagePage(): string {
           </div>
 
           <!-- Stats cards -->
-          <div class="grid sm:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-2">
-              <div class="flex items-center gap-3 mb-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-2 cursor-pointer hover:border-yellow-200" onclick="document.querySelector('[data-page=jobs]').click()">
+              <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-yellow-50 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div><p class="text-xs text-gray-500">未対応案件</p><p id="statPending" class="text-lg font-bold text-sva-dark">-</p></div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-2 cursor-pointer hover:border-blue-200" onclick="document.querySelector('[data-page=jobs]').click()">
+              <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                   <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500">案件情報</p>
-                  <p class="text-lg font-bold text-sva-dark">準備中</p>
-                </div>
+                <div><p class="text-xs text-gray-500">対応中案件</p><p id="statActive" class="text-lg font-bold text-sva-dark">-</p></div>
               </div>
-              <p class="text-xs text-gray-400">案件管理機能は近日公開予定です</p>
             </div>
             <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-3">
-              <div class="flex items-center gap-3 mb-3">
+              <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                   <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500">ステータス</p>
-                  <p class="text-lg font-bold text-green-600">有効</p>
-                </div>
+                <div><p class="text-xs text-gray-500">累計案件</p><p id="statTotal" class="text-lg font-bold text-sva-dark">-</p></div>
               </div>
-              <p class="text-xs text-gray-400">パートナーアカウントは有効です</p>
             </div>
-            <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-4">
-              <div class="flex items-center gap-3 mb-3">
+            <div class="bg-white rounded-xl p-5 card-shadow border border-gray-100 fade-in fade-in-delay-4 cursor-pointer hover:border-amber-200" onclick="document.querySelector('[data-page=messages]').click()">
+              <div class="flex items-center gap-3 mb-2">
                 <div class="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 </div>
-                <div>
-                  <p class="text-xs text-gray-500">お知らせ</p>
-                  <p class="text-lg font-bold text-sva-dark">0件</p>
-                </div>
+                <div><p class="text-xs text-gray-500">未読メッセージ</p><p id="statUnread" class="text-lg font-bold text-sva-dark">-</p></div>
               </div>
-              <p class="text-xs text-gray-400">新しいお知らせはありません</p>
             </div>
           </div>
 
@@ -261,6 +267,31 @@ export function partnerMypagePage(): string {
           </div>
         </div>
 
+        <!-- Jobs page -->
+        <div id="page-jobs" class="page-content hidden">
+          <h2 class="text-lg font-bold text-sva-dark mb-5 fade-in">案件一覧</h2>
+          <div id="jobsList" class="space-y-3 fade-in fade-in-delay-1"></div>
+          <!-- Job detail modal -->
+          <div id="jobDetailModal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-auto">
+              <div id="jobDetailContent" class="p-6"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages page -->
+        <div id="page-messages" class="page-content hidden">
+          <h2 class="text-lg font-bold text-sva-dark mb-5 fade-in">メッセージ</h2>
+          <!-- Reply form -->
+          <div class="bg-white rounded-xl card-shadow border border-gray-100 p-5 mb-5 fade-in fade-in-delay-1">
+            <p class="text-xs font-medium text-gray-600 mb-2">SVA事務局に返信</p>
+            <input id="replySubject" placeholder="件名" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-sva-red">
+            <textarea id="replyBody" rows="3" placeholder="メッセージ本文..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm mb-2 focus:outline-none focus:border-sva-red resize-none"></textarea>
+            <button id="sendReplyBtn" class="px-5 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">送信</button>
+          </div>
+          <div id="messagesList" class="space-y-3 fade-in fade-in-delay-2"></div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -268,17 +299,21 @@ export function partnerMypagePage(): string {
   <!-- Mobile bottom nav -->
   <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 safe-area-pb">
     <div class="flex items-center justify-around py-2">
-      <button data-page="dashboard" class="mobile-nav flex flex-col items-center gap-1 px-4 py-1.5 text-sva-red">
+      <button data-page="dashboard" class="mobile-nav flex flex-col items-center gap-1 px-3 py-1.5 text-sva-red">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span class="text-[10px] font-medium">ホーム</span>
       </button>
-      <button data-page="profile" class="mobile-nav flex flex-col items-center gap-1 px-4 py-1.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        <span class="text-[10px] font-medium">プロフィール</span>
+      <button data-page="jobs" class="mobile-nav flex flex-col items-center gap-1 px-3 py-1.5 text-gray-400 relative">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span class="text-[10px] font-medium">案件</span>
       </button>
-      <button data-page="password" class="mobile-nav flex flex-col items-center gap-1 px-4 py-1.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        <span class="text-[10px] font-medium">パスワード</span>
+      <button data-page="messages" class="mobile-nav flex flex-col items-center gap-1 px-3 py-1.5 text-gray-400 relative">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <span class="text-[10px] font-medium">メッセージ</span>
+      </button>
+      <button data-page="profile" class="mobile-nav flex flex-col items-center gap-1 px-3 py-1.5 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <span class="text-[10px] font-medium">設定</span>
       </button>
     </div>
   </div>
@@ -333,11 +368,29 @@ export function partnerMypagePage(): string {
       setupNav();
       setupForms();
       setupLogout();
+      loadStats();
+    }
+
+    // --- Stats ---
+    async function loadStats() {
+      try {
+        var res = await fetch('/api/partner/me/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        if (data.stats) {
+          document.getElementById('statPending').textContent = data.stats.pending_jobs + '件';
+          document.getElementById('statActive').textContent = data.stats.active_jobs + '件';
+          document.getElementById('statTotal').textContent = data.stats.total_jobs + '件';
+          document.getElementById('statUnread').textContent = data.stats.unread_messages + '件';
+          // Sidebar badges
+          if (data.stats.pending_jobs > 0) { var jb = document.getElementById('sidebarJobBadge'); jb.textContent = data.stats.pending_jobs; jb.classList.remove('hidden'); }
+          if (data.stats.unread_messages > 0) { var mb = document.getElementById('sidebarMsgBadge'); mb.textContent = data.stats.unread_messages; mb.classList.remove('hidden'); }
+        }
+      } catch(e) {}
     }
 
     // --- Navigation ---
     function setupNav() {
-      var pages = ['dashboard', 'profile', 'password'];
+      var pages = ['dashboard', 'profile', 'password', 'jobs', 'messages'];
       var allBtns = document.querySelectorAll('[data-page]');
       var gotoBtns = document.querySelectorAll('[data-goto]');
 
@@ -346,6 +399,9 @@ export function partnerMypagePage(): string {
           var el = document.getElementById('page-' + p);
           if (el) el.classList.toggle('hidden', p !== name);
         });
+        // Load data on page switch
+        if (name === 'jobs') loadJobs();
+        if (name === 'messages') loadMessages();
         allBtns.forEach(function(b) {
           var isActive = b.getAttribute('data-page') === name;
           // Sidebar
@@ -458,6 +514,130 @@ export function partnerMypagePage(): string {
         window.location.href = '/partner/login';
       });
     }
+
+    // --- Jobs ---
+    var JOB_S = { 'pending': ['未対応','bg-yellow-50 text-yellow-700 border-yellow-200'], 'accepted': ['受諾','bg-blue-50 text-blue-700 border-blue-200'], 'in_progress': ['対応中','bg-indigo-50 text-indigo-700 border-indigo-200'], 'completed': ['完了','bg-green-50 text-green-700 border-green-200'], 'declined': ['辞退','bg-gray-50 text-gray-500 border-gray-200'], 'cancelled': ['キャンセル','bg-red-50 text-red-600 border-red-200'] };
+
+    async function loadJobs() {
+      var el = document.getElementById('jobsList');
+      try {
+        var res = await fetch('/api/partner/me/jobs', { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        if (!data.jobs || !data.jobs.length) { el.innerHTML = '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-12 text-center"><p class="text-gray-400 text-sm">まだ案件がありません</p><p class="text-xs text-gray-300 mt-1">SVAから案件が届くとここに表示されます</p></div>'; return; }
+        el.innerHTML = data.jobs.map(function(j) {
+          var s = JOB_S[j.status] || JOB_S.pending;
+          var date = j.created_at ? new Date(j.created_at).toLocaleDateString('ja-JP') : '';
+          return '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-5 cursor-pointer hover:border-gray-200 transition-colors" onclick="openJobDetail(' + j.id + ')">'
+            + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><span class="text-xs text-gray-400 ml-auto">' + date + '</span></div>'
+            + '<p class="text-sm font-bold text-sva-dark mb-1">' + escH(j.title) + '</p>'
+            + '<div class="flex flex-wrap gap-3 text-xs text-gray-500">'
+            + (j.vehicle_type ? '<span>車両: ' + escH(j.vehicle_type) + '</span>' : '')
+            + (j.device_type ? '<span>装置: ' + escH(j.device_type) + '</span>' : '')
+            + (j.location ? '<span>場所: ' + escH(j.location) + '</span>' : '')
+            + '</div></div>';
+        }).join('');
+      } catch(e) { el.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    async function openJobDetail(id) {
+      var modal = document.getElementById('jobDetailModal');
+      var content = document.getElementById('jobDetailContent');
+      modal.classList.remove('hidden');
+      try {
+        var res = await fetch('/api/partner/me/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json(); var j = data.job;
+        var s = JOB_S[j.status] || JOB_S.pending;
+        var statusBtns = '';
+        if (j.status === 'pending') {
+          statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'accepted\\')" class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">受諾する</button><button onclick="updateJobStatus(' + j.id + ',\\'declined\\')" class="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">辞退する</button></div>';
+        } else if (j.status === 'accepted') {
+          statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'in_progress\\')" class="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">対応開始</button></div>';
+        } else if (j.status === 'in_progress') {
+          statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'completed\\')" class="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">完了報告</button></div>';
+        }
+        content.innerHTML = '<div class="flex items-center justify-between mb-4"><h3 class="text-base font-bold text-sva-dark">案件詳細</h3><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
+          + '<span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
+          + '<h4 class="text-sm font-bold text-sva-dark mt-3 mb-3">' + escH(j.title) + '</h4>'
+          + '<div class="grid grid-cols-2 gap-3 text-sm mb-4">'
+          + '<div><p class="text-xs text-gray-400">車両タイプ</p><p class="font-medium">' + escH(j.vehicle_type || '-') + '</p></div>'
+          + '<div><p class="text-xs text-gray-400">取付装置</p><p class="font-medium">' + escH(j.device_type || '-') + '</p></div>'
+          + '<div><p class="text-xs text-gray-400">作業場所</p><p class="font-medium">' + escH(j.location || '-') + '</p></div>'
+          + '<div><p class="text-xs text-gray-400">希望日程</p><p class="font-medium">' + escH(j.preferred_date || '-') + '</p></div>'
+          + '<div><p class="text-xs text-gray-400">予算</p><p class="font-medium">' + escH(j.budget || '-') + '</p></div>'
+          + '</div>'
+          + (j.description ? '<div class="mb-4"><p class="text-xs text-gray-400 mb-1">詳細</p><p class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 rounded-lg p-3">' + escH(j.description) + '</p></div>' : '')
+          + '<div class="mb-2"><label class="text-xs text-gray-400 mb-1 block">メモ（自分用）</label><textarea id="jobMemoInput" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red">' + escH(j.partner_memo || '') + '</textarea><button onclick="saveJobMemo(' + j.id + ')" class="mt-1 px-3 py-1 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">メモ保存</button></div>'
+          + statusBtns;
+      } catch(e) { content.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    async function updateJobStatus(id, status) {
+      try {
+        await fetch('/api/partner/me/jobs/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ status: status }) });
+        document.getElementById('jobDetailModal').classList.add('hidden');
+        showToast('ステータスを更新しました');
+        loadJobs(); loadStats();
+      } catch(e) { showToast('更新失敗', true); }
+    }
+
+    async function saveJobMemo(id) {
+      var memo = document.getElementById('jobMemoInput').value;
+      try {
+        await fetch('/api/partner/me/jobs/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ partner_memo: memo }) });
+        showToast('メモを保存しました');
+      } catch(e) { showToast('保存失敗', true); }
+    }
+
+    // --- Messages ---
+    async function loadMessages() {
+      var el = document.getElementById('messagesList');
+      try {
+        var res = await fetch('/api/partner/me/messages', { headers: { 'Authorization': 'Bearer ' + token } });
+        var data = await res.json();
+        if (!data.messages || !data.messages.length) { el.innerHTML = '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-12 text-center"><p class="text-gray-400 text-sm">メッセージはありません</p></div>'; return; }
+        el.innerHTML = data.messages.map(function(m) {
+          var isFromSVA = m.direction === 'to_partner';
+          var unread = isFromSVA && !m.is_read;
+          var time = m.created_at ? new Date(m.created_at).toLocaleString('ja-JP') : '';
+          return '<div class="bg-white rounded-xl card-shadow border ' + (unread ? 'border-sva-red/30 bg-red-50/20' : 'border-gray-100') + ' p-5' + (unread ? ' cursor-pointer" onclick="markRead(' + m.id + ',this)"' : '"') + '>'
+            + '<div class="flex items-center gap-2 mb-2"><span class="text-xs font-medium px-2 py-0.5 rounded ' + (isFromSVA ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700') + '">' + (isFromSVA ? 'SVA事務局から' : '送信済み') + '</span>'
+            + (unread ? '<span class="text-[10px] bg-sva-red text-white px-1.5 py-0.5 rounded font-bold">未読</span>' : '')
+            + '<span class="text-[10px] text-gray-400 ml-auto">' + time + '</span></div>'
+            + '<p class="text-sm font-bold text-sva-dark mb-1">' + escH(m.subject) + '</p>'
+            + '<p class="text-sm text-gray-600 whitespace-pre-line">' + escH(m.body) + '</p></div>';
+        }).join('');
+      } catch(e) { el.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    async function markRead(id, el) {
+      try {
+        await fetch('/api/partner/me/messages/' + id + '/read', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+        if (el) { el.classList.remove('border-sva-red/30', 'bg-red-50/20'); el.classList.add('border-gray-100'); el.onclick = null; var badge = el.querySelector('.bg-sva-red'); if (badge) badge.remove(); }
+        loadStats();
+      } catch(e) {}
+    }
+
+    // Reply
+    document.getElementById('sendReplyBtn').addEventListener('click', async function() {
+      var subj = document.getElementById('replySubject').value;
+      var body = document.getElementById('replyBody').value;
+      if (!body) { showToast('本文を入力してください', true); return; }
+      try {
+        await fetch('/api/partner/me/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify({ subject: subj || '返信', body: body }) });
+        document.getElementById('replySubject').value = '';
+        document.getElementById('replyBody').value = '';
+        showToast('メッセージを送信しました');
+        loadMessages();
+      } catch(e) { showToast('送信失敗', true); }
+    });
+
+    function escH(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // Expose to global scope for inline onclick handlers
+    window.openJobDetail = openJobDetail;
+    window.updateJobStatus = updateJobStatus;
+    window.saveJobMemo = saveJobMemo;
+    window.markRead = markRead;
 
     // --- Toast ---
     function showToast(msg, isError) {

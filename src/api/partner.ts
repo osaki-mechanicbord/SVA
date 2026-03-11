@@ -172,4 +172,117 @@ partnerApi.put('/me/password', async (c) => {
   return c.json({ success: true })
 })
 
+// ==========================================
+// Partner Jobs & Messages (マイページ用)
+// ==========================================
+
+// Auth helper middleware
+async function getPartnerId(c: any): Promise<number | null> {
+  const auth = c.req.header('Authorization')
+  if (!auth?.startsWith('Bearer ')) return null
+  const token = auth.slice(7)
+  const session = await c.env.DB.prepare(
+    "SELECT partner_id, expires_at FROM partner_sessions WHERE token = ?"
+  ).bind(token).first<{ partner_id: number; expires_at: string }>()
+  if (!session || new Date(session.expires_at) < new Date()) return null
+  return session.partner_id
+}
+
+// 案件一覧
+partnerApi.get('/me/jobs', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const page = Math.max(1, Number(c.req.query('page')) || 1)
+  const limit = 20; const offset = (page - 1) * limit
+  const status = c.req.query('status') || ''
+
+  let where = 'partner_id = ?'
+  const params: any[] = [pid]
+  if (status) { where += ' AND status = ?'; params.push(status) }
+
+  const [cnt, data] = await Promise.all([
+    c.env.DB.prepare(`SELECT COUNT(*) as total FROM jobs WHERE ${where}`).bind(...params).first<{ total: number }>(),
+    c.env.DB.prepare(`SELECT * FROM jobs WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...params, limit, offset).all()
+  ])
+  return c.json({ jobs: data.results, pagination: { page, limit, total: cnt?.total || 0, totalPages: Math.ceil((cnt?.total || 0) / limit) } })
+})
+
+// 案件詳細
+partnerApi.get('/me/jobs/:id', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  return c.json({ job })
+})
+
+// 案件ステータス更新 (パートナー側: accept / decline / メモ)
+partnerApi.put('/me/jobs/:id', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{ status?: string; partner_memo?: string }>()
+  const allowedStatuses = ['accepted', 'declined', 'in_progress', 'completed']
+  if (body.status && !allowedStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  await c.env.DB.prepare(
+    "UPDATE jobs SET status = ?, partner_memo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+  ).bind(body.status ?? job.status, body.partner_memo ?? job.partner_memo, id).run()
+  return c.json({ success: true })
+})
+
+// メッセージ一覧
+partnerApi.get('/me/messages', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const msgs = await c.env.DB.prepare(
+    "SELECT * FROM messages WHERE partner_id = ? ORDER BY created_at DESC LIMIT 100"
+  ).bind(pid).all()
+  // 未読数
+  const unread = await c.env.DB.prepare(
+    "SELECT COUNT(*) as c FROM messages WHERE partner_id = ? AND direction = 'to_partner' AND is_read = 0"
+  ).bind(pid).first<{ c: number }>()
+  return c.json({ messages: msgs.results, unread_count: unread?.c || 0 })
+})
+
+// メッセージ既読
+partnerApi.put('/me/messages/:id/read', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  await c.env.DB.prepare(
+    "UPDATE messages SET is_read = 1 WHERE id = ? AND partner_id = ?"
+  ).bind(id, pid).run()
+  return c.json({ success: true })
+})
+
+// パートナーからメッセージ返信
+partnerApi.post('/me/messages', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const { subject, body } = await c.req.json<{ subject: string; body: string }>()
+  if (!body) return c.json({ error: 'body required' }, 400)
+  const r = await c.env.DB.prepare(
+    "INSERT INTO messages (partner_id, direction, subject, body) VALUES (?, 'from_partner', ?, ?)"
+  ).bind(pid, subject || '返信', body).run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// ダッシュボード統計
+partnerApi.get('/me/stats', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const [pending, active, total, unread] = await Promise.all([
+    c.env.DB.prepare("SELECT COUNT(*) as c FROM jobs WHERE partner_id = ? AND status = 'pending'").bind(pid).first<{ c: number }>(),
+    c.env.DB.prepare("SELECT COUNT(*) as c FROM jobs WHERE partner_id = ? AND status IN ('accepted','in_progress')").bind(pid).first<{ c: number }>(),
+    c.env.DB.prepare("SELECT COUNT(*) as c FROM jobs WHERE partner_id = ?").bind(pid).first<{ c: number }>(),
+    c.env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE partner_id = ? AND direction = 'to_partner' AND is_read = 0").bind(pid).first<{ c: number }>()
+  ])
+  return c.json({ stats: { pending_jobs: pending?.c || 0, active_jobs: active?.c || 0, total_jobs: total?.c || 0, unread_messages: unread?.c || 0 } })
+})
+
 export { partnerApi }
