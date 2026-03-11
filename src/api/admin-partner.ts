@@ -175,20 +175,80 @@ adminPartnerApi.post('/jobs', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// Update job (basic fields)
+// Update job (basic fields + new detail fields)
 adminPartnerApi.put('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
-  const body = await c.req.json<{ status?: string; title?: string; description?: string; vehicle_type?: string; device_type?: string; location?: string; preferred_date?: string; budget?: string }>()
-  const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ?").bind(id).first()
+  const body = await c.req.json<{
+    status?: string; title?: string; description?: string; vehicle_type?: string;
+    device_type?: string; location?: string; preferred_date?: string; budget?: string;
+    tracking_number?: string; maker_name?: string; car_model?: string; car_model_code?: string;
+    work_report?: string; general_memo?: string
+  }>()
+  const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ?").bind(id).first<any>()
   if (!j) return c.json({ error: 'Not found' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
   ).bind(
     body.title ?? j.title, body.description ?? j.description, body.vehicle_type ?? j.vehicle_type,
     body.device_type ?? j.device_type, body.location ?? j.location, body.preferred_date ?? j.preferred_date,
-    body.budget ?? j.budget, body.status ?? j.status, id
+    body.budget ?? j.budget, body.status ?? j.status,
+    body.tracking_number ?? j.tracking_number, body.maker_name ?? j.maker_name,
+    body.car_model ?? j.car_model, body.car_model_code ?? j.car_model_code,
+    body.work_report ?? j.work_report, body.general_memo ?? j.general_memo, id
   ).run()
+  return c.json({ success: true })
+})
+
+// Get single job detail (with photos metadata)
+adminPartnerApi.get('/jobs/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const j = await c.env.DB.prepare(
+    "SELECT j.*, p.company_name, p.representative_name, p.email as partner_email FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE j.id = ?"
+  ).bind(id).first()
+  if (!j) return c.json({ error: 'Not found' }, 404)
+  const photos = await c.env.DB.prepare(
+    "SELECT id, job_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? ORDER BY category, created_at"
+  ).bind(id).all()
+  return c.json({ job: j, photos: photos.results })
+})
+
+// Get job photo data (individual)
+adminPartnerApi.get('/jobs/:id/photos/:photoId', async (c) => {
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const photo = await c.env.DB.prepare("SELECT * FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
+  if (!photo) return c.json({ error: 'Photo not found' }, 404)
+  return c.json({ photo })
+})
+
+// Admin can also upload photos
+adminPartnerApi.post('/jobs/:id/photos', async (c) => {
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(id).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string
+  }>()
+
+  const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
+  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
+  if (body.photo_data.length > 7_000_000) return c.json({ error: 'File too large' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?)"
+  ).bind(id, body.category, body.photo_data, body.mime_type || 'image/jpeg', body.file_name || '', body.caption || '', 'admin').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// Delete photo (admin)
+adminPartnerApi.delete('/jobs/:id/photos/:photoId', async (c) => {
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const r = await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
   return c.json({ success: true })
 })
 

@@ -235,6 +235,97 @@ partnerApi.put('/me/jobs/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// 案件詳細情報更新 (送り状NO・車両情報・作業報告・メモ)
+partnerApi.put('/me/jobs/:id/details', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first<any>()
+  if (!j) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    tracking_number?: string; maker_name?: string; car_model?: string; car_model_code?: string;
+    work_report?: string; general_memo?: string
+  }>()
+
+  await c.env.DB.prepare(
+    `UPDATE jobs SET tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+  ).bind(
+    body.tracking_number ?? j.tracking_number, body.maker_name ?? j.maker_name,
+    body.car_model ?? j.car_model, body.car_model_code ?? j.car_model_code,
+    body.work_report ?? j.work_report, body.general_memo ?? j.general_memo, id
+  ).run()
+  return c.json({ success: true })
+})
+
+// 写真アップロード (パートナーが現場で撮影した写真を案件に紐付け)
+partnerApi.post('/me/jobs/:id/photos', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string
+  }>()
+
+  const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
+  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
+
+  // Limit photo_data size (approx 5MB base64)
+  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます（5MB以下にしてください）' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?)"
+  ).bind(id, body.category, body.photo_data, body.mime_type || 'image/jpeg', body.file_name || '', body.caption || '', 'partner').run()
+
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// 写真一覧取得 (メタデータのみ、データは含まない)
+partnerApi.get('/me/jobs/:id/photos', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const photos = await c.env.DB.prepare(
+    "SELECT id, job_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? ORDER BY category, created_at"
+  ).bind(id).all()
+  return c.json({ photos: photos.results })
+})
+
+// 写真データ取得 (個別)
+partnerApi.get('/me/jobs/:id/photos/:photoId', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const photo = await c.env.DB.prepare("SELECT * FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
+  if (!photo) return c.json({ error: 'Photo not found' }, 404)
+  return c.json({ photo })
+})
+
+// 写真削除
+partnerApi.delete('/me/jobs/:id/photos/:photoId', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const r = await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
 // 案件トラッキングステータス更新 (パートナー側 - 共通ステータス編集)
 partnerApi.put('/me/jobs/:id/tracking', async (c) => {
   const pid = await getPartnerId(c)

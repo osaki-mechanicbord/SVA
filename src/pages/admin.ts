@@ -951,34 +951,50 @@ export function adminPage(): string {
       var dv = document.getElementById('jobDetailView');
       dv.innerHTML = '<div class="flex items-center justify-center py-12"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       try {
-        // Fetch full job via the list endpoint (includes partner info)
-        var res = await fetch(API + '/admin/jobs?page=1', { headers: { 'Authorization': 'Bearer ' + authToken } });
-        var allData = await res.json();
-        var j = (allData.jobs || []).find(function(x) { return x.id === id; });
-        if (!j) {
-          // Try next pages or single fetch
-          var r2 = await fetch(API + '/admin/jobs?page=1&partner_id=', { headers: { 'Authorization': 'Bearer ' + authToken } });
-          var d2 = await r2.json();
-          j = (d2.jobs || []).find(function(x) { return x.id === id; });
-        }
-        if (!j) { dv.innerHTML = '<p class="text-sm text-red-500">案件が見つかりません</p>'; return; }
-        renderJobDetail(j);
+        var res = await fetch(API + '/admin/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        if (!data.job) { dv.innerHTML = '<p class="text-sm text-red-500">案件が見つかりません</p>'; return; }
+        renderJobDetail(data.job, data.photos || []);
       } catch(e) { dv.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
     }
 
-    function fmtDt(d) { if (!d) return '-'; try { return new Date(d).toLocaleString('ja-JP'); } catch(e) { return d; } }
+    var PHOTO_CATS = {
+      'caution_plate': 'コーションプレート', 'pre_install': '取付前製品', 'power_source': '電源取得箇所',
+      'ground_point': 'アース取得箇所', 'completed': '取付完了写真',
+      'claim_caution_plate': 'コーションプレート(クレーム)', 'claim_fault': '故障原因箇所(不良個所)', 'claim_repair': '修理内容', 'other': 'その他'
+    };
 
-    function renderJobDetail(j) {
+    function renderJobDetail(j, photos) {
       var s = JOB_STATUS[j.status] || ['不明','bg-gray-100 text-gray-500 border-gray-200'];
-      var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
-      var sc = SCHED_S[j.schedule_status] || SCHED_S.not_started;
-      var wk = WORK_S[j.work_status] || WORK_S.scheduling;
 
       var shipOpts = [['not_shipped','未発送'],['shipped','発送済'],['received','受取済']].map(function(o) { return '<option value="' + o[0] + '"' + (j.shipping_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
       var schedOpts = [['not_started','未着手'],['contacting','連絡中'],['waiting_callback','折り返し待ち'],['date_confirmed','作業日決定']].map(function(o) { return '<option value="' + o[0] + '"' + (j.schedule_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
       var workOpts = [['scheduling','日程調整中'],['completed','完了'],['user_postponed','ユーザー都合延期'],['self_postponed','自己都合延期'],['maker_postponed','メーカー都合延期'],['cancelled','キャンセル']].map(function(o) { return '<option value="' + o[0] + '"' + (j.work_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
 
       var updatedBy = j.last_status_updated_by === 'admin' ? 'SVA管理者' : j.last_status_updated_by === 'partner' ? 'パートナー' : '-';
+
+      // Build photo gallery by category
+      var photosByCategory = {};
+      (photos || []).forEach(function(p) {
+        if (!photosByCategory[p.category]) photosByCategory[p.category] = [];
+        photosByCategory[p.category].push(p);
+      });
+      var allCats = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
+      var photoHtml = '';
+      if (!photos || photos.length === 0) {
+        photoHtml = '<p class="text-sm text-gray-400 py-4">写真がアップロードされていません</p>';
+      } else {
+        photoHtml = allCats.map(function(c) {
+          var catPhotos = photosByCategory[c[0]] || [];
+          if (catPhotos.length === 0) return '';
+          return '<div class="mb-3"><p class="text-xs font-bold text-gray-600 mb-2">' + c[1] + ' (' + catPhotos.length + '枚)</p>'
+            + '<div class="flex gap-2 flex-wrap">' + catPhotos.map(function(p) {
+              return '<div class="w-20 h-20 rounded-lg border border-gray-200 overflow-hidden cursor-pointer bg-gray-50 hover:border-sva-red transition-colors flex items-center justify-center" onclick="viewAdminPhoto(' + j.id + ',' + p.id + ')">'
+                + '<div class="text-center"><svg class="w-6 h-6 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+                + '<p class="text-[9px] text-gray-400">' + fmtDt(p.created_at).split(' ')[0] + '</p></div></div>';
+            }).join('') + '</div></div>';
+        }).filter(Boolean).join('');
+      }
 
       document.getElementById('jobDetailView').innerHTML = '<div class="space-y-6">'
         // Header
@@ -998,58 +1014,75 @@ export function adminPage(): string {
         + (j.description ? '<div class="mt-4"><p class="text-xs text-gray-400 mb-1">詳細</p><p class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line">' + esc(j.description) + '</p></div>' : '')
         + '</div>'
 
+        // ===== 案件詳細情報 (送り状NO・車両情報・作業報告) =====
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
+        + '<h4 class="font-bold text-sva-dark text-base mb-4">案件詳細情報</h4>'
+        + '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-4">'
+        + '<div><p class="text-xs text-gray-400 mb-1">送り状NO</p><input id="aj_tracking" type="text" value="' + esc(j.tracking_number || '') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="追跡番号"></div>'
+        + '<div><p class="text-xs text-gray-400 mb-1">メーカー名</p><input id="aj_maker" type="text" value="' + esc(j.maker_name || '') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><p class="text-xs text-gray-400 mb-1">車種</p><input id="aj_car_model" type="text" value="' + esc(j.car_model || '') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '<div><p class="text-xs text-gray-400 mb-1">車両型式</p><input id="aj_car_code" type="text" value="' + esc(j.car_model_code || '') + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '</div>'
+        + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">作業報告（パートナー記入）</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[60px]">' + esc(j.work_report || '未記入') + '</div></div>'
+        + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">パートナー自由メモ</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[40px]">' + esc(j.general_memo || '未記入') + '</div></div>'
+        + '<div class="flex items-center gap-3"><button onclick="saveJobDetails(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">詳細情報を保存</button><span id="ajdMsg" class="text-sm"></span></div>'
+        + '</div>'
+
+        // ===== 作業写真 =====
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
+        + '<h4 class="font-bold text-sva-dark text-base mb-1">作業写真 <span class="text-sm font-normal text-gray-400">(' + (photos ? photos.length : 0) + '枚)</span></h4>'
+        + '<p class="text-xs text-gray-400 mb-4">パートナーが現場でアップロードした写真を確認できます</p>'
+        + photoHtml
+        + '</div>'
+
         // ===== Tracking Status Panel =====
         + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
         + '<h4 class="font-bold text-sva-dark text-base mb-1">進捗トラッキング</h4>'
         + '<p class="text-xs text-gray-400 mb-5">SVA・パートナー双方が編集可能な共通ステータスです</p>'
-
-        // Progress bar visual
         + '<div class="flex items-center gap-1 mb-6">'
         + '<div class="flex-1 h-2 rounded-full ' + (j.shipping_status !== 'not_shipped' ? 'bg-green-400' : 'bg-gray-200') + '"></div>'
         + '<div class="flex-1 h-2 rounded-full ' + (j.shipping_status === 'received' ? 'bg-green-400' : 'bg-gray-200') + '"></div>'
         + '<div class="flex-1 h-2 rounded-full ' + (j.schedule_status === 'date_confirmed' ? 'bg-green-400' : j.schedule_status !== 'not_started' ? 'bg-yellow-400' : 'bg-gray-200') + '"></div>'
         + '<div class="flex-1 h-2 rounded-full ' + (j.work_status === 'completed' ? 'bg-green-400' : j.work_status !== 'scheduling' ? 'bg-yellow-400' : 'bg-gray-200') + '"></div>'
         + '</div>'
-
-        // Three tracking sections in grid
         + '<div class="grid md:grid-cols-3 gap-4 mb-5">'
-
-        // 1. Shipping
-        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50">'
-        + '<div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="text-sm font-bold text-gray-800">製品発送</span></div>'
-        + '<div class="space-y-2.5">'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">発送ステータス</label><select id="jt_shipping" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + shipOpts + '</select></div>'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">発送日</label><p class="text-sm text-gray-700">' + fmtDt(j.shipped_at) + '</p></div>'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">受取確認日</label><p class="text-sm text-gray-700">' + fmtDt(j.received_at) + '</p></div>'
-        + '</div></div>'
-
-        // 2. Schedule
-        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50">'
-        + '<div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="text-sm font-bold text-gray-800">日程調整</span></div>'
-        + '<div class="space-y-2.5">'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">日程調整ステータス</label><select id="jt_schedule" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + schedOpts + '</select></div>'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">確定作業日</label><input id="jt_work_date" type="text" value="' + esc(j.confirmed_work_date || '') + '" placeholder="例: 2026-04-15" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
-        + '</div></div>'
-
-        // 3. Work completion
-        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50">'
-        + '<div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="text-sm font-bold text-gray-800">作業完了</span></div>'
-        + '<div class="space-y-2.5">'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">作業ステータス</label><select id="jt_work" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + workOpts + '</select></div>'
-        + '<div><label class="block text-[10px] font-medium text-gray-500 mb-1">作業完了日</label><p class="text-sm text-gray-700">' + fmtDt(j.work_completed_at) + '</p></div>'
-        + '</div></div>'
+        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50"><div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="text-sm font-bold text-gray-800">製品発送</span></div><div class="space-y-2.5"><div><label class="block text-[10px] font-medium text-gray-500 mb-1">発送ステータス</label><select id="jt_shipping" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + shipOpts + '</select></div><div><label class="block text-[10px] font-medium text-gray-500 mb-1">発送日</label><p class="text-sm text-gray-700">' + fmtDt(j.shipped_at) + '</p></div><div><label class="block text-[10px] font-medium text-gray-500 mb-1">受取確認日</label><p class="text-sm text-gray-700">' + fmtDt(j.received_at) + '</p></div></div></div>'
+        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50"><div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg><span class="text-sm font-bold text-gray-800">日程調整</span></div><div class="space-y-2.5"><div><label class="block text-[10px] font-medium text-gray-500 mb-1">日程調整ステータス</label><select id="jt_schedule" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + schedOpts + '</select></div><div><label class="block text-[10px] font-medium text-gray-500 mb-1">確定作業日</label><input id="jt_work_date" type="text" value="' + esc(j.confirmed_work_date || '') + '" placeholder="例: 2026-04-15" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div></div></div>'
+        + '<div class="rounded-xl border border-gray-100 p-4 bg-gray-50/50"><div class="flex items-center gap-2 mb-3"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="text-sm font-bold text-gray-800">作業完了</span></div><div class="space-y-2.5"><div><label class="block text-[10px] font-medium text-gray-500 mb-1">作業ステータス</label><select id="jt_work" class="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + workOpts + '</select></div><div><label class="block text-[10px] font-medium text-gray-500 mb-1">作業完了日</label><p class="text-sm text-gray-700">' + fmtDt(j.work_completed_at) + '</p></div></div></div>'
         + '</div>'
-
-        // Status note and save
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータスメモ</label><textarea id="jt_note" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="更新理由や備考...">' + esc(j.status_note || '') + '</textarea></div>'
-        + '<div class="flex items-center gap-3 mt-2"><button onclick="saveJobTracking(' + j.id + ')" class="px-6 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">トラッキング更新</button>'
-        + '<span id="jtMsg" class="text-sm"></span>'
-        + (j.last_status_updated_at ? '<span class="text-[10px] text-gray-400 ml-auto">最終更新: ' + updatedBy + ' (' + fmtDt(j.last_status_updated_at) + ')</span>' : '')
-        + '</div></div>'
-
-        // Partner memo
-        + (j.partner_memo ? '<div class="bg-white rounded-xl border border-gray-200 p-6"><h4 class="text-sm font-bold text-sva-dark mb-2">パートナーメモ</h4><p class="text-sm text-gray-600 whitespace-pre-line">' + esc(j.partner_memo) + '</p></div>' : '')
+        + '<div class="flex items-center gap-3 mt-2"><button onclick="saveJobTracking(' + j.id + ')" class="px-6 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">トラッキング更新</button><span id="jtMsg" class="text-sm"></span>'
+        + (j.last_status_updated_at ? '<span class="text-[10px] text-gray-400 ml-auto">最終更新: ' + updatedBy + ' (' + fmtDt(j.last_status_updated_at) + ')</span>' : '') + '</div></div>'
+        + (j.partner_memo ? '<div class="bg-white rounded-xl border border-gray-200 p-6"><h4 class="text-sm font-bold text-sva-dark mb-2">パートナーメモ（ステータス用）</h4><p class="text-sm text-gray-600 whitespace-pre-line">' + esc(j.partner_memo) + '</p></div>' : '')
         + '</div>';
+    }
+
+    async function saveJobDetails(jobId) {
+      var msgEl = document.getElementById('ajdMsg');
+      try {
+        var res = await fetch(API + '/admin/jobs/' + jobId, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({
+            tracking_number: document.getElementById('aj_tracking').value,
+            maker_name: document.getElementById('aj_maker').value,
+            car_model: document.getElementById('aj_car_model').value,
+            car_model_code: document.getElementById('aj_car_code').value
+          })
+        });
+        if (res.ok) { msgEl.textContent = '保存しました'; msgEl.className = 'text-sm text-green-600'; showToast('詳細情報を保存しました'); }
+        else { msgEl.textContent = '保存失敗'; msgEl.className = 'text-sm text-red-600'; }
+      } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-sm text-red-600'; }
+    }
+
+    async function viewAdminPhoto(jobId, photoId) {
+      try {
+        var res = await fetch(API + '/admin/jobs/' + jobId + '/photos/' + photoId, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        if (data.photo && data.photo.photo_data) {
+          var w = window.open('', '_blank');
+          w.document.write('<html><head><title>写真プレビュー</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#111;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="data:' + (data.photo.mime_type || 'image/jpeg') + ';base64,' + data.photo.photo_data + '"></body></html>');
+        }
+      } catch(e) { showToast('写真の読み込みに失敗しました'); }
     }
 
     async function saveJobTracking(jobId) {
