@@ -208,12 +208,38 @@ partnerApi.get('/me/jobs', async (c) => {
 })
 
 // 案件詳細（車両数・商品数・写真数の集計付き）
+// ★ お客様詳細情報は受諾(accepted)以降のステータスでのみ返す
 partnerApi.get('/me/jobs/:id', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
   const id = Number(c.req.param('id'))
-  const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first<any>()
   if (!job) return c.json({ error: 'Not found' }, 404)
+
+  // お客様詳細情報は pending / declined の場合は隠す
+  const clientInfoAllowed = !['pending', 'declined'].includes(job.status)
+  const safeJob = { ...job }
+  if (!clientInfoAllowed) {
+    // 機密情報を除外
+    safeJob.client_company = ''
+    safeJob.client_branch = ''
+    safeJob.client_contact_name = ''
+    safeJob.client_contact_phone = ''
+    safeJob.client_contact_email = ''
+    safeJob.work_location_detail = ''
+    safeJob.work_datetime = ''
+    safeJob.vehicle_count = 0
+    safeJob.urgent_contact_note = ''
+    safeJob.products_maker = ''
+    safeJob.products_customer = ''
+    safeJob.products_partner = ''
+    safeJob.products_local = ''
+    safeJob.cost_labor = 0
+    safeJob.cost_travel = 0
+    safeJob.cost_other = 0
+    safeJob.cost_preliminary = 0
+    safeJob.cost_memo = ''
+  }
 
   // 車両明細+集計
   const vehicles = await c.env.DB.prepare(
@@ -236,7 +262,7 @@ partnerApi.get('/me/jobs/:id', async (c) => {
     "SELECT id, job_id, file_name, mime_type, file_size, description, uploaded_by, created_at FROM job_attachments WHERE job_id = ? ORDER BY created_at DESC"
   ).bind(id).all()
 
-  return c.json({ job, vehicles: vehicleDetails, attachments: attachments.results })
+  return c.json({ job: safeJob, vehicles: vehicleDetails, attachments: attachments.results, client_info_allowed: clientInfoAllowed })
 })
 
 // ========== 車両明細 CRUD ==========

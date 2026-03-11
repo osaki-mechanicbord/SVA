@@ -920,6 +920,41 @@ export function adminPage(): string {
         + '</div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="案件の詳細..."></textarea></div>'
         + '</div>'
+        // お客様詳細情報セクション
+        + '<div class="mt-6 border-t border-gray-200 pt-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>お客様詳細情報 <span class="text-[10px] text-orange-500 font-normal">※受諾後にパートナーへ開示</span></h4>'
+        + '<div class="grid sm:grid-cols-2 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">会社名</label><input id="nj_client_company" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="株式会社〇〇物流"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">支店名</label><input id="nj_client_branch" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="堺営業所"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">担当者名</label><input id="nj_client_contact" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="田中太郎"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">打合せ連絡先（電話）</label><input id="nj_client_phone" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="072-XXX-XXXX"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">連絡先（メール）</label><input id="nj_client_email" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="tanaka@example.co.jp"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業場所（詳細住所）</label><input id="nj_work_location" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="大阪府堺市中区〇〇町1-2-3"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業希望日時</label><input id="nj_work_datetime" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="2026年4月15日 09:00〜17:00"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両台数</label><input id="nj_vehicle_count" type="number" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="5"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">受諾後 即連絡メモ</label><textarea id="nj_urgent_note" rows="2" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm resize-none bg-orange-50/30" placeholder="受諾後、48時間以内にお客様担当者へ電話連絡してください"></textarea></div>'
+        + '</div>'
+        // 取付製品セクション
+        + '<div class="mt-5 border-t border-gray-200 pt-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付製品（準備区分）</h4>'
+        + '<div class="grid sm:grid-cols-2 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メーカー準備</label><textarea id="nj_prod_maker" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="AIカメラ FLC-1 x5台"></textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">お客様準備</label><textarea id="nj_prod_customer" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="取付ステー"></textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">公認パートナー準備</label><textarea id="nj_prod_partner" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="配線部材一式"></textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">現地調達</label><textarea id="nj_prod_local" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="なし"></textarea></div>'
+        + '</div></div>'
+        // 費用セクション
+        + '<div class="mt-5 border-t border-gray-200 pt-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3">費用情報 <span class="text-[10px] text-gray-400 font-normal">※税抜金額を入力（表示時に10%加算）</span></h4>'
+        + '<div class="grid sm:grid-cols-4 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">推定希望工賃</label><input id="nj_cost_labor" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="250000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">出張費用</label><input id="nj_cost_travel" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="35000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">その他費用</label><input id="nj_cost_other" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="5000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">事前打合せ工賃</label><input id="nj_cost_prelim" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="15000"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">費用メモ</label><textarea id="nj_cost_memo" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="備考..."></textarea></div>'
+        + '</div>'
         + '<div class="flex items-center gap-3 mt-5"><button onclick="createJob()" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">案件を送信</button><span id="njMsg" class="text-sm"></span></div></div>';
     }
 
@@ -947,7 +982,7 @@ export function adminPage(): string {
       if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと案件名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
       try {
         var res = await fetch(API + '/admin/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value, job_number: document.getElementById('nj_job_number').value })
+          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value, job_number: document.getElementById('nj_job_number').value, client_company: document.getElementById('nj_client_company').value, client_branch: document.getElementById('nj_client_branch').value, client_contact_name: document.getElementById('nj_client_contact').value, client_contact_phone: document.getElementById('nj_client_phone').value, client_contact_email: document.getElementById('nj_client_email').value, work_location_detail: document.getElementById('nj_work_location').value, work_datetime: document.getElementById('nj_work_datetime').value, vehicle_count: Number(document.getElementById('nj_vehicle_count').value)||0, urgent_contact_note: document.getElementById('nj_urgent_note').value, products_maker: document.getElementById('nj_prod_maker').value, products_customer: document.getElementById('nj_prod_customer').value, products_partner: document.getElementById('nj_prod_partner').value, products_local: document.getElementById('nj_prod_local').value, cost_labor: Number(document.getElementById('nj_cost_labor').value)||0, cost_travel: Number(document.getElementById('nj_cost_travel').value)||0, cost_other: Number(document.getElementById('nj_cost_other').value)||0, cost_preliminary: Number(document.getElementById('nj_cost_prelim').value)||0, cost_memo: document.getElementById('nj_cost_memo').value })
         });
         var data = await res.json();
         if (!res.ok) { document.getElementById('njMsg').textContent = data.error || '作成失敗'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
@@ -1061,7 +1096,42 @@ export function adminPage(): string {
         + '</div>'
         + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">作業報告（パートナー記入）</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[40px]">' + esc(j.work_report||'未記入') + '</div></div>'
         + '<div class="mb-3"><p class="text-xs text-gray-400 mb-1">メモ</p><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[30px]">' + esc(j.general_memo||'未記入') + '</div></div>'
-        + '<div class="flex items-center gap-3"><button onclick="saveJobDetails(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">詳細情報を保存</button><span id="ajdMsg" class="text-sm"></span></div>'
+        // お客様詳細情報セクション（編集可能）
+        + '<div class="mt-5 rounded-xl border border-orange-200 bg-orange-50/20 p-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>お客様詳細情報 <span class="text-[10px] text-orange-500 font-normal">※受諾後にパートナーへ開示</span></h4>'
+        + '<div class="grid sm:grid-cols-2 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">会社名</label><input id="aj_client_company" type="text" value="' + esc(j.client_company||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="株式会社〇〇物流"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">支店名</label><input id="aj_client_branch" type="text" value="' + esc(j.client_branch||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="堺営業所"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">担当者名</label><input id="aj_client_contact_name" type="text" value="' + esc(j.client_contact_name||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="田中太郎"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">打合せ連絡先（電話）</label><input id="aj_client_phone" type="text" value="' + esc(j.client_contact_phone||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="072-XXX-XXXX"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">連絡先（メール）</label><input id="aj_client_email" type="text" value="' + esc(j.client_contact_email||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="tanaka@example.co.jp"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業場所（詳細住所）</label><input id="aj_work_location_detail" type="text" value="' + esc(j.work_location_detail||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="大阪府堺市中区〇〇町1-2-3"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業希望日時</label><input id="aj_work_datetime" type="text" value="' + esc(j.work_datetime||'') + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="2026年4月15日 09:00〜17:00"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両台数</label><input id="aj_vehicle_count" type="number" value="' + (j.vehicle_count||0) + '" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm focus:outline-none focus:border-sva-red bg-white" placeholder="5"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">受諾後 即連絡メモ</label><textarea id="aj_urgent_note" rows="2" class="w-full px-2.5 py-1.5 border border-orange-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red bg-white" placeholder="受諾後、48時間以内にお客様担当者へ電話連絡してください">' + esc(j.urgent_contact_note||'') + '</textarea></div>'
+        + '</div>'
+        // 取付製品セクション
+        + '<div class="mt-5 rounded-xl border border-gray-200 p-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付製品（準備区分）</h4>'
+        + '<div class="grid sm:grid-cols-2 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メーカー準備</label><textarea id="aj_prod_maker" rows="2" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="AIカメラ FLC-1 x5台">' + esc(j.products_maker||'') + '</textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">お客様準備</label><textarea id="aj_prod_customer" rows="2" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="取付ステー">' + esc(j.products_customer||'') + '</textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">公認パートナー準備</label><textarea id="aj_prod_partner" rows="2" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="配線部材一式">' + esc(j.products_partner||'') + '</textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">現地調達</label><textarea id="aj_prod_local" rows="2" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="なし">' + esc(j.products_local||'') + '</textarea></div>'
+        + '</div></div>'
+        // 費用セクション
+        + '<div class="mt-5 rounded-xl border border-gray-200 p-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3">費用情報 <span class="text-[10px] text-gray-400 font-normal">※税抜金額を入力（表示時に10%加算）</span></h4>'
+        + '<div class="grid sm:grid-cols-4 gap-3">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">推定希望工賃</label><input id="aj_cost_labor" type="number" value="' + (j.cost_labor||0) + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="250000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">出張費用</label><input id="aj_cost_travel" type="number" value="' + (j.cost_travel||0) + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="35000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">その他費用</label><input id="aj_cost_other" type="number" value="' + (j.cost_other||0) + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="5000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">事前打合せ工賃</label><input id="aj_cost_prelim" type="number" value="' + (j.cost_preliminary||0) + '" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="15000"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">費用メモ</label><textarea id="aj_cost_memo" rows="2" class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="備考...">' + esc(j.cost_memo||'') + '</textarea></div>'
+        + '</div>'
+        + '<div class="flex items-center gap-3 mt-5"><button onclick="saveJobDetails(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">詳細情報を保存</button><span id="ajdMsg" class="text-sm"></span></div>'
         // 添付ファイル（PDF等）セクション
         + '<div class="mt-6 rounded-xl border border-gray-200 p-5">'
         + '<div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-sva-dark"><svg class="w-4 h-4 inline mr-1 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>添付ファイル（取付マニュアル等）</h4>'
@@ -1274,7 +1344,25 @@ export function adminPage(): string {
             tracking_number: document.getElementById('aj_tracking').value,
             maker_name: document.getElementById('aj_maker').value,
             car_model: document.getElementById('aj_car_model').value,
-            car_model_code: document.getElementById('aj_car_code').value
+            car_model_code: document.getElementById('aj_car_code').value,
+            client_company: document.getElementById('aj_client_company').value,
+            client_branch: document.getElementById('aj_client_branch').value,
+            client_contact_name: document.getElementById('aj_client_contact_name').value,
+            client_contact_phone: document.getElementById('aj_client_phone').value,
+            client_contact_email: document.getElementById('aj_client_email').value,
+            work_location_detail: document.getElementById('aj_work_location_detail').value,
+            work_datetime: document.getElementById('aj_work_datetime').value,
+            vehicle_count: Number(document.getElementById('aj_vehicle_count').value)||0,
+            urgent_contact_note: document.getElementById('aj_urgent_note').value,
+            products_maker: document.getElementById('aj_prod_maker').value,
+            products_customer: document.getElementById('aj_prod_customer').value,
+            products_partner: document.getElementById('aj_prod_partner').value,
+            products_local: document.getElementById('aj_prod_local').value,
+            cost_labor: Number(document.getElementById('aj_cost_labor').value)||0,
+            cost_travel: Number(document.getElementById('aj_cost_travel').value)||0,
+            cost_other: Number(document.getElementById('aj_cost_other').value)||0,
+            cost_preliminary: Number(document.getElementById('aj_cost_prelim').value)||0,
+            cost_memo: document.getElementById('aj_cost_memo').value
           })
         });
         if (res.ok) { msgEl.textContent = '保存しました'; msgEl.className = 'text-sm text-green-600'; showToast('詳細情報を保存しました'); }

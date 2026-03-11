@@ -162,7 +162,13 @@ adminPartnerApi.post('/jobs', async (c) => {
   const body = await c.req.json<{
     partner_id: number; title: string; description?: string; vehicle_type?: string;
     device_type?: string; location?: string; preferred_date?: string; budget?: string;
-    job_number?: string
+    job_number?: string;
+    client_company?: string; client_branch?: string; client_contact_name?: string;
+    client_contact_phone?: string; client_contact_email?: string;
+    work_location_detail?: string; work_datetime?: string; vehicle_count?: number;
+    urgent_contact_note?: string;
+    products_maker?: string; products_customer?: string; products_partner?: string; products_local?: string;
+    cost_labor?: number; cost_travel?: number; cost_other?: number; cost_preliminary?: number; cost_memo?: string
   }>()
   if (!body.partner_id || !body.title) return c.json({ error: 'partner_id and title required' }, 400)
 
@@ -170,8 +176,8 @@ adminPartnerApi.post('/jobs', async (c) => {
   if (!p) return c.json({ error: 'Partner not found' }, 404)
 
   const r = await c.env.DB.prepare(
-    `INSERT INTO jobs (partner_id, title, description, vehicle_type, device_type, location, preferred_date, budget, job_number) VALUES (?,?,?,?,?,?,?,?,?)`
-  ).bind(body.partner_id, body.title, body.description || '', body.vehicle_type || '', body.device_type || '', body.location || '', body.preferred_date || '', body.budget || '', body.job_number || '').run()
+    `INSERT INTO jobs (partner_id, title, description, vehicle_type, device_type, location, preferred_date, budget, job_number, client_company, client_branch, client_contact_name, client_contact_phone, client_contact_email, work_location_detail, work_datetime, vehicle_count, urgent_contact_note, products_maker, products_customer, products_partner, products_local, cost_labor, cost_travel, cost_other, cost_preliminary, cost_memo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(body.partner_id, body.title, body.description||'', body.vehicle_type||'', body.device_type||'', body.location||'', body.preferred_date||'', body.budget||'', body.job_number||'', body.client_company||'', body.client_branch||'', body.client_contact_name||'', body.client_contact_phone||'', body.client_contact_email||'', body.work_location_detail||'', body.work_datetime||'', body.vehicle_count||0, body.urgent_contact_note||'', body.products_maker||'', body.products_customer||'', body.products_partner||'', body.products_local||'', body.cost_labor||0, body.cost_travel||0, body.cost_other||0, body.cost_preliminary||0, body.cost_memo||'').run()
 
   // Auto-send notification message
   await c.env.DB.prepare(
@@ -183,20 +189,26 @@ adminPartnerApi.post('/jobs', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// Update job (basic fields + new detail fields + job_number)
+// Update job (basic fields + client details + costs)
 adminPartnerApi.put('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const body = await c.req.json<{
     status?: string; title?: string; description?: string; vehicle_type?: string;
     device_type?: string; location?: string; preferred_date?: string; budget?: string;
     tracking_number?: string; maker_name?: string; car_model?: string; car_model_code?: string;
-    work_report?: string; general_memo?: string; job_number?: string
+    work_report?: string; general_memo?: string; job_number?: string;
+    client_company?: string; client_branch?: string; client_contact_name?: string;
+    client_contact_phone?: string; client_contact_email?: string;
+    work_location_detail?: string; work_datetime?: string; vehicle_count?: number;
+    urgent_contact_note?: string;
+    products_maker?: string; products_customer?: string; products_partner?: string; products_local?: string;
+    cost_labor?: number; cost_travel?: number; cost_other?: number; cost_preliminary?: number; cost_memo?: string
   }>()
   const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ?").bind(id).first<any>()
   if (!j) return c.json({ error: 'Not found' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, job_number=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+    `UPDATE jobs SET title=?, description=?, vehicle_type=?, device_type=?, location=?, preferred_date=?, budget=?, status=?, tracking_number=?, maker_name=?, car_model=?, car_model_code=?, work_report=?, general_memo=?, job_number=?, client_company=?, client_branch=?, client_contact_name=?, client_contact_phone=?, client_contact_email=?, work_location_detail=?, work_datetime=?, vehicle_count=?, urgent_contact_note=?, products_maker=?, products_customer=?, products_partner=?, products_local=?, cost_labor=?, cost_travel=?, cost_other=?, cost_preliminary=?, cost_memo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
   ).bind(
     body.title ?? j.title, body.description ?? j.description, body.vehicle_type ?? j.vehicle_type,
     body.device_type ?? j.device_type, body.location ?? j.location, body.preferred_date ?? j.preferred_date,
@@ -204,7 +216,17 @@ adminPartnerApi.put('/jobs/:id', async (c) => {
     body.tracking_number ?? j.tracking_number, body.maker_name ?? j.maker_name,
     body.car_model ?? j.car_model, body.car_model_code ?? j.car_model_code,
     body.work_report ?? j.work_report, body.general_memo ?? j.general_memo,
-    body.job_number ?? j.job_number, id
+    body.job_number ?? j.job_number,
+    body.client_company ?? j.client_company, body.client_branch ?? j.client_branch,
+    body.client_contact_name ?? j.client_contact_name, body.client_contact_phone ?? j.client_contact_phone,
+    body.client_contact_email ?? j.client_contact_email, body.work_location_detail ?? j.work_location_detail,
+    body.work_datetime ?? j.work_datetime, body.vehicle_count ?? j.vehicle_count,
+    body.urgent_contact_note ?? j.urgent_contact_note,
+    body.products_maker ?? j.products_maker, body.products_customer ?? j.products_customer,
+    body.products_partner ?? j.products_partner, body.products_local ?? j.products_local,
+    body.cost_labor ?? j.cost_labor, body.cost_travel ?? j.cost_travel,
+    body.cost_other ?? j.cost_other, body.cost_preliminary ?? j.cost_preliminary,
+    body.cost_memo ?? j.cost_memo, id
   ).run()
   return c.json({ success: true })
 })
