@@ -273,7 +273,7 @@ export function partnerMypagePage(): string {
           <div id="jobsList" class="space-y-3 fade-in fade-in-delay-1"></div>
           <!-- Job detail modal -->
           <div id="jobDetailModal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-auto">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
               <div id="jobDetailContent" class="p-6"></div>
             </div>
           </div>
@@ -517,6 +517,11 @@ export function partnerMypagePage(): string {
 
     // --- Jobs ---
     var JOB_S = { 'pending': ['未対応','bg-yellow-50 text-yellow-700 border-yellow-200'], 'accepted': ['受諾','bg-blue-50 text-blue-700 border-blue-200'], 'in_progress': ['対応中','bg-indigo-50 text-indigo-700 border-indigo-200'], 'completed': ['完了','bg-green-50 text-green-700 border-green-200'], 'declined': ['辞退','bg-gray-50 text-gray-500 border-gray-200'], 'cancelled': ['キャンセル','bg-red-50 text-red-600 border-red-200'] };
+    var SHIP_S = { 'not_shipped': ['未発送','bg-gray-100 text-gray-500'], 'shipped': ['発送済','bg-orange-50 text-orange-700'], 'received': ['受取済','bg-green-50 text-green-700'] };
+    var SCHED_S = { 'not_started': ['未着手','bg-gray-100 text-gray-500'], 'contacting': ['連絡中','bg-blue-50 text-blue-700'], 'waiting_callback': ['折り返し待ち','bg-amber-50 text-amber-700'], 'date_confirmed': ['作業日決定','bg-green-50 text-green-700'] };
+    var WORK_S = { 'scheduling': ['日程調整中','bg-blue-50 text-blue-700'], 'completed': ['完了','bg-green-50 text-green-700'], 'user_postponed': ['ユーザー都合延期','bg-amber-50 text-amber-700'], 'self_postponed': ['自己都合延期','bg-orange-50 text-orange-700'], 'maker_postponed': ['メーカー都合延期','bg-purple-50 text-purple-700'], 'cancelled': ['キャンセル','bg-red-50 text-red-600'] };
+
+    function fmtDt(d) { if (!d) return '-'; try { return new Date(d).toLocaleString('ja-JP'); } catch(e) { return d; } }
 
     async function loadJobs() {
       var el = document.getElementById('jobsList');
@@ -526,10 +531,14 @@ export function partnerMypagePage(): string {
         if (!data.jobs || !data.jobs.length) { el.innerHTML = '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-12 text-center"><p class="text-gray-400 text-sm">まだ案件がありません</p><p class="text-xs text-gray-300 mt-1">SVAから案件が届くとここに表示されます</p></div>'; return; }
         el.innerHTML = data.jobs.map(function(j) {
           var s = JOB_S[j.status] || JOB_S.pending;
+          var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
+          var sc = SCHED_S[j.schedule_status] || SCHED_S.not_started;
+          var wk = WORK_S[j.work_status] || WORK_S.scheduling;
           var date = j.created_at ? new Date(j.created_at).toLocaleDateString('ja-JP') : '';
           return '<div class="bg-white rounded-xl card-shadow border border-gray-100 p-5 cursor-pointer hover:border-gray-200 transition-colors" onclick="openJobDetail(' + j.id + ')">'
             + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span><span class="text-xs text-gray-400 ml-auto">' + date + '</span></div>'
-            + '<p class="text-sm font-bold text-sva-dark mb-1">' + escH(j.title) + '</p>'
+            + '<p class="text-sm font-bold text-sva-dark mb-2">' + escH(j.title) + '</p>'
+            + '<div class="flex items-center gap-1.5 flex-wrap mb-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sh[1] + '">製品:' + sh[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sc[1] + '">日程:' + sc[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + wk[1] + '">作業:' + wk[0] + '</span></div>'
             + '<div class="flex flex-wrap gap-3 text-xs text-gray-500">'
             + (j.vehicle_type ? '<span>車両: ' + escH(j.vehicle_type) + '</span>' : '')
             + (j.device_type ? '<span>装置: ' + escH(j.device_type) + '</span>' : '')
@@ -543,10 +552,15 @@ export function partnerMypagePage(): string {
       var modal = document.getElementById('jobDetailModal');
       var content = document.getElementById('jobDetailContent');
       modal.classList.remove('hidden');
+      content.innerHTML = '<div class="flex items-center justify-center py-8"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       try {
         var res = await fetch('/api/partner/me/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
         var data = await res.json(); var j = data.job;
         var s = JOB_S[j.status] || JOB_S.pending;
+        var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
+        var sc = SCHED_S[j.schedule_status] || SCHED_S.not_started;
+        var wk = WORK_S[j.work_status] || WORK_S.scheduling;
+
         var statusBtns = '';
         if (j.status === 'pending') {
           statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'accepted\\')" class="flex-1 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">受諾する</button><button onclick="updateJobStatus(' + j.id + ',\\'declined\\')" class="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">辞退する</button></div>';
@@ -555,6 +569,14 @@ export function partnerMypagePage(): string {
         } else if (j.status === 'in_progress') {
           statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'completed\\')" class="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">完了報告</button></div>';
         }
+
+        // Tracking select options
+        var shipOpts = [['not_shipped','未発送'],['shipped','発送済'],['received','受取済']].map(function(o) { return '<option value="' + o[0] + '"' + (j.shipping_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+        var schedOpts = [['not_started','未着手'],['contacting','連絡中'],['waiting_callback','折り返し待ち'],['date_confirmed','作業日決定']].map(function(o) { return '<option value="' + o[0] + '"' + (j.schedule_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+        var workOpts = [['scheduling','日程調整中'],['completed','完了'],['user_postponed','ユーザー都合延期'],['self_postponed','自己都合延期'],['maker_postponed','メーカー都合延期'],['cancelled','キャンセル']].map(function(o) { return '<option value="' + o[0] + '"' + (j.work_status === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+
+        var updatedBy = j.last_status_updated_by === 'admin' ? 'SVA事務局' : j.last_status_updated_by === 'partner' ? 'パートナー' : '-';
+
         content.innerHTML = '<div class="flex items-center justify-between mb-4"><h3 class="text-base font-bold text-sva-dark">案件詳細</h3><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
           + '<span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
           + '<h4 class="text-sm font-bold text-sva-dark mt-3 mb-3">' + escH(j.title) + '</h4>'
@@ -566,9 +588,65 @@ export function partnerMypagePage(): string {
           + '<div><p class="text-xs text-gray-400">予算</p><p class="font-medium">' + escH(j.budget || '-') + '</p></div>'
           + '</div>'
           + (j.description ? '<div class="mb-4"><p class="text-xs text-gray-400 mb-1">詳細</p><p class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 rounded-lg p-3">' + escH(j.description) + '</p></div>' : '')
+
+          // ===== Tracking Status Section =====
+          + '<div class="border-t border-gray-100 pt-4 mt-4">'
+          + '<h5 class="text-sm font-bold text-sva-dark mb-1">進捗トラッキング</h5>'
+          + '<p class="text-[10px] text-gray-400 mb-3">SVA・パートナー双方が編集・確認できます</p>'
+
+          // Progress bar
+          + '<div class="flex items-center gap-1 mb-4">'
+          + '<div class="flex-1 h-1.5 rounded-full ' + (j.shipping_status !== 'not_shipped' ? 'bg-green-400' : 'bg-gray-200') + '"></div>'
+          + '<div class="flex-1 h-1.5 rounded-full ' + (j.shipping_status === 'received' ? 'bg-green-400' : 'bg-gray-200') + '"></div>'
+          + '<div class="flex-1 h-1.5 rounded-full ' + (j.schedule_status === 'date_confirmed' ? 'bg-green-400' : j.schedule_status !== 'not_started' ? 'bg-yellow-400' : 'bg-gray-200') + '"></div>'
+          + '<div class="flex-1 h-1.5 rounded-full ' + (j.work_status === 'completed' ? 'bg-green-400' : j.work_status !== 'scheduling' ? 'bg-yellow-400' : 'bg-gray-200') + '"></div>'
+          + '</div>'
+
+          // Tracking selects in compact grid
+          + '<div class="space-y-3">'
+          + '<div class="grid grid-cols-2 gap-3">'
+          + '<div><label class="block text-[10px] font-bold text-gray-500 mb-1">製品発送</label><select id="pt_shipping" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sva-red">' + shipOpts + '</select>'
+          + (j.shipped_at ? '<p class="text-[10px] text-gray-400 mt-0.5">発送: ' + fmtDt(j.shipped_at) + '</p>' : '')
+          + (j.received_at ? '<p class="text-[10px] text-gray-400">受取: ' + fmtDt(j.received_at) + '</p>' : '')
+          + '</div>'
+          + '<div><label class="block text-[10px] font-bold text-gray-500 mb-1">日程調整</label><select id="pt_schedule" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sva-red">' + schedOpts + '</select>'
+          + '<input id="pt_work_date" type="text" value="' + escH(j.confirmed_work_date || '') + '" placeholder="作業日 例: 2026-04-15" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs mt-1 focus:outline-none focus:border-sva-red">'
+          + '</div>'
+          + '</div>'
+          + '<div><label class="block text-[10px] font-bold text-gray-500 mb-1">作業完了</label><select id="pt_work" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-sva-red">' + workOpts + '</select>'
+          + (j.work_completed_at ? '<p class="text-[10px] text-gray-400 mt-0.5">完了日: ' + fmtDt(j.work_completed_at) + '</p>' : '')
+          + '</div>'
+          + '<div><label class="block text-[10px] font-bold text-gray-500 mb-1">メモ</label><textarea id="pt_note" rows="2" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs resize-none focus:outline-none focus:border-sva-red" placeholder="ステータスの備考...">' + escH(j.status_note || '') + '</textarea></div>'
+          + '<div class="flex items-center gap-2">'
+          + '<button onclick="saveJobTracking(' + j.id + ')" class="px-4 py-2 bg-sva-red text-white text-xs font-medium rounded-lg hover:bg-red-800">トラッキング更新</button>'
+          + '<span id="ptTrackMsg" class="text-xs"></span>'
+          + '</div>'
+          + (j.last_status_updated_at ? '<p class="text-[10px] text-gray-400 mt-1">最終更新: ' + updatedBy + ' (' + fmtDt(j.last_status_updated_at) + ')</p>' : '')
+          + '</div></div>'
+
+          // Memo & status buttons
+          + '<div class="border-t border-gray-100 pt-4 mt-4">'
           + '<div class="mb-2"><label class="text-xs text-gray-400 mb-1 block">メモ（自分用）</label><textarea id="jobMemoInput" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red">' + escH(j.partner_memo || '') + '</textarea><button onclick="saveJobMemo(' + j.id + ')" class="mt-1 px-3 py-1 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">メモ保存</button></div>'
-          + statusBtns;
+          + statusBtns + '</div>';
       } catch(e) { content.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    async function saveJobTracking(jobId) {
+      var msgEl = document.getElementById('ptTrackMsg');
+      try {
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/tracking', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({
+            shipping_status: document.getElementById('pt_shipping').value,
+            schedule_status: document.getElementById('pt_schedule').value,
+            confirmed_work_date: document.getElementById('pt_work_date').value,
+            work_status: document.getElementById('pt_work').value,
+            status_note: document.getElementById('pt_note').value
+          })
+        });
+        if (res.ok) { msgEl.textContent = '更新しました'; msgEl.className = 'text-xs text-green-600'; showToast('トラッキングを更新しました'); loadStats(); }
+        else { var d = await res.json(); msgEl.textContent = d.error || '更新失敗'; msgEl.className = 'text-xs text-red-600'; }
+      } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-xs text-red-600'; }
     }
 
     async function updateJobStatus(id, status) {
@@ -637,6 +715,7 @@ export function partnerMypagePage(): string {
     window.openJobDetail = openJobDetail;
     window.updateJobStatus = updateJobStatus;
     window.saveJobMemo = saveJobMemo;
+    window.saveJobTracking = saveJobTracking;
     window.markRead = markRead;
 
     // --- Toast ---

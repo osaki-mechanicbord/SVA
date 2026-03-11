@@ -175,7 +175,7 @@ adminPartnerApi.post('/jobs', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// Update job status
+// Update job (basic fields)
 adminPartnerApi.put('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const body = await c.req.json<{ status?: string; title?: string; description?: string; vehicle_type?: string; device_type?: string; location?: string; preferred_date?: string; budget?: string }>()
@@ -188,6 +188,45 @@ adminPartnerApi.put('/jobs/:id', async (c) => {
     body.title ?? j.title, body.description ?? j.description, body.vehicle_type ?? j.vehicle_type,
     body.device_type ?? j.device_type, body.location ?? j.location, body.preferred_date ?? j.preferred_date,
     body.budget ?? j.budget, body.status ?? j.status, id
+  ).run()
+  return c.json({ success: true })
+})
+
+// Update job tracking statuses (shared between admin & partner)
+adminPartnerApi.put('/jobs/:id/tracking', async (c) => {
+  const id = Number(c.req.param('id'))
+  const body = await c.req.json<{
+    shipping_status?: string; shipped_at?: string; received_at?: string;
+    schedule_status?: string; confirmed_work_date?: string;
+    work_status?: string; work_completed_at?: string;
+    status_note?: string
+  }>()
+  const j = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ?").bind(id).first<any>()
+  if (!j) return c.json({ error: 'Not found' }, 404)
+
+  const shippingValid = ['not_shipped', 'shipped', 'received']
+  const scheduleValid = ['not_started', 'contacting', 'waiting_callback', 'date_confirmed']
+  const workValid = ['scheduling', 'completed', 'user_postponed', 'self_postponed', 'maker_postponed', 'cancelled']
+
+  if (body.shipping_status && !shippingValid.includes(body.shipping_status)) return c.json({ error: 'Invalid shipping_status' }, 400)
+  if (body.schedule_status && !scheduleValid.includes(body.schedule_status)) return c.json({ error: 'Invalid schedule_status' }, 400)
+  if (body.work_status && !workValid.includes(body.work_status)) return c.json({ error: 'Invalid work_status' }, 400)
+
+  // Auto-set timestamps
+  let shippedAt = body.shipped_at ?? j.shipped_at
+  let receivedAt = body.received_at ?? j.received_at
+  let workCompletedAt = body.work_completed_at ?? j.work_completed_at
+  if (body.shipping_status === 'shipped' && !j.shipped_at && !body.shipped_at) shippedAt = new Date().toISOString()
+  if (body.shipping_status === 'received' && !j.received_at && !body.received_at) receivedAt = new Date().toISOString()
+  if (body.work_status === 'completed' && !j.work_completed_at && !body.work_completed_at) workCompletedAt = new Date().toISOString()
+
+  await c.env.DB.prepare(
+    `UPDATE jobs SET shipping_status=?, shipped_at=?, received_at=?, schedule_status=?, confirmed_work_date=?, work_status=?, work_completed_at=?, status_note=?, last_status_updated_by='admin', last_status_updated_at=CURRENT_TIMESTAMP, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+  ).bind(
+    body.shipping_status ?? j.shipping_status, shippedAt, receivedAt,
+    body.schedule_status ?? j.schedule_status, body.confirmed_work_date ?? j.confirmed_work_date,
+    body.work_status ?? j.work_status, workCompletedAt,
+    body.status_note ?? j.status_note, id
   ).run()
   return c.json({ success: true })
 })
