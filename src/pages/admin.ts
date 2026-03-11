@@ -752,6 +752,12 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ランク</label><select id="ep_rank" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + rankOpts + '</select></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータス</label><select id="ep_status" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + statusOpts + '</select></div>'
         + '</div>'
+        + '<div class="mt-4 border-t border-gray-100 pt-4"><p class="text-xs font-medium text-gray-500 mb-3">住所・インボイス情報</p></div>'
+        + '<div class="grid sm:grid-cols-3 gap-4 mt-2">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">郵便番号</label><input id="ep_postal" value="' + esc(p.postal_code || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="000-0000"></div>'
+        + '<div class="sm:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1">住所</label><input id="ep_address" value="' + esc(p.address || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="都道府県 市区町村 番地 建物名"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">インボイス番号（適格請求書発行事業者登録番号）</label><input id="ep_invoice" value="' + esc(p.invoice_number || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="T1234567890123"></div>'
         + '<div class="mt-4"><label class="block text-xs font-medium text-gray-600 mb-1">管理メモ</label><textarea id="ep_notes" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red resize-none">' + esc(p.notes) + '</textarea></div>'
         + '<div class="flex items-center gap-3 mt-4">'
         + '<button onclick="savePartner(' + p.id + ')" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">保存</button>'
@@ -781,7 +787,7 @@ export function adminPage(): string {
     async function savePartner(id) {
       try {
         const res = await fetch(API + '/admin/partners/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-          body: JSON.stringify({ company_name: document.getElementById('ep_company').value, representative_name: document.getElementById('ep_name').value, phone: document.getElementById('ep_phone').value, region: document.getElementById('ep_region').value, specialties: document.getElementById('ep_specialties').value, rank: document.getElementById('ep_rank').value, status: document.getElementById('ep_status').value, notes: document.getElementById('ep_notes').value })
+          body: JSON.stringify({ company_name: document.getElementById('ep_company').value, representative_name: document.getElementById('ep_name').value, phone: document.getElementById('ep_phone').value, region: document.getElementById('ep_region').value, specialties: document.getElementById('ep_specialties').value, rank: document.getElementById('ep_rank').value, status: document.getElementById('ep_status').value, notes: document.getElementById('ep_notes').value, postal_code: document.getElementById('ep_postal').value, address: document.getElementById('ep_address').value, invoice_number: document.getElementById('ep_invoice').value })
         });
         if (res.ok) { document.getElementById('epMsg').textContent = '保存しました'; document.getElementById('epMsg').className = 'text-sm text-green-600'; }
         else { var d = await res.json(); document.getElementById('epMsg').textContent = d.error || '失敗'; document.getElementById('epMsg').className = 'text-sm text-red-600'; }
@@ -921,6 +927,12 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">専門分野</label><input id="np_specialties" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ランク</label><select id="np_rank" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"><option value="standard">スタンダード</option><option value="silver">シルバー</option><option value="gold">ゴールド</option><option value="platinum">プラチナ</option></select></div>'
         + '</div>'
+        + '<div class="mt-4 border-t border-gray-100 pt-4"><p class="text-xs font-medium text-gray-500 mb-3">住所・インボイス情報</p></div>'
+        + '<div class="grid sm:grid-cols-3 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">郵便番号</label><input id="np_postal" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="000-0000"></div>'
+        + '<div class="sm:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1">住所</label><input id="np_address" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="都道府県 市区町村 番地 建物名"></div>'
+        + '</div>'
+        + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">インボイス番号（適格請求書発行事業者登録番号）</label><input id="np_invoice" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="T1234567890123"></div>'
         + '<div class="flex items-center gap-3 mt-5"><button onclick="createPartner()" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">登録する</button><span id="npMsg" class="text-sm"></span></div></div>';
     }
 
@@ -930,7 +942,7 @@ export function adminPage(): string {
       if (!email || !pw) { document.getElementById('npMsg').textContent = 'メールとパスワードは必須です'; document.getElementById('npMsg').className = 'text-sm text-red-600'; return; }
       try {
         var res = await fetch(API + '/admin/partners', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-          body: JSON.stringify({ email: email, password: pw, company_name: document.getElementById('np_company').value, representative_name: document.getElementById('np_name').value, phone: document.getElementById('np_phone').value, region: document.getElementById('np_region').value, specialties: document.getElementById('np_specialties').value, rank: document.getElementById('np_rank').value })
+          body: JSON.stringify({ email: email, password: pw, company_name: document.getElementById('np_company').value, representative_name: document.getElementById('np_name').value, phone: document.getElementById('np_phone').value, region: document.getElementById('np_region').value, specialties: document.getElementById('np_specialties').value, rank: document.getElementById('np_rank').value, postal_code: document.getElementById('np_postal').value, address: document.getElementById('np_address').value, invoice_number: document.getElementById('np_invoice').value })
         });
         var data = await res.json();
         if (!res.ok) { document.getElementById('npMsg').textContent = data.error || '登録失敗'; document.getElementById('npMsg').className = 'text-sm text-red-600'; return; }

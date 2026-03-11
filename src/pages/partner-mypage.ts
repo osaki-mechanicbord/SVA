@@ -229,6 +229,24 @@ export function partnerMypagePage(): string {
                   <input id="prof_specialties" type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm input-focus focus:outline-none focus:border-sva-red transition-all" placeholder="ドラレコ取付、AIカメラ取付">
                 </div>
               </div>
+              <div class="border-t border-gray-100 pt-5 mt-1">
+                <p class="text-sm font-medium text-gray-700 mb-4">住所・インボイス情報</p>
+                <div class="grid sm:grid-cols-3 gap-5">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">郵便番号</label>
+                    <input id="prof_postal" type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm input-focus focus:outline-none focus:border-sva-red transition-all" placeholder="000-0000">
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">住所</label>
+                    <input id="prof_address" type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm input-focus focus:outline-none focus:border-sva-red transition-all" placeholder="都道府県 市区町村 番地 建物名">
+                  </div>
+                </div>
+                <div class="mt-5">
+                  <label class="block text-sm font-medium text-gray-700 mb-1.5">インボイス番号（適格請求書発行事業者登録番号）</label>
+                  <input id="prof_invoice" type="text" class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm input-focus focus:outline-none focus:border-sva-red transition-all" placeholder="T1234567890123">
+                  <p class="text-xs text-gray-400 mt-1">「T」+ 13桁の数字で入力してください</p>
+                </div>
+              </div>
               <div class="pt-2">
                 <button id="profileSaveBtn" type="submit" class="inline-flex items-center justify-center px-8 py-3 bg-sva-red text-white font-medium rounded-xl hover:bg-red-800 active:scale-[0.98] transition-all text-sm">
                   保存する
@@ -368,6 +386,9 @@ export function partnerMypagePage(): string {
       document.getElementById('prof_phone').value = partnerData.phone || '';
       document.getElementById('prof_region').value = partnerData.region || '';
       document.getElementById('prof_specialties').value = partnerData.specialties || '';
+      document.getElementById('prof_postal').value = partnerData.postal_code || '';
+      document.getElementById('prof_address').value = partnerData.address || '';
+      document.getElementById('prof_invoice').value = partnerData.invoice_number || '';
 
       setupNav();
       setupForms();
@@ -448,6 +469,9 @@ export function partnerMypagePage(): string {
               phone: document.getElementById('prof_phone').value,
               region: document.getElementById('prof_region').value,
               specialties: document.getElementById('prof_specialties').value,
+              postal_code: document.getElementById('prof_postal').value,
+              address: document.getElementById('prof_address').value,
+              invoice_number: document.getElementById('prof_invoice').value,
             })
           });
           if (res.ok) {

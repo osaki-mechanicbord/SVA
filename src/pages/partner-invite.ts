@@ -106,6 +106,25 @@ export function partnerInvitePage(token: string): string {
               </div>
             </div>
 
+            <div class="border-t border-gray-100 pt-5">
+              <p class="text-xs text-gray-400 mb-3">住所・インボイス情報（任意・後からマイページで変更できます）</p>
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 mb-1">郵便番号</label>
+                  <input id="reg_postal" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm input-focus focus:outline-none focus:border-sva-red" placeholder="000-0000">
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-xs font-medium text-gray-600 mb-1">住所</label>
+                  <input id="reg_address" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm input-focus focus:outline-none focus:border-sva-red" placeholder="都道府県 市区町村 番地">
+                </div>
+              </div>
+              <div class="mt-3">
+                <label class="block text-xs font-medium text-gray-600 mb-1">インボイス番号（適格請求書発行事業者登録番号）</label>
+                <input id="reg_invoice" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm input-focus focus:outline-none focus:border-sva-red" placeholder="T1234567890123">
+                <p class="text-xs text-gray-400 mt-1">「T」+ 13桁の数字で入力</p>
+              </div>
+            </div>
+
             <div id="regError" class="hidden text-sm text-red-600 bg-red-50 rounded-lg p-3"></div>
 
             <button id="regBtn" onclick="doRegister()" class="w-full py-3 bg-sva-red text-white font-bold rounded-xl hover:bg-red-800 transition-colors text-sm">
@@ -190,7 +209,10 @@ export function partnerInvitePage(token: string): string {
             representative_name: document.getElementById('reg_name').value.trim(),
             phone: document.getElementById('reg_phone').value.trim(),
             region: document.getElementById('reg_region').value.trim(),
-            specialties: document.getElementById('reg_specialties').value.trim()
+            specialties: document.getElementById('reg_specialties').value.trim(),
+            postal_code: document.getElementById('reg_postal').value.trim(),
+            address: document.getElementById('reg_address').value.trim(),
+            invoice_number: document.getElementById('reg_invoice').value.trim()
           })
         });
         var data = await res.json();

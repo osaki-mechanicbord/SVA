@@ -26,7 +26,7 @@ adminPartnerApi.get('/partners', async (c) => {
   if (rank) { where += " AND rank = ?"; params.push(rank); }
 
   const countQ = `SELECT COUNT(*) as total FROM partners WHERE ${where}`
-  const dataQ = `SELECT id, email, company_name, representative_name, phone, region, specialties, rank, status, notes, last_login_at, created_at FROM partners WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+  const dataQ = `SELECT id, email, company_name, representative_name, phone, region, specialties, rank, status, notes, postal_code, address, invoice_number, last_login_at, created_at FROM partners WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
 
   const [cnt, data] = await Promise.all([
     c.env.DB.prepare(countQ).bind(...params).first<{ total: number }>(),
@@ -54,17 +54,19 @@ adminPartnerApi.put('/partners/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const body = await c.req.json<{
     company_name?: string; representative_name?: string; phone?: string;
-    region?: string; specialties?: string; rank?: string; status?: string; notes?: string
+    region?: string; specialties?: string; rank?: string; status?: string; notes?: string;
+    postal_code?: string; address?: string; invoice_number?: string
   }>()
   const p = await c.env.DB.prepare("SELECT * FROM partners WHERE id = ?").bind(id).first()
   if (!p) return c.json({ error: 'Not found' }, 404)
 
   await c.env.DB.prepare(
-    `UPDATE partners SET company_name=?, representative_name=?, phone=?, region=?, specialties=?, rank=?, status=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
+    `UPDATE partners SET company_name=?, representative_name=?, phone=?, region=?, specialties=?, rank=?, status=?, notes=?, postal_code=?, address=?, invoice_number=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`
   ).bind(
     body.company_name ?? p.company_name, body.representative_name ?? p.representative_name,
     body.phone ?? p.phone, body.region ?? p.region, body.specialties ?? p.specialties,
-    body.rank ?? p.rank, body.status ?? p.status, body.notes ?? p.notes, id
+    body.rank ?? p.rank, body.status ?? p.status, body.notes ?? p.notes,
+    body.postal_code ?? p.postal_code, body.address ?? p.address, body.invoice_number ?? p.invoice_number, id
   ).run()
   return c.json({ success: true })
 })
@@ -81,7 +83,8 @@ adminPartnerApi.delete('/partners/:id', async (c) => {
 adminPartnerApi.post('/partners', async (c) => {
   const body = await c.req.json<{
     email: string; password: string; company_name?: string;
-    representative_name?: string; phone?: string; region?: string; specialties?: string; rank?: string
+    representative_name?: string; phone?: string; region?: string; specialties?: string; rank?: string;
+    postal_code?: string; address?: string; invoice_number?: string
   }>()
   if (!body.email || !body.password) return c.json({ error: 'email and password required' }, 400)
 
@@ -93,8 +96,8 @@ adminPartnerApi.post('/partners', async (c) => {
   const hash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('')
 
   const r = await c.env.DB.prepare(
-    `INSERT INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, rank) VALUES (?,?,?,?,?,?,?,?)`
-  ).bind(body.email, hash, body.company_name || '', body.representative_name || '', body.phone || '', body.region || '', body.specialties || '', body.rank || 'standard').run()
+    `INSERT INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, rank, postal_code, address, invoice_number) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(body.email, hash, body.company_name || '', body.representative_name || '', body.phone || '', body.region || '', body.specialties || '', body.rank || 'standard', body.postal_code || '', body.address || '', body.invoice_number || '').run()
 
   return c.json({ id: r.meta.last_row_id }, 201)
 })

@@ -41,7 +41,8 @@ partnerApi.post('/invite/:token/register', async (c) => {
   const token = c.req.param('token')
   const body = await c.req.json<{
     email: string; password: string; company_name?: string;
-    representative_name?: string; phone?: string; region?: string; specialties?: string
+    representative_name?: string; phone?: string; region?: string; specialties?: string;
+    postal_code?: string; address?: string; invoice_number?: string
   }>()
 
   if (!body.email || !body.password) return c.json({ error: 'メールアドレスとパスワードは必須です' }, 400)
@@ -63,12 +64,13 @@ partnerApi.post('/invite/:token/register', async (c) => {
   // パートナー作成
   const passwordHash = await hashPassword(body.password)
   const r = await c.env.DB.prepare(
-    `INSERT INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, rank, invited_by_token) VALUES (?,?,?,?,?,?,?,?,?)`
+    `INSERT INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, rank, invited_by_token, postal_code, address, invoice_number) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(
     body.email, passwordHash,
     body.company_name || '', body.representative_name || '',
     body.phone || '', body.region || '', body.specialties || '',
-    invite.rank, token
+    invite.rank, token,
+    body.postal_code || '', body.address || '', body.invoice_number || ''
   ).run()
 
   // 招待使用回数を更新
@@ -104,7 +106,7 @@ partnerApi.post('/login', async (c) => {
 
   const passwordHash = await hashPassword(password)
   const partner = await c.env.DB.prepare(
-    "SELECT id, email, company_name, representative_name, phone, region, specialties, status FROM partners WHERE email = ? AND password_hash = ?"
+    "SELECT id, email, company_name, representative_name, phone, region, specialties, status, postal_code, address, invoice_number FROM partners WHERE email = ? AND password_hash = ?"
   ).bind(email, passwordHash).first()
 
   if (!partner) return c.json({ error: 'メールアドレスまたはパスワードが正しくありません' }, 401)
@@ -133,6 +135,9 @@ partnerApi.post('/login', async (c) => {
       phone: partner.phone,
       region: partner.region,
       specialties: partner.specialties,
+      postal_code: partner.postal_code,
+      address: partner.address,
+      invoice_number: partner.invoice_number,
     }
   })
 })
@@ -166,7 +171,7 @@ partnerApi.get('/me', async (c) => {
   }
 
   const partner = await c.env.DB.prepare(
-    "SELECT id, email, company_name, representative_name, phone, region, specialties, status, last_login_at, created_at FROM partners WHERE id = ?"
+    "SELECT id, email, company_name, representative_name, phone, region, specialties, status, postal_code, address, invoice_number, last_login_at, created_at FROM partners WHERE id = ?"
   ).bind(session.partner_id).first()
 
   if (!partner || partner.status === 'suspended') return c.json({ error: 'Unauthorized' }, 401)
@@ -189,20 +194,24 @@ partnerApi.put('/me', async (c) => {
   }
 
   const body = await c.req.json<{
-    company_name?: string; representative_name?: string; phone?: string; region?: string; specialties?: string
+    company_name?: string; representative_name?: string; phone?: string; region?: string; specialties?: string;
+    postal_code?: string; address?: string; invoice_number?: string
   }>()
 
   const partner = await c.env.DB.prepare("SELECT * FROM partners WHERE id = ?").bind(session.partner_id).first()
   if (!partner) return c.json({ error: 'Not found' }, 404)
 
   await c.env.DB.prepare(
-    "UPDATE partners SET company_name = ?, representative_name = ?, phone = ?, region = ?, specialties = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    "UPDATE partners SET company_name = ?, representative_name = ?, phone = ?, region = ?, specialties = ?, postal_code = ?, address = ?, invoice_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
   ).bind(
     body.company_name ?? partner.company_name,
     body.representative_name ?? partner.representative_name,
     body.phone ?? partner.phone,
     body.region ?? partner.region,
     body.specialties ?? partner.specialties,
+    body.postal_code ?? partner.postal_code,
+    body.address ?? partner.address,
+    body.invoice_number ?? partner.invoice_number,
     session.partner_id
   ).run()
 
