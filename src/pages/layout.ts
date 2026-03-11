@@ -70,12 +70,34 @@ export function siteHeader(): string {
           <a href="/#partner" class="text-gray-600 hover:text-sva-red transition-colors">パートナー募集</a>
           <a href="/#faq" class="text-gray-600 hover:text-sva-red transition-colors">FAQ</a>
         </nav>
+        <div id="partnerBtnWrap">
+          <a href="/partner/login" id="partnerLoginBtn" class="hidden sm:inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            ログイン
+          </a>
+          <a href="/partner/mypage" id="partnerMypageBtn" style="display:none" class="items-center justify-center px-4 py-2 border border-sva-red/20 text-sva-red text-sm font-medium rounded-lg hover:bg-red-50 transition-colors gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            マイページ
+          </a>
+        </div>
         <a href="/#contact" class="hidden sm:inline-flex items-center justify-center px-5 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">
           お問い合わせ
         </a>
       </div>
     </div>
-  </header>`
+  </header>
+  <script>
+  (function(){
+    var token=localStorage.getItem('sva_partner_token');
+    var lb=document.getElementById('partnerLoginBtn');
+    var mb=document.getElementById('partnerMypageBtn');
+    if(token){
+      fetch('/api/partner/me',{headers:{'Authorization':'Bearer '+token}})
+        .then(function(r){if(r.ok){if(lb)lb.style.display='none';if(mb)mb.style.display='inline-flex';}else{localStorage.removeItem('sva_partner_token');localStorage.removeItem('sva_partner');if(lb)lb.style.display='';}})
+        .catch(function(){});
+    } else { if(lb)lb.style.display=''; }
+  })();
+  </script>`
 }
 
 export function siteFooter(): string {

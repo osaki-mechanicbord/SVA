@@ -6,8 +6,11 @@ import { llmsTxt } from './pages/llms'
 import { adminPage } from './pages/admin'
 import { columnListPage } from './pages/column-list'
 import { columnDetailPage } from './pages/column-detail'
+import { partnerLoginPage } from './pages/partner-login'
+import { partnerMypagePage } from './pages/partner-mypage'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
+import { partnerApi } from './api/partner'
 
 type Bindings = { DB: D1Database }
 
@@ -35,6 +38,7 @@ app.use('/api/*', cors())
 // API Routes
 // ==========================================
 app.route('/api', api)
+app.route('/api/partner', partnerApi)
 app.route('/media', imagesApi)
 app.route('/api', imagesApi)
 
@@ -119,6 +123,15 @@ app.get('/column/:slug', async (c) => {
 // CMS Admin page
 app.get('/admin', (c) => {
   return c.html(adminPage())
+})
+
+// Partner pages
+app.get('/partner/login', (c) => {
+  return c.html(partnerLoginPage())
+})
+
+app.get('/partner/mypage', (c) => {
+  return c.html(partnerMypagePage())
 })
 
 // llms.txt for LLMO

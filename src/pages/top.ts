@@ -262,6 +262,17 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
           <a href="#faq" class="text-gray-600 hover:text-sva-red transition-colors">FAQ</a>
         </nav>
         <div class="flex items-center gap-3">
+          <!-- Partner login/mypage button -->
+          <div id="partnerBtnWrap">
+            <a href="/partner/login" id="partnerLoginBtn" class="hidden sm:inline-flex items-center justify-center px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              ログイン
+            </a>
+            <a href="/partner/mypage" id="partnerMypageBtn" class="hidden items-center justify-center px-4 py-2 border border-sva-red/20 text-sva-red text-sm font-medium rounded-lg hover:bg-red-50 transition-colors gap-1.5" style="display:none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              マイページ
+            </a>
+          </div>
           <a href="#contact" class="hidden sm:inline-flex items-center justify-center px-5 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">
             お問い合わせ
           </a>
@@ -280,6 +291,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
         <a href="/column" class="block text-sm text-gray-600 py-2">コラム</a>
         <a href="#partner" class="block text-sm text-gray-600 py-2">パートナー募集</a>
         <a href="#faq" class="block text-sm text-gray-600 py-2">FAQ</a>
+        <a id="mobilePartnerBtn" href="/partner/login" class="block text-sm text-gray-600 py-2 border-t border-gray-100 mt-2 pt-3">パートナーログイン</a>
         <a href="#contact" class="block text-sm text-white bg-sva-red rounded-lg px-4 py-2.5 text-center font-medium">お問い合わせ</a>
       </nav>
     </div>
@@ -684,6 +696,29 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
         header.classList.remove('shadow-sm');
       }
     });
+    // Partner auth state check
+    (function() {
+      var token = localStorage.getItem('sva_partner_token');
+      var loginBtn = document.getElementById('partnerLoginBtn');
+      var mypageBtn = document.getElementById('partnerMypageBtn');
+      var mobileBtn = document.getElementById('mobilePartnerBtn');
+      if (token) {
+        fetch('/api/partner/me', { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function(r) {
+            if (r.ok) {
+              if (loginBtn) loginBtn.style.display = 'none';
+              if (mypageBtn) { mypageBtn.style.display = 'inline-flex'; }
+              if (mobileBtn) { mobileBtn.href = '/partner/mypage'; mobileBtn.textContent = 'マイページ'; }
+            } else {
+              localStorage.removeItem('sva_partner_token');
+              localStorage.removeItem('sva_partner');
+              if (loginBtn) loginBtn.style.display = '';
+            }
+          }).catch(function() {});
+      } else {
+        if (loginBtn) loginBtn.style.display = '';
+      }
+    })();
   </script>
 </body>
 </html>`

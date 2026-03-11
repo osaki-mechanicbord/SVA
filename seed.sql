@@ -61,6 +61,11 @@ INSERT OR IGNORE INTO articles (slug, title, excerpt, content, category, author,
   '2025-11-15 09:00:00'
 );
 
--- Insert default admin user (password: sva-admin-2025 - SHA-256 hashed)
+-- Insert default admin user (password: password - SHA-256 hashed)
 INSERT OR IGNORE INTO admin_users (username, password_hash) VALUES
 ('admin', '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8');
+
+-- Insert sample partner account (password: partner123 - SHA-256 hashed)
+-- SHA-256("partner123") = 8e37df0ddb39db85df57ad5edca885157b89c43e7e5a1b8e0135a22206712a45
+INSERT OR IGNORE INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, status) VALUES
+('demo@example.co.jp', 'd4e870198339c045e84f416cc6a1f15c30f010f68e14c637a9d35366f2e35ba6', '株式会社デモ電装', 'デモ太郎', '090-1234-5678', '大阪府・兵庫県', 'ドラレコ取付、AIカメラ取付、デジタコ取付', 'active');
