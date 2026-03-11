@@ -22,6 +22,81 @@ function generateToken(): string {
 // Partner Auth API
 // ==========================================
 
+// 招待トークン検証（登録画面表示前にチェック）
+partnerApi.get('/invite/:token', async (c) => {
+  const token = c.req.param('token')
+  const invite = await c.env.DB.prepare(
+    "SELECT * FROM partner_invitations WHERE token = ?"
+  ).bind(token).first<any>()
+
+  if (!invite) return c.json({ error: 'この招待リンクは無効です' }, 404)
+  if (new Date(invite.expires_at) < new Date()) return c.json({ error: 'この招待リンクは期限切れです' }, 410)
+  if (invite.used_count >= invite.max_uses) return c.json({ error: 'この招待リンクは使用済みです' }, 410)
+
+  return c.json({ valid: true, memo: invite.memo, rank: invite.rank })
+})
+
+// 招待トークンを使って初回登録
+partnerApi.post('/invite/:token/register', async (c) => {
+  const token = c.req.param('token')
+  const body = await c.req.json<{
+    email: string; password: string; company_name?: string;
+    representative_name?: string; phone?: string; region?: string; specialties?: string
+  }>()
+
+  if (!body.email || !body.password) return c.json({ error: 'メールアドレスとパスワードは必須です' }, 400)
+  if (body.password.length < 8) return c.json({ error: 'パスワードは8文字以上で設定してください' }, 400)
+
+  // 招待トークン検証
+  const invite = await c.env.DB.prepare(
+    "SELECT * FROM partner_invitations WHERE token = ?"
+  ).bind(token).first<any>()
+
+  if (!invite) return c.json({ error: 'この招待リンクは無効です' }, 404)
+  if (new Date(invite.expires_at) < new Date()) return c.json({ error: 'この招待リンクは期限切れです' }, 410)
+  if (invite.used_count >= invite.max_uses) return c.json({ error: 'この招待リンクは使用済みです' }, 410)
+
+  // メールアドレス重複チェック
+  const exists = await c.env.DB.prepare("SELECT id FROM partners WHERE email = ?").bind(body.email).first()
+  if (exists) return c.json({ error: 'このメールアドレスは既に登録されています' }, 409)
+
+  // パートナー作成
+  const passwordHash = await hashPassword(body.password)
+  const r = await c.env.DB.prepare(
+    `INSERT INTO partners (email, password_hash, company_name, representative_name, phone, region, specialties, rank, invited_by_token) VALUES (?,?,?,?,?,?,?,?,?)`
+  ).bind(
+    body.email, passwordHash,
+    body.company_name || '', body.representative_name || '',
+    body.phone || '', body.region || '', body.specialties || '',
+    invite.rank, token
+  ).run()
+
+  // 招待使用回数を更新
+  await c.env.DB.prepare(
+    "UPDATE partner_invitations SET used_count = used_count + 1 WHERE id = ?"
+  ).bind(invite.id).run()
+
+  // 自動ログイン用トークン発行
+  const sessionToken = generateToken()
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  const partnerId = r.meta.last_row_id
+
+  await c.env.DB.prepare(
+    "INSERT INTO partner_sessions (partner_id, token, expires_at) VALUES (?, ?, ?)"
+  ).bind(partnerId, sessionToken, expiresAt).run()
+
+  return c.json({
+    success: true,
+    token: sessionToken,
+    partner: {
+      id: partnerId,
+      email: body.email,
+      company_name: body.company_name || '',
+      representative_name: body.representative_name || ''
+    }
+  }, 201)
+})
+
 // ログイン
 partnerApi.post('/login', async (c) => {
   const { email, password } = await c.req.json<{ email: string; password: string }>()

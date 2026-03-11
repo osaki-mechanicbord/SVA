@@ -502,4 +502,49 @@ adminPartnerApi.delete('/jobs/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// ===================== Partner Invitations (招待リンク) =====================
+
+// Generate invite token
+function generateInviteToken(): string {
+  const arr = new Uint8Array(16)
+  crypto.getRandomValues(arr)
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// List invitations
+adminPartnerApi.get('/invitations', async (c) => {
+  const invites = await c.env.DB.prepare(
+    "SELECT * FROM partner_invitations ORDER BY created_at DESC LIMIT 100"
+  ).all()
+  return c.json({ invitations: invites.results })
+})
+
+// Create invitation
+adminPartnerApi.post('/invitations', async (c) => {
+  const body = await c.req.json<{
+    memo?: string; rank?: string; max_uses?: number; expires_days?: number
+  }>()
+
+  const validRanks = ['standard', 'silver', 'gold', 'platinum']
+  const rank = (body.rank && validRanks.includes(body.rank)) ? body.rank : 'standard'
+  const maxUses = Math.max(1, body.max_uses || 1)
+  const expiresDays = Math.max(1, Math.min(365, body.expires_days || 7))
+  const expiresAt = new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000).toISOString()
+  const token = generateInviteToken()
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO partner_invitations (token, memo, rank, max_uses, expires_at) VALUES (?,?,?,?,?)"
+  ).bind(token, body.memo || '', rank, maxUses, expiresAt).run()
+
+  return c.json({ id: r.meta.last_row_id, token, expires_at: expiresAt }, 201)
+})
+
+// Delete invitation
+adminPartnerApi.delete('/invitations/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const r = await c.env.DB.prepare("DELETE FROM partner_invitations WHERE id = ?").bind(id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
 export { adminPartnerApi }

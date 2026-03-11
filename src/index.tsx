@@ -9,6 +9,7 @@ import { columnListPage } from './pages/column-list'
 import { columnDetailPage } from './pages/column-detail'
 import { partnerLoginPage } from './pages/partner-login'
 import { partnerMypagePage } from './pages/partner-mypage'
+import { partnerInvitePage } from './pages/partner-invite'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
@@ -140,6 +141,12 @@ app.get('/partner/login', (c) => {
 
 app.get('/partner/mypage', (c) => {
   return c.html(partnerMypagePage())
+})
+
+// Partner invitation registration
+app.get('/partner/invite/:token', (c) => {
+  const token = c.req.param('token')
+  return c.html(partnerInvitePage(token))
 })
 
 // llms.txt for LLMO

@@ -253,6 +253,7 @@ export function adminPage(): string {
               <option value="platinum">プラチナ</option>
             </select>
             <button id="backToPartnerListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadPartners(1)">一覧に戻る</button>
+            <button onclick="showInvitePanel()" class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700"><svg class="w-3.5 h-3.5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>招待リンク</button>
             <button onclick="showNewPartnerForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規登録</button>
           </div>
         </div>
@@ -802,6 +803,105 @@ export function adminPage(): string {
         showToast('メッセージを送信しました');
         viewPartner(partnerId); // refresh
       } catch(e) { showToast('送信失敗'); }
+    }
+
+    // ===== Invitation Panel =====
+    async function showInvitePanel() {
+      document.getElementById('partnerListView').classList.add('hidden');
+      document.getElementById('partnerDetailView').classList.remove('hidden');
+      document.getElementById('backToPartnerListBtn').classList.remove('hidden');
+      document.getElementById('partnerViewTitle').textContent = '招待リンク管理';
+      var dv = document.getElementById('partnerDetailView');
+      dv.innerHTML = '<div class="flex items-center justify-center py-8"><div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>';
+      try {
+        var res = await fetch(API + '/admin/invitations', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        renderInvitePanel(data.invitations || []);
+      } catch(e) { dv.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
+    }
+
+    function renderInvitePanel(invites) {
+      var dv = document.getElementById('partnerDetailView');
+      var baseUrl = location.origin + '/partner/invite/';
+      var RANK_LABELS = { 'standard': 'スタンダード', 'silver': 'シルバー', 'gold': 'ゴールド', 'platinum': 'プラチナ' };
+      var RANK_COLORS = { 'standard': 'bg-gray-100 text-gray-700', 'silver': 'bg-blue-50 text-blue-700', 'gold': 'bg-yellow-50 text-yellow-700', 'platinum': 'bg-purple-50 text-purple-700' };
+
+      dv.innerHTML = ''
+        // 新規発行フォーム
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">'
+        + '<h3 class="text-base font-bold text-sva-dark mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>新しい招待リンクを発行</h3>'
+        + '<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メモ（パートナー名等）</label><input id="inv_memo" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-500" placeholder="例: 株式会社〇〇様"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ランク</label><select id="inv_rank" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"><option value="standard">スタンダード</option><option value="silver">シルバー</option><option value="gold">ゴールド</option><option value="platinum">プラチナ</option></select></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">使用回数上限</label><input id="inv_max" type="number" value="1" min="1" max="100" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">有効期限（日数）</label><input id="inv_days" type="number" value="7" min="1" max="365" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"></div>'
+        + '</div>'
+        + '<div class="flex items-center gap-3"><button onclick="createInvitation()" class="px-6 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">招待リンクを発行</button><span id="invMsg" class="text-sm"></span></div>'
+        + '</div>'
+        // 発行済み一覧
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
+        + '<h3 class="text-base font-bold text-sva-dark mb-4">発行済み招待リンク</h3>'
+        + (invites.length === 0
+          ? '<p class="text-sm text-gray-400 text-center py-6">まだ招待リンクがありません</p>'
+          : '<div class="space-y-3">' + invites.map(function(inv) {
+            var expired = new Date(inv.expires_at) < new Date();
+            var full = inv.used_count >= inv.max_uses;
+            var statusText = expired ? '期限切れ' : full ? '使用済み' : '有効';
+            var statusColor = expired ? 'text-gray-400' : full ? 'text-orange-500' : 'text-green-600';
+            var rankLabel = RANK_LABELS[inv.rank] || inv.rank;
+            var rankColor = RANK_COLORS[inv.rank] || RANK_COLORS.standard;
+            var url = baseUrl + inv.token;
+            return '<div class="border border-gray-200 rounded-xl p-4 ' + (expired || full ? 'bg-gray-50 opacity-60' : '') + '">'
+              + '<div class="flex items-center gap-2 mb-2">'
+              + '<span class="text-xs font-bold ' + statusColor + '">' + statusText + '</span>'
+              + '<span class="px-2 py-0.5 text-[10px] rounded font-medium ' + rankColor + '">' + rankLabel + '</span>'
+              + (inv.memo ? '<span class="text-xs text-gray-600 font-medium">' + esc(inv.memo) + '</span>' : '')
+              + '<span class="text-[10px] text-gray-400 ml-auto">' + fmtDt(inv.created_at) + '</span></div>'
+              + '<div class="flex items-center gap-2 mb-2">'
+              + '<input type="text" readonly value="' + url + '" class="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono text-gray-600 select-all">'
+              + '<button onclick="copyInviteUrl(this,\\'' + url + '\\')" class="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-medium shrink-0">コピー</button></div>'
+              + '<div class="flex items-center gap-4 text-xs text-gray-500">'
+              + '<span>使用: ' + inv.used_count + '/' + inv.max_uses + '回</span>'
+              + '<span>期限: ' + new Date(inv.expires_at).toLocaleDateString('ja-JP') + '</span>'
+              + '<button onclick="deleteInvitation(' + inv.id + ')" class="ml-auto text-red-400 hover:text-red-600">削除</button>'
+              + '</div></div>';
+          }).join('') + '</div>')
+        + '</div>';
+    }
+
+    async function createInvitation() {
+      var msgEl = document.getElementById('invMsg');
+      try {
+        var res = await fetch(API + '/admin/invitations', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({
+            memo: document.getElementById('inv_memo').value,
+            rank: document.getElementById('inv_rank').value,
+            max_uses: Number(document.getElementById('inv_max').value) || 1,
+            expires_days: Number(document.getElementById('inv_days').value) || 7
+          })
+        });
+        var data = await res.json();
+        if (!res.ok) { msgEl.textContent = data.error || '発行失敗'; msgEl.className = 'text-sm text-red-600'; return; }
+        showToast('招待リンクを発行しました');
+        showInvitePanel(); // リロード
+      } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-sm text-red-600'; }
+    }
+
+    function copyInviteUrl(btn, url) {
+      navigator.clipboard.writeText(url).then(function() {
+        btn.textContent = 'コピー済み';
+        btn.className = 'px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded-lg font-medium shrink-0';
+        setTimeout(function() { btn.textContent = 'コピー'; btn.className = 'px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 font-medium shrink-0'; }, 2000);
+      });
+    }
+
+    async function deleteInvitation(id) {
+      if (!confirm('この招待リンクを削除しますか？')) return;
+      try {
+        var res = await fetch(API + '/admin/invitations/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.ok) { showToast('招待リンクを削除しました'); showInvitePanel(); }
+      } catch(e) {}
     }
 
     function showNewPartnerForm() {
