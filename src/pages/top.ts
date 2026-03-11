@@ -29,13 +29,19 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Organization",
+        "@type": ["Organization", "LocalBusiness"],
         "@id": "https://sva.tci-service.co.jp/#organization",
         "name": "株式会社TCIサービス",
-        "alternateName": "TCI Service Co., Ltd.",
+        "alternateName": ["TCI Service Co., Ltd.", "SVA", "Special Vehicle Assist"],
         "url": "https://sva.tci-service.co.jp",
-        "logo": "https://sva.tci-service.co.jp/static/images/sva-logo.png",
-        "description": "特殊車両専門の装置取付プラットフォーム「SVA（Special Vehicle Assist）」を運営。フォークリフト・重機・建機・トラック・バスなど乗用車以外のすべての車両にドライブレコーダー・AIカメラ等の特殊装置を出張取付。",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://sva.tci-service.co.jp/static/images/sva-logo.png",
+          "width": 600,
+          "height": 200
+        },
+        "image": "https://sva.tci-service.co.jp/static/images/sva-logo.png",
+        "description": "特殊車両専門の装置取付プラットフォーム「SVA（Special Vehicle Assist）」を運営。フォークリフト・重機・建機・トラック・バスなど乗用車以外のすべての車両にドライブレコーダー・AIカメラ等の特殊装置を全国出張取付。",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "新高1丁目5-4 3階",
@@ -44,17 +50,64 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
           "postalCode": "532-0033",
           "addressCountry": "JP"
         },
-        "telephone": "06-6152-7511",
-        "areaServed": "JP",
-        "serviceType": ["特殊車両装置取付", "ドライブレコーダー取付", "AIカメラ取付", "デジタルタコグラフ取付"]
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 34.7399,
+          "longitude": 135.4837
+        },
+        "telephone": "+81-6-6152-7511",
+        "email": "info@tci-service.co.jp",
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "18:00"
+        },
+        "priceRange": "$$",
+        "areaServed": {
+          "@type": "Country",
+          "name": "Japan",
+          "alternateName": "日本"
+        },
+        "serviceType": ["特殊車両装置取付", "ドライブレコーダー取付", "AIカメラ取付", "デジタルタコグラフ取付", "出張施工"],
+        "knowsAbout": ["特殊車両", "フォークリフト", "重機", "建機", "トラック", "バス", "ドライブレコーダー", "AIカメラ", "人検知カメラ", "デジタルタコグラフ", "置き去り防止装置", "ETC車載器"],
+        "slogan": "特殊車両の装置取付を、全国どこでも。",
+        "foundingDate": "2024",
+        "founder": {
+          "@type": "Person",
+          "name": "謝花 祐治"
+        },
+        "sameAs": [
+          "https://www.torasapo-kun.com/"
+        ]
       },
       {
         "@type": "WebSite",
         "@id": "https://sva.tci-service.co.jp/#website",
         "name": "SVA - Special Vehicle Assist",
+        "alternateName": "SVA 特殊車両装置取付プラットフォーム",
         "url": "https://sva.tci-service.co.jp",
         "publisher": { "@id": "https://sva.tci-service.co.jp/#organization" },
-        "description": "特殊車両専門の装置取付マッチングプラットフォーム。全国の公認パートナーが出張対応。"
+        "description": "日本初・特殊車両専門の装置取付B2Bプラットフォーム。全国47都道府県の公認パートナーが出張対応。",
+        "inLanguage": "ja",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://sva.tci-service.co.jp/column?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://sva.tci-service.co.jp/",
+        "url": "https://sva.tci-service.co.jp/",
+        "name": "SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム",
+        "description": "フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付するB2Bプラットフォーム。公認パートナーも募集中。",
+        "isPartOf": { "@id": "https://sva.tci-service.co.jp/#website" },
+        "about": { "@id": "https://sva.tci-service.co.jp/#organization" },
+        "speakable": {
+          "@type": "SpeakableSpecification",
+          "cssSelector": [".hero-gradient h1", ".hero-gradient p", "#service h2", "#service h3", "#faq"]
+        }
       },
       {
         "@type": "Service",
@@ -64,19 +117,66 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
         "serviceType": "特殊車両への装置出張取付",
         "areaServed": { "@type": "Country", "name": "Japan" },
         "description": "フォークリフト・重機・建機・トラック・バス・農機・船舶など、乗用車以外のすべての車両にドライブレコーダー、AIカメラ、デジタルタコグラフ等の安全装置を全国出張で取り付けるB2Bプラットフォームです。",
+        "audience": {
+          "@type": "BusinessAudience",
+          "audienceType": "法人のお客様",
+          "numberOfEmployees": {
+            "@type": "QuantitativeValue",
+            "minValue": 1
+          }
+        },
         "hasOfferCatalog": {
           "@type": "OfferCatalog",
           "name": "取付対応装置一覧",
           "itemListElement": [
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "ドライブレコーダー取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "フォークリフト用人検知AIカメラ取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "重機専用人検知AIカメラ取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "デジタルタコグラフ取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "建機停止装置AIカメラ取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SOS-0006置き去り防止装置取付" }},
-            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "クラウド型ドライブレコーダー取付" }}
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "ドライブレコーダー取付", "description": "各種車両対応の業務用ドライブレコーダーの出張取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "フォークリフト用人検知AIカメラ取付", "description": "AI画像認識による作業員検知・事故防止カメラの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "重機専用人検知AIカメラ取付", "description": "重機周辺の作業員を自動検知する360度AIカメラの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "デジタルタコグラフ取付", "description": "運行記録の法定義務対応デジタコの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "建機停止装置AIカメラ取付", "description": "AI検知で建機を自動停止させる安全装置の取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "SOS-0006置き去り防止装置取付", "description": "送迎バスの安全対策義務化対応・国土交通省認定装置の取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "クラウド型ドライブレコーダー取付", "description": "リアルタイム映像確認・遠隔管理対応クラウドドラレコの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "ETC車載器取付", "description": "大型車・特殊車両用ETC車載器の取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "船舶用ドライブレコーダー取付", "description": "防水・耐振動仕様の船舶専用ドラレコの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "バックカメラ取付", "description": "ダブル連結トラック等の後方確認用カメラの取付" }},
+            { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "LEDマーカーランプ取付", "description": "トラック用LEDマーカーランプの取付・視認性向上" }}
           ]
-        }
+        },
+        "termsOfService": "https://sva.tci-service.co.jp/terms"
+      },
+      {
+        "@type": "HowTo",
+        "@id": "https://sva.tci-service.co.jp/#howto",
+        "name": "特殊車両への装置取付ご依頼の流れ",
+        "description": "SVAで特殊車両への装置取付を依頼する手順（お問い合わせから施工完了まで）",
+        "totalTime": "P7D",
+        "step": [
+          {
+            "@type": "HowToStep",
+            "position": 1,
+            "name": "お問い合わせ・ご相談",
+            "text": "車両の種類、台数、取り付けたい装置、作業場所をお知らせください。お電話（06-6152-7511）またはWebフォームから受け付けています。",
+            "url": "https://sva.tci-service.co.jp/#contact"
+          },
+          {
+            "@type": "HowToStep",
+            "position": 2,
+            "name": "お見積もり・ご提案",
+            "text": "車両情報をもとに、最適な装置と施工プランをご提案。取付工賃・出張費用・部材費用を明確にお伝えします。追加請求はありません。"
+          },
+          {
+            "@type": "HowToStep",
+            "position": 3,
+            "name": "日程調整・パートナー手配",
+            "text": "施工日程を調整し、お客様のエリアの公認パートナー（審査済み電装技術者）を手配いたします。"
+          },
+          {
+            "@type": "HowToStep",
+            "position": 4,
+            "name": "出張施工・完了報告",
+            "text": "公認パートナーがお客様の現場に出張し施工。作業完了後、動作確認と完了報告をお送りします。"
+          }
+        ]
       },
       {
         "@type": "FAQPage",
@@ -116,10 +216,34 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
           },
           {
             "@type": "Question",
+            "name": "1台からでも依頼できますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "はい、1台からご依頼いただけます。数十台〜数百台規模の大量取付にも対応しております。台数に応じたお見積もりをご提案いたします。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "料金体系はどうなっていますか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "取付工賃・出張費用・部材費用を車両の種類と装置に応じてお見積もりいたします。事前にすべての費用を明示し、追加請求はございません。"
+            }
+          },
+          {
+            "@type": "Question",
             "name": "公認パートナーになるにはどうすればいいですか？",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "フリーランスの電装技術者、電装店、取付専門サービスマンの方を対象に公認パートナーを募集しています。SVAに加入することで、特殊車両向けの高単価取付案件を継続的に受注できます。パートナー登録フォームからお申し込みください。"
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "ミツモアやセイビーとの違いは何ですか？",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "ミツモアやセイビーは乗用車の整備マッチングが中心のC2Cサービスです。SVAはフォークリフト・重機・建機などの特殊車両に完全特化したB2B専門プラットフォームです。特殊車両は電源構造・設置環境・法規制が乗用車と全く異なるため、専門的な知識と技術が不可欠です。全国47都道府県の公認パートナー制度による品質管理も特長です。"
             }
           }
         ]
@@ -134,30 +258,36 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
   })
 
   return `<!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム</title>
   <meta name="description" content="SVA（Special Vehicle Assist）は、フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付するB2Bプラットフォームです。公認パートナーも募集中。">
-  <meta name="keywords" content="特殊車両,ドライブレコーダー,AIカメラ,フォークリフト,重機,建機,トラック,バス,出張取付,デジタルタコグラフ,置き去り防止装置">
+  <meta name="keywords" content="特殊車両,ドライブレコーダー,AIカメラ,フォークリフト,重機,建機,トラック,バス,出張取付,デジタルタコグラフ,置き去り防止装置,B2B,全国対応,公認パートナー">
   <link rel="canonical" href="https://sva.tci-service.co.jp/">
+  <link rel="alternate" hreflang="ja" href="https://sva.tci-service.co.jp/">
+  <link rel="alternate" hreflang="x-default" href="https://sva.tci-service.co.jp/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta property="og:description" content="フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付。公認パートナーも募集中。">
   <meta property="og:url" content="https://sva.tci-service.co.jp/">
   <meta property="og:site_name" content="SVA - Special Vehicle Assist">
   <meta property="og:image" content="https://sva.tci-service.co.jp/static/images/sva-logo.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ja_JP">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta name="twitter:description" content="特殊車両専門の装置取付プラットフォーム。全国出張対応。公認パートナー募集中。">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="format-detection" content="telephone=no">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#C41E3A">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script type="application/ld+json">${structuredData}</script>
   <script>
     tailwind.config = {

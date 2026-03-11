@@ -22,7 +22,7 @@ export function columnDetailPage(article: Article, relatedArticles: RelatedArtic
         "@type": "Article",
         "headline": article.title,
         "description": article.excerpt,
-        "author": { "@type": "Organization", "name": article.author || "SVA編集部" },
+        "author": { "@type": "Organization", "name": article.author || "SVA編集部", "url": "https://sva.tci-service.co.jp" },
         "publisher": {
           "@type": "Organization",
           "name": "株式会社TCIサービス",
@@ -30,8 +30,16 @@ export function columnDetailPage(article: Article, relatedArticles: RelatedArtic
         },
         "datePublished": article.published_at,
         "dateModified": article.updated_at || article.published_at,
-        "mainEntityOfPage": `https://sva.tci-service.co.jp/column/${article.slug}`,
-        ...(article.thumbnail_url ? { "image": article.thumbnail_url } : {})
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": `https://sva.tci-service.co.jp/column/${article.slug}`,
+          "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": ["article h1", ".article-content h2", ".article-content p:first-of-type"]
+          }
+        },
+        "isPartOf": { "@id": "https://sva.tci-service.co.jp/#website" },
+        ...(article.thumbnail_url ? { "image": { "@type": "ImageObject", "url": article.thumbnail_url } } : {})
       },
       {
         "@type": "BreadcrumbList",
@@ -44,7 +52,13 @@ export function columnDetailPage(article: Article, relatedArticles: RelatedArtic
     ]
   })
 
-  const head = siteHead(title, description, `/column/${article.slug}`, `<script type="application/ld+json">${structuredData}</script>`)
+  const head = siteHead(title, description, `/column/${article.slug}`, `
+  <meta property="og:type" content="article">
+  <meta property="article:published_time" content="${article.published_at}">
+  <meta property="article:modified_time" content="${article.updated_at || article.published_at}">
+  <meta property="article:section" content="${categoryLabel(article.category)}">
+  <meta property="article:author" content="${article.author || 'SVA編集部'}">
+  <script type="application/ld+json">${structuredData}</script>`)
   const header = siteHeader()
 
   // Related articles sidebar

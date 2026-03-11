@@ -1,29 +1,35 @@
 // Shared HTML layout helper for public pages
 export function siteHead(title: string, description: string, path: string, extra?: string): string {
   return `<!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" prefix="og: https://ogp.me/ns#">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <meta name="description" content="${description}">
   <link rel="canonical" href="https://sva.tci-service.co.jp${path}">
+  <link rel="alternate" hreflang="ja" href="https://sva.tci-service.co.jp${path}">
+  <link rel="alternate" hreflang="x-default" href="https://sva.tci-service.co.jp${path}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:url" content="https://sva.tci-service.co.jp${path}">
   <meta property="og:site_name" content="SVA - Special Vehicle Assist">
   <meta property="og:image" content="https://sva.tci-service.co.jp/static/images/sva-logo.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ja_JP">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${description}">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="format-detection" content="telephone=no">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#C41E3A">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {

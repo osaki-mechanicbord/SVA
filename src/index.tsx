@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { topPage } from './pages/top'
-import { llmsTxt } from './pages/llms'
+import { llmsTxt, llmsFullTxt, aiTxt, sitemapXml, robotsTxt } from './pages/llms'
 import { adminPage } from './pages/admin'
 import { adminSamplePage } from './pages/admin-sample'
 import { columnListPage } from './pages/column-list'
@@ -23,9 +23,9 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('*', secureHeaders({
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
-    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-    fontSrc: ["'self'", "https://fonts.gstatic.com"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net"],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
     imgSrc: ["'self'", "data:", "https:"],
     connectSrc: ["'self'"],
   },
@@ -149,10 +149,58 @@ app.get('/partner/invite/:token', (c) => {
   return c.html(partnerInvitePage(token))
 })
 
-// llms.txt for LLMO
+// ==========================================
+// SEO / LLMO Routes
+// ==========================================
+
+// llms.txt for LLMO (summary)
 app.get('/llms.txt', (c) => {
   c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=3600')
   return c.text(llmsTxt())
+})
+
+// llms-full.txt for LLMO (detailed)
+app.get('/llms-full.txt', async (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=3600')
+  // Include latest articles in llms-full.txt
+  try {
+    const articles = await c.env.DB.prepare(
+      "SELECT slug, title, excerpt, category, published_at FROM articles WHERE status = 'published' ORDER BY published_at DESC LIMIT 20"
+    ).all()
+    return c.text(llmsFullTxt(articles.results as any[]))
+  } catch {
+    return c.text(llmsFullTxt([]))
+  }
+})
+
+// ai.txt - AI policy
+app.get('/ai.txt', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=86400')
+  return c.text(aiTxt())
+})
+
+// robots.txt
+app.get('/robots.txt', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=86400')
+  return c.text(robotsTxt())
+})
+
+// sitemap.xml - dynamic
+app.get('/sitemap.xml', async (c) => {
+  c.header('Content-Type', 'application/xml; charset=utf-8')
+  c.header('Cache-Control', 'public, max-age=3600')
+  try {
+    const articles = await c.env.DB.prepare(
+      "SELECT slug, updated_at FROM articles WHERE status = 'published' ORDER BY published_at DESC"
+    ).all()
+    return c.text(sitemapXml(articles.results as any[]))
+  } catch {
+    return c.text(sitemapXml([]))
+  }
 })
 
 // API health
