@@ -605,14 +605,14 @@ export function partnerMypagePage(): string {
         statusBtns = '<div class="flex gap-2 mt-4"><button onclick="updateJobStatus(' + j.id + ',\\'completed\\')" class="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700">完了報告</button></div>';
       }
 
-      // Build tab navigation
-      var tabNav = '<div class="flex border-b border-gray-200 mb-4 -mx-6 px-6">'
-        + '<button onclick="switchJobTab(\\'info\\',' + j.id + ')" id="jt_tab_info" class="px-4 py-2 text-sm font-medium border-b-2 border-sva-red text-sva-red">基本情報</button>'
-        + (vCount > 0 ? '<button onclick="switchJobTab(\\'vehicles\\',' + j.id + ')" id="jt_tab_vehicles" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">車両 <span class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">' + vDone + '/' + vCount + '</span></button>' : '')
-        + '<button onclick="switchJobTab(\\'details\\',' + j.id + ')" id="jt_tab_details" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">詳細</button>'
-        + '<button onclick="switchJobTab(\\'tracking\\',' + j.id + ')" id="jt_tab_tracking" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">トラッキング</button>'
-        + '<button onclick="switchJobTab(\\'photos\\',' + j.id + ')" id="jt_tab_photos" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 relative">写真<span id="photoBadge" class="' + (photos.length > 0 ? '' : 'hidden') + ' ml-1 px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full">' + photos.length + '</span></button>'
-        + '<button onclick="switchJobTab(\\'report\\',' + j.id + ')" id="jt_tab_report" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">作業報告</button>'
+      // Build tab navigation - 5タブ構成（案件概要・お客様情報・車両・トラッキング・写真）
+      var clientAllowed = data.client_info_allowed;
+      var tabNav = '<div class="flex border-b border-gray-200 mb-4 -mx-6 px-6 overflow-x-auto">'
+        + '<button onclick="switchJobTab(\\'info\\',' + j.id + ')" id="jt_tab_info" class="px-4 py-2 text-sm font-medium border-b-2 border-sva-red text-sva-red whitespace-nowrap">案件概要</button>'
+        + '<button onclick="switchJobTab(\\'client\\',' + j.id + ')" id="jt_tab_client" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">お客様情報' + (clientAllowed ? '' : ' <svg class="w-3 h-3 inline text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>') + '</button>'
+        + (vCount > 0 ? '<button onclick="switchJobTab(\\'vehicles\\',' + j.id + ')" id="jt_tab_vehicles" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">車両 <span class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">' + vDone + '/' + vCount + '</span></button>' : '')
+        + '<button onclick="switchJobTab(\\'tracking\\',' + j.id + ')" id="jt_tab_tracking" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">トラッキング</button>'
+        + '<button onclick="switchJobTab(\\'photos\\',' + j.id + ')" id="jt_tab_photos" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap relative">写真<span id="photoBadge" class="' + (photos.length > 0 ? '' : 'hidden') + ' ml-1 px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full">' + photos.length + '</span></button>'
         + '</div>';
 
       // ===== TAB: 基本情報 =====
@@ -646,98 +646,9 @@ export function partnerMypagePage(): string {
         + '</div>'
         + (j.description ? '<div class="mb-4"><p class="text-xs text-gray-400 mb-1">詳細</p><p class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 rounded-lg p-3">' + escH(j.description) + '</p></div>' : '');
 
-      // お客様詳細情報（受諾後 = accepted, in_progress, completed で表示）
-      var clientAllowed = data.client_info_allowed;
-      if (clientAllowed && (j.client_company || j.client_contact_name || j.work_location_detail || j.work_datetime)) {
-        // 費用10%税込計算ヘルパー
-        function taxIncl(v) { return Math.round(v * 1.1); }
-        function fmtYen(v) { return v ? '¥' + v.toLocaleString() : '¥0'; }
-
-        var costLabor = j.cost_labor || 0;
-        var costTravel = j.cost_travel || 0;
-        var costOther = j.cost_other || 0;
-        var costPrelim = j.cost_preliminary || 0;
-        var costSubtotal = costLabor + costTravel + costOther + costPrelim;
-        var costTax = Math.round(costSubtotal * 0.1);
-        var costTotal = costSubtotal + costTax;
-
-        infoTab += '<div class="mb-4 rounded-xl border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">'
-          // ヘッダー
-          + '<div class="bg-orange-500 text-white px-5 py-3 flex items-center gap-2">'
-          + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
-          + '<span class="font-bold text-sm">お客様詳細情報</span>'
-          + '<span class="text-[10px] bg-orange-600 px-2 py-0.5 rounded-full ml-auto">機密情報</span></div>'
-
-          // 受諾後即連絡メモ（urgent note）
-          + (j.urgent_contact_note
-            ? '<div class="mx-4 mt-4 p-3 rounded-lg bg-red-50 border border-red-200"><div class="flex items-center gap-2 mb-1"><svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span class="text-xs font-bold text-red-700">受諾後 即連絡</span></div><p class="text-sm text-red-800 font-medium">' + escH(j.urgent_contact_note) + '</p></div>'
-            : '')
-
-          // お客様連絡先
-          + '<div class="p-4 space-y-4">'
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">お客様連絡先</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">会社名</p><p class="font-bold text-gray-800">' + escH(j.client_company||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">支店名</p><p class="font-bold text-gray-800">' + escH(j.client_branch||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">担当者名</p><p class="font-bold text-gray-800">' + escH(j.client_contact_name||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">打合せ連絡先</p><p class="font-bold text-blue-700">' + (j.client_contact_phone ? '<a href="tel:' + escH(j.client_contact_phone) + '">' + escH(j.client_contact_phone) + '</a>' : '-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メール</p><p class="font-medium text-blue-700 text-xs break-all">' + (j.client_contact_email ? '<a href="mailto:' + escH(j.client_contact_email) + '">' + escH(j.client_contact_email) + '</a>' : '-') + '</p></div>'
-          + '</div></div>'
-
-          // 作業情報
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">作業情報</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="sm:col-span-2 bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業場所（詳細住所）</p><p class="font-bold text-gray-800">' + escH(j.work_location_detail||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業希望日時</p><p class="font-bold text-gray-800">' + escH(j.work_datetime||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">車両台数</p><p class="font-bold text-gray-800">' + (j.vehicle_count||0) + '台</p></div>'
-          + '</div></div>'
-
-          // 取付製品（準備区分）
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">取付製品（準備区分）</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メーカー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_maker||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">お客様準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_customer||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">公認パートナー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_partner||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">現地調達</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_local||'なし') + '</p></div>'
-          + '</div></div>'
-
-          // 費用情報（10%税込表示）
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">費用情報 <span class="text-orange-400 font-normal">（税込10%）</span></p>'
-          + '<div class="bg-white rounded-xl border border-orange-200 overflow-hidden">'
-          + '<table class="w-full text-sm"><tbody>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">推定希望工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costLabor) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costLabor)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">出張費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costTravel) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costTravel)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">その他費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costOther) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costOther)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">事前打合せ工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costPrelim) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costPrelim)) + '</td></tr>'
-          + '<tr class="bg-orange-50 border-t-2 border-orange-200"><td class="px-4 py-3 font-bold text-gray-800">合計（税込10%）</td><td class="px-4 py-3 text-right font-mono text-xs text-gray-500">税抜 ' + fmtYen(costSubtotal) + '</td><td class="px-4 py-3 text-right font-mono font-bold text-lg text-orange-700">' + fmtYen(costTotal) + '</td></tr>'
-          + '</tbody></table></div>'
-          + (j.cost_memo ? '<p class="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg p-2">備考: ' + escH(j.cost_memo) + '</p>' : '')
-          + '</div>'
-
-          + '</div></div>';
-      } else if (!clientAllowed && j.status === 'pending') {
-        infoTab += '<div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-5 text-center">'
-          + '<svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
-          + '<p class="text-sm font-medium text-gray-500">お客様の詳細情報は案件を受諾後に表示されます</p>'
-          + '<p class="text-xs text-gray-400 mt-1">受諾 → 対応開始でお客様連絡先・費用情報が開示されます</p></div>';
-      }
+      // infoTab: お客様情報・添付ファイルはclientタブに移動済み
 
       infoTab += ''
-        // 添付ファイル（取付マニュアル等 - パートナーダウンロード用）
-        + (currentJobAttachments.length > 0
-          ? '<div class="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg><span class="text-sm font-bold text-sva-dark">添付ファイル（取付マニュアル等）</span></div>'
-            + '<div class="space-y-2">' + currentJobAttachments.map(function(a) {
-              var size = a.file_size > 1048576 ? (a.file_size/1048576).toFixed(1) + 'MB' : (a.file_size/1024).toFixed(0) + 'KB';
-              var isPdf = (a.mime_type||'').includes('pdf');
-              return '<div class="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-100">'
-                + '<div class="w-8 h-8 rounded flex items-center justify-center shrink-0 ' + (isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500') + '">'
-                + (isPdf ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>' : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>')
-                + '</div>'
-                + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800 truncate">' + escH(a.file_name) + '</p>'
-                + '<p class="text-[10px] text-gray-400">' + size + (a.description ? ' ・ ' + escH(a.description) : '') + '</p></div>'
-                + '<button onclick="downloadPartnerAttachment(' + j.id + ',' + a.id + ',\\'' + escH(a.file_name).replace(/'/g,"\\\\'") + '\\')" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shrink-0"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>ダウンロード</button></div>';
-            }).join('') + '</div></div>'
-          : '')
         + '<div class="border-t border-gray-100 pt-4">'
         + '<div class="mb-3"><label class="text-xs text-gray-400 mb-1 block">メモ（自分用）</label><textarea id="jobMemoInput" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red">' + escH(j.partner_memo || '') + '</textarea><button onclick="saveJobMemo(' + j.id + ')" class="mt-1 px-3 py-1 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">メモ保存</button></div>'
         + statusBtns + '</div></div>';
@@ -804,19 +715,90 @@ export function partnerMypagePage(): string {
       }
 
       // ===== TAB: 詳細情報 =====
-      var detailsTab = '<div id="jt_panel_details" class="hidden">'
-        + '<p class="text-xs text-gray-400 mb-3">車両情報・送り状NO・作業メモを入力してください</p>'
-        + '<div class="space-y-3">'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">送り状NO（荷物追跡用）</label>'
-        + '<input id="jd_tracking" type="text" value="' + escH(j.tracking_number || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="追跡番号を入力"></div>'
-        + '<div class="grid grid-cols-3 gap-3">'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メーカー名</label><input id="jd_maker" type="text" value="' + escH(j.maker_name || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="トヨタ"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車種</label><input id="jd_car_model" type="text" value="' + escH(j.car_model || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="プロフィア"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両型式</label><input id="jd_car_code" type="text" value="' + escH(j.car_model_code || '') + '" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="QKG-FW1E"></div>'
-        + '</div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">自由メモ</label><textarea id="jd_memo" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="案件に関するメモを自由に記載...">' + escH(j.general_memo || '') + '</textarea></div>'
-        + '<div class="flex items-center gap-2"><button onclick="saveJobDetails(' + j.id + ')" class="px-5 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">保存</button><span id="jdMsg" class="text-xs"></span></div>'
-        + '</div></div>';
+      // ===== TAB: お客様情報 =====
+      var clientTab = '';
+      if (clientAllowed && (j.client_company || j.client_contact_name || j.work_location_detail || j.work_datetime)) {
+        function taxIncl(v) { return Math.round(v * 1.1); }
+        function fmtYen(v) { return v ? '¥' + v.toLocaleString() : '¥0'; }
+        var costLabor = j.cost_labor || 0;
+        var costTravel = j.cost_travel || 0;
+        var costOther = j.cost_other || 0;
+        var costPrelim = j.cost_preliminary || 0;
+        var costSubtotal = costLabor + costTravel + costOther + costPrelim;
+        var costTotal = costSubtotal + Math.round(costSubtotal * 0.1);
+
+        clientTab = '<div id="jt_panel_client" class="hidden">'
+          + '<div class="rounded-xl border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden mb-4">'
+          + '<div class="bg-orange-500 text-white px-5 py-3 flex items-center gap-2">'
+          + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
+          + '<span class="font-bold text-sm">お客様詳細情報</span>'
+          + '<span class="text-[10px] bg-orange-600 px-2 py-0.5 rounded-full ml-auto">機密情報</span></div>'
+
+          + (j.urgent_contact_note
+            ? '<div class="mx-4 mt-4 p-3 rounded-lg bg-red-50 border border-red-200"><div class="flex items-center gap-2 mb-1"><svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span class="text-xs font-bold text-red-700">受諾後 即連絡</span></div><p class="text-sm text-red-800 font-medium">' + escH(j.urgent_contact_note) + '</p></div>'
+            : '')
+
+          + '<div class="p-4 space-y-4">'
+          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">お客様連絡先</p>'
+          + '<div class="grid grid-cols-2 gap-3 text-sm">'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">会社名</p><p class="font-bold text-gray-800">' + escH(j.client_company||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">支店名</p><p class="font-bold text-gray-800">' + escH(j.client_branch||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">担当者名</p><p class="font-bold text-gray-800">' + escH(j.client_contact_name||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">打合せ連絡先</p><p class="font-bold text-blue-700">' + (j.client_contact_phone ? '<a href="tel:' + escH(j.client_contact_phone) + '">' + escH(j.client_contact_phone) + '</a>' : '-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メール</p><p class="font-medium text-blue-700 text-xs break-all">' + (j.client_contact_email ? '<a href="mailto:' + escH(j.client_contact_email) + '">' + escH(j.client_contact_email) + '</a>' : '-') + '</p></div>'
+          + '</div></div>'
+
+          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">作業情報</p>'
+          + '<div class="grid grid-cols-2 gap-3 text-sm">'
+          + '<div class="sm:col-span-2 bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業場所（詳細住所）</p><p class="font-bold text-gray-800">' + escH(j.work_location_detail||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業希望日時</p><p class="font-bold text-gray-800">' + escH(j.work_datetime||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">車両台数</p><p class="font-bold text-gray-800">' + (j.vehicle_count||0) + '台</p></div>'
+          + '</div></div>'
+
+          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">取付製品（準備区分）</p>'
+          + '<div class="grid grid-cols-2 gap-3 text-sm">'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メーカー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_maker||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">お客様準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_customer||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">公認パートナー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_partner||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">現地調達</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_local||'なし') + '</p></div>'
+          + '</div></div>'
+
+          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">費用情報 <span class="text-orange-400 font-normal">（税込10%）</span></p>'
+          + '<div class="bg-white rounded-xl border border-orange-200 overflow-hidden">'
+          + '<table class="w-full text-sm"><tbody>'
+          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">推定希望工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costLabor) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costLabor)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">出張費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costTravel) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costTravel)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">その他費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costOther) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costOther)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">事前打合せ工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costPrelim) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costPrelim)) + '</td></tr>'
+          + '<tr class="bg-orange-50 border-t-2 border-orange-200"><td class="px-4 py-3 font-bold text-gray-800">合計（税込10%）</td><td class="px-4 py-3 text-right font-mono text-xs text-gray-500">税抜 ' + fmtYen(costSubtotal) + '</td><td class="px-4 py-3 text-right font-mono font-bold text-lg text-orange-700">' + fmtYen(costTotal) + '</td></tr>'
+          + '</tbody></table></div>'
+          + (j.cost_memo ? '<p class="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg p-2">備考: ' + escH(j.cost_memo) + '</p>' : '')
+          + '</div>'
+          + '</div></div>'
+
+          // 添付ファイル（取付マニュアル等）
+          + (currentJobAttachments.length > 0
+            ? '<div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg><span class="text-sm font-bold text-sva-dark">添付ファイル（取付マニュアル等）</span></div>'
+              + '<div class="space-y-2">' + currentJobAttachments.map(function(a) {
+                var size = a.file_size > 1048576 ? (a.file_size/1048576).toFixed(1) + 'MB' : (a.file_size/1024).toFixed(0) + 'KB';
+                var isPdf = (a.mime_type||'').includes('pdf');
+                return '<div class="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-100">'
+                  + '<div class="w-8 h-8 rounded flex items-center justify-center shrink-0 ' + (isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500') + '">'
+                  + (isPdf ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>' : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>')
+                  + '</div>'
+                  + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800 truncate">' + escH(a.file_name) + '</p>'
+                  + '<p class="text-[10px] text-gray-400">' + size + (a.description ? ' ・ ' + escH(a.description) : '') + '</p></div>'
+                  + '<button onclick="downloadPartnerAttachment(' + j.id + ',' + a.id + ',\\'' + escH(a.file_name).replace(/'/g,"\\\\'") + '\\')" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shrink-0"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>ダウンロード</button></div>';
+              }).join('') + '</div></div>'
+            : '')
+          + '</div>';
+      } else {
+        clientTab = '<div id="jt_panel_client" class="hidden">'
+          + '<div class="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">'
+          + '<svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
+          + '<p class="text-sm font-medium text-gray-500">お客様の詳細情報は案件を受諾後に表示されます</p>'
+          + '<p class="text-xs text-gray-400 mt-1">受諾 → 対応開始でお客様連絡先・費用情報・添付ファイルが開示されます</p></div></div>';
+      }
 
       // ===== TAB: トラッキング =====
       var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
@@ -893,24 +875,18 @@ export function partnerMypagePage(): string {
         + '</div>';
 
       // ===== TAB: 作業報告 =====
-      var reportTab = '<div id="jt_panel_report" class="hidden">'
-        + '<p class="text-xs text-gray-400 mb-3">作業完了後、作業報告を記載してください</p>'
-        + '<textarea id="jr_report" rows="10" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red resize-none" placeholder="作業内容の詳細を記載してください。\\n\\n例:\\n・取付位置: フロントガラス上部中央\\n・配線経路: Aピラー→天井裏→リアへ\\n・電源取得: ヒューズBOX ACC電源\\n・動作確認: 録画・GPS・WiFi接続 OK">' + escH(j.work_report || '') + '</textarea>'
-        + '<div class="flex items-center gap-2 mt-3"><button onclick="saveJobReport(' + j.id + ')" class="px-5 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">作業報告を保存</button><span id="jrMsg" class="text-xs"></span></div>'
-        + '</div>';
-
       content.innerHTML = '<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
         + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + escH(j.job_number) + '</span>' : '')
         + '<h3 class="text-base font-bold text-sva-dark">' + escH(j.title) + '</h3>'
         + (vCount > 0 ? '<span class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">車両 ' + vDone + '/' + vCount + '台</span>' : '')
         + (totalProducts > 0 ? '<span class="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full font-medium">商品 ' + totalProducts + '点</span>' : '')
         + '</div><button onclick="document.getElementById(\\'jobDetailModal\\').classList.add(\\'hidden\\')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button></div>'
-        + tabNav + infoTab + vehiclesTab + detailsTab + trackingTab + photosTab + reportTab;
+        + tabNav + infoTab + clientTab + vehiclesTab + trackingTab + photosTab;
     }
 
     function switchJobTab(tab, jobId) {
       currentJobTab = tab;
-      ['info','vehicles','details','tracking','photos','report'].forEach(function(t) {
+      ['info','client','vehicles','tracking','photos'].forEach(function(t) {
         var panel = document.getElementById('jt_panel_' + t);
         var tabBtn = document.getElementById('jt_tab_' + t);
         if (panel) panel.classList.toggle('hidden', t !== tab);
