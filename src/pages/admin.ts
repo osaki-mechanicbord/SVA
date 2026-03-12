@@ -72,6 +72,7 @@ export function adminPage(): string {
         <button id="tabImages" onclick="switchTab('images')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">画像管理</button>
         <button id="tabPartners" onclick="switchTab('partners')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">パートナー管理</button>
         <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
+        <button id="tabAccount" onclick="switchTab('account')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 ml-auto">⚙ アカウント</button>
       </div>
     </div>
 
@@ -312,11 +313,78 @@ export function adminPage(): string {
       </div>
     </div>
 
-  </div>
+    <!-- ============================================ -->
+    <!-- ACCOUNT TAB -->
+    <!-- ============================================ -->
+    <div id="accountTab" class="hidden">
+      <div class="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-gray-100 bg-gray-50">
+            <h2 class="text-lg font-bold text-sva-dark">アカウント設定</h2>
+            <p class="text-sm text-gray-500 mt-1">ユーザー名とパスワードを定期的に変更してください</p>
+          </div>
 
-  <script>
-    const API = '/api';
-    let authToken = sessionStorage.getItem('sva_token') || '';
+          <!-- 現在のアカウント情報 -->
+          <div class="px-6 py-5 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">現在のアカウント情報</h3>
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-sva-red/10 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-sva-dark">ユーザー名: <span id="currentUsername" class="text-sva-red">-</span></p>
+                <p class="text-xs text-gray-400 mt-0.5">最終更新: ログイン中</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ユーザー名変更 -->
+          <div class="px-6 py-5 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">ユーザー名の変更</h3>
+            <form id="usernameForm" class="space-y-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">新しいユーザー名</label>
+                <input id="newUsername" type="text" required minlength="3" maxlength="50" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="3文字以上">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">現在のパスワード（確認用）</label>
+                <input id="usernameConfirmPassword" type="password" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="パスワードを入力">
+              </div>
+              <div id="usernameMsg" class="text-sm hidden"></div>
+              <button type="submit" class="px-5 py-2.5 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">ユーザー名を変更</button>
+            </form>
+          </div>
+
+          <!-- パスワード変更 -->
+          <div class="px-6 py-5">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">パスワードの変更</h3>
+            <form id="passwordForm" class="space-y-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">現在のパスワード</label>
+                <input id="currentAdminPassword" type="password" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="現在のパスワード">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">新しいパスワード</label>
+                <input id="newAdminPassword" type="password" required minlength="8" maxlength="128" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="8文字以上">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">新しいパスワード（確認）</label>
+                <input id="confirmAdminPassword" type="password" required class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="もう一度入力">
+              </div>
+              <div id="passwordMsg" class="text-sm hidden"></div>
+              <button type="submit" class="px-5 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">パスワードを変更</button>
+            </form>
+          </div>
+
+          <!-- セキュリティ注意 -->
+          <div class="px-6 py-4 bg-amber-50 border-t border-amber-100">
+            <p class="text-xs text-amber-700 leading-relaxed">⚠️ セキュリティのため、パスワードは定期的に変更することをお勧めします。パスワード変更後は再ログインが必要です。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
     let currentPage = 1;
     let imgPage = 1;
     let pickerCallback = null;
@@ -361,10 +429,11 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs'];
+    const TABS = ['articles','images','partners','jobs','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
+        if (t === 'account' && tab === 'account') loadAccountInfo();
         var btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         if (btn) { btn.classList.toggle('border-sva-red', t === tab); btn.classList.toggle('text-sva-red', t === tab); btn.classList.toggle('border-transparent', t !== tab); btn.classList.toggle('text-gray-500', t !== tab); }
       });
@@ -1607,6 +1676,79 @@ export function adminPage(): string {
         else { var d = await res.json(); msgEl.textContent = d.error || '更新失敗'; msgEl.className = 'text-sm text-red-600'; }
       } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-sm text-red-600'; }
     }
+
+    // ==========================================
+    // ACCOUNT MANAGEMENT
+    // ==========================================
+    async function loadAccountInfo() {
+      try {
+        var res = await fetch(API + '/admin/account/me', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.ok) {
+          var data = await res.json();
+          document.getElementById('currentUsername').textContent = data.user.username;
+        }
+      } catch(e) {}
+    }
+
+    document.getElementById('usernameForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var msgEl = document.getElementById('usernameMsg');
+      var newName = document.getElementById('newUsername').value.trim();
+      var pw = document.getElementById('usernameConfirmPassword').value;
+      if (!newName || !pw) { msgEl.textContent = '全項目を入力してください'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); return; }
+      try {
+        var res = await fetch(API + '/admin/account/username', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ current_password: pw, new_username: newName })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          msgEl.textContent = data.message;
+          msgEl.className = 'text-sm text-green-600';
+          document.getElementById('currentUsername').textContent = newName;
+          document.getElementById('newUsername').value = '';
+          document.getElementById('usernameConfirmPassword').value = '';
+          showToast('ユーザー名を変更しました');
+        } else {
+          msgEl.textContent = data.error || '変更に失敗しました';
+          msgEl.className = 'text-sm text-red-600';
+        }
+        msgEl.classList.remove('hidden');
+      } catch(e) { msgEl.textContent = '通信エラーが発生しました'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); }
+    });
+
+    document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var msgEl = document.getElementById('passwordMsg');
+      var currentPw = document.getElementById('currentAdminPassword').value;
+      var newPw = document.getElementById('newAdminPassword').value;
+      var confirmPw = document.getElementById('confirmAdminPassword').value;
+      if (!currentPw || !newPw || !confirmPw) { msgEl.textContent = '全項目を入力してください'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); return; }
+      if (newPw !== confirmPw) { msgEl.textContent = '新しいパスワードが一致しません'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); return; }
+      if (newPw.length < 8) { msgEl.textContent = 'パスワードは8文字以上にしてください'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); return; }
+      try {
+        var res = await fetch(API + '/admin/account/password', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ current_password: currentPw, new_password: newPw })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          msgEl.textContent = 'パスワードを変更しました。再ログインしてください。';
+          msgEl.className = 'text-sm text-green-600';
+          msgEl.classList.remove('hidden');
+          showToast('パスワードが変更されました');
+          setTimeout(function() {
+            authToken = ''; sessionStorage.removeItem('sva_token');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+          }, 2000);
+        } else {
+          msgEl.textContent = data.error || '変更に失敗しました';
+          msgEl.className = 'text-sm text-red-600';
+          msgEl.classList.remove('hidden');
+        }
+      } catch(e) { msgEl.textContent = '通信エラーが発生しました'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); }
+    });
   </script>
 </body>
 </html>`

@@ -100,8 +100,75 @@ api.use('/admin/articles/*', async (c, next) => {
   if (!auth || !auth.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401)
   }
-  // トークン検証（本番ではDBセッションテーブルで管理すべき）
   await next()
+})
+
+api.use('/admin/account/*', async (c, next) => {
+  const auth = c.req.header('Authorization')
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  await next()
+})
+
+// ==========================================
+// 管理者アカウント管理API
+// ==========================================
+
+// 管理者情報取得
+api.get('/admin/account/me', async (c) => {
+  // tokenからユーザーを特定（簡易実装: admin_usersが1人前提）
+  const user = await c.env.DB.prepare("SELECT id, username, created_at FROM admin_users LIMIT 1").first()
+  if (!user) return c.json({ error: 'User not found' }, 404)
+  return c.json({ user })
+})
+
+// ユーザー名変更
+api.put('/admin/account/username', async (c) => {
+  const { current_password, new_username } = await c.req.json<{ current_password: string; new_username: string }>()
+  if (!current_password || !new_username) return c.json({ error: '全項目を入力してください' }, 400)
+  if (new_username.length < 3) return c.json({ error: 'ユーザー名は3文字以上にしてください' }, 400)
+  if (new_username.length > 50) return c.json({ error: 'ユーザー名は50文字以内にしてください' }, 400)
+
+  const passwordHash = await hashPassword(current_password)
+  const user = await c.env.DB.prepare(
+    "SELECT id FROM admin_users WHERE password_hash = ?"
+  ).bind(passwordHash).first()
+  if (!user) return c.json({ error: '現在のパスワードが正しくありません' }, 401)
+
+  // ユーザー名の重複チェック
+  const existing = await c.env.DB.prepare(
+    "SELECT id FROM admin_users WHERE username = ? AND id != ?"
+  ).bind(new_username, user.id).first()
+  if (existing) return c.json({ error: 'このユーザー名は既に使用されています' }, 409)
+
+  await c.env.DB.prepare(
+    "UPDATE admin_users SET username = ? WHERE id = ?"
+  ).bind(new_username, user.id).run()
+
+  return c.json({ success: true, message: 'ユーザー名を変更しました', username: new_username })
+})
+
+// パスワード変更
+api.put('/admin/account/password', async (c) => {
+  const { current_password, new_password } = await c.req.json<{ current_password: string; new_password: string }>()
+  if (!current_password || !new_password) return c.json({ error: '全項目を入力してください' }, 400)
+  if (new_password.length < 8) return c.json({ error: '新しいパスワードは8文字以上にしてください' }, 400)
+  if (new_password.length > 128) return c.json({ error: 'パスワードは128文字以内にしてください' }, 400)
+  if (current_password === new_password) return c.json({ error: '現在のパスワードと同じです' }, 400)
+
+  const currentHash = await hashPassword(current_password)
+  const user = await c.env.DB.prepare(
+    "SELECT id FROM admin_users WHERE password_hash = ?"
+  ).bind(currentHash).first()
+  if (!user) return c.json({ error: '現在のパスワードが正しくありません' }, 401)
+
+  const newHash = await hashPassword(new_password)
+  await c.env.DB.prepare(
+    "UPDATE admin_users SET password_hash = ? WHERE id = ?"
+  ).bind(newHash, user.id).run()
+
+  return c.json({ success: true, message: 'パスワードを変更しました' })
 })
 
 // 管理用: 全記事一覧（下書き含む）
