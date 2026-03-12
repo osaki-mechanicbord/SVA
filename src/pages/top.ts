@@ -772,12 +772,18 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
           </dl>
         </div>
       </div>
-      <div class="border-t border-white/10 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p class="text-xs text-gray-500">&copy; 2025 株式会社TCIサービス All rights reserved.</p>
-        <div class="flex gap-6 text-xs text-gray-500">
-          <a href="/privacy" class="hover:text-white transition-colors">プライバシーポリシー</a>
-          <a href="/terms" class="hover:text-white transition-colors">利用規約</a>
-          <a href="/tokushoho" class="hover:text-white transition-colors">特定商取引法に基づく表記</a>
+      <div class="border-t border-white/10 mt-10 pt-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <p class="text-xs text-gray-500">&copy; 2025 株式会社TCIサービス All rights reserved.</p>
+          <div class="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs text-gray-500">
+            <a href="/privacy" class="hover:text-white transition-colors">プライバシーポリシー</a>
+            <a href="/terms" class="hover:text-white transition-colors">利用規約</a>
+            <a href="/tokushoho" class="hover:text-white transition-colors">特定商取引法</a>
+            <a href="/sitemap" class="inline-flex items-center gap-1 hover:text-white transition-colors">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+              サイトマップ
+            </a>
+          </div>
         </div>
       </div>
     </div>

@@ -476,6 +476,30 @@ export function sitemapXml(articleSlugs: { slug: string; updated_at: string }[])
     <lastmod>${now}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${DOMAIN}/privacy</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>${DOMAIN}/terms</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>${DOMAIN}/tokushoho</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>${DOMAIN}/sitemap</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.4</priority>
   </url>`
 
   for (const a of articleSlugs) {

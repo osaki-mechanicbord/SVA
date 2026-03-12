@@ -10,6 +10,7 @@ import { columnDetailPage } from './pages/column-detail'
 import { partnerLoginPage } from './pages/partner-login'
 import { partnerMypagePage } from './pages/partner-mypage'
 import { partnerInvitePage } from './pages/partner-invite'
+import { privacyPage, termsPage, tokushohoPage, sitemapHtmlPage } from './pages/legal'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
@@ -147,6 +148,33 @@ app.get('/partner/mypage', (c) => {
 app.get('/partner/invite/:token', (c) => {
   const token = c.req.param('token')
   return c.html(partnerInvitePage(token))
+})
+
+// ==========================================
+// Legal Pages
+// ==========================================
+
+app.get('/privacy', (c) => {
+  return c.html(privacyPage())
+})
+
+app.get('/terms', (c) => {
+  return c.html(termsPage())
+})
+
+app.get('/tokushoho', (c) => {
+  return c.html(tokushohoPage())
+})
+
+app.get('/sitemap', async (c) => {
+  try {
+    const articles = await c.env.DB.prepare(
+      "SELECT slug, title, category FROM articles WHERE status = 'published' ORDER BY published_at DESC"
+    ).all()
+    return c.html(sitemapHtmlPage(articles.results as any[]))
+  } catch {
+    return c.html(sitemapHtmlPage([]))
+  }
 })
 
 // ==========================================
