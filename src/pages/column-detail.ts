@@ -22,31 +22,31 @@ export function columnDetailPage(article: Article, relatedArticles: RelatedArtic
         "@type": "Article",
         "headline": article.title,
         "description": article.excerpt,
-        "author": { "@type": "Organization", "name": article.author || "SVA編集部", "url": "https://sva.tci-service.co.jp" },
+        "author": { "@type": "Organization", "name": article.author || "SVA編集部", "url": "https://sva-assist.com" },
         "publisher": {
           "@type": "Organization",
           "name": "株式会社TCIサービス",
-          "logo": { "@type": "ImageObject", "url": "https://sva.tci-service.co.jp/static/images/sva-logo.png" }
+          "logo": { "@type": "ImageObject", "url": "https://sva-assist.com/static/images/sva-logo.png" }
         },
         "datePublished": article.published_at,
         "dateModified": article.updated_at || article.published_at,
         "mainEntityOfPage": {
           "@type": "WebPage",
-          "@id": `https://sva.tci-service.co.jp/column/${article.slug}`,
+          "@id": `https://sva-assist.com/column/${article.slug}`,
           "speakable": {
             "@type": "SpeakableSpecification",
             "cssSelector": ["article h1", ".article-content h2", ".article-content p:first-of-type"]
           }
         },
-        "isPartOf": { "@id": "https://sva.tci-service.co.jp/#website" },
+        "isPartOf": { "@id": "https://sva-assist.com/#website" },
         ...(article.thumbnail_url ? { "image": { "@type": "ImageObject", "url": article.thumbnail_url } } : {})
       },
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva.tci-service.co.jp/" },
-          { "@type": "ListItem", "position": 2, "name": "コラム", "item": "https://sva.tci-service.co.jp/column" },
-          { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://sva.tci-service.co.jp/column/${article.slug}` }
+          { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva-assist.com/" },
+          { "@type": "ListItem", "position": 2, "name": "コラム", "item": "https://sva-assist.com/column" },
+          { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://sva-assist.com/column/${article.slug}` }
         ]
       }
     ]

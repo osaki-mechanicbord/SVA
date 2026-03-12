@@ -5,17 +5,19 @@ export function siteHead(title: string, description: string, path: string, extra
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/static/images/sva-logo.png">
   <title>${title}</title>
   <meta name="description" content="${description}">
-  <link rel="canonical" href="https://sva.tci-service.co.jp${path}">
-  <link rel="alternate" hreflang="ja" href="https://sva.tci-service.co.jp${path}">
-  <link rel="alternate" hreflang="x-default" href="https://sva.tci-service.co.jp${path}">
+  <link rel="canonical" href="https://sva-assist.com${path}">
+  <link rel="alternate" hreflang="ja" href="https://sva-assist.com${path}">
+  <link rel="alternate" hreflang="x-default" href="https://sva-assist.com${path}">
   <meta property="og:type" content="website">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
-  <meta property="og:url" content="https://sva.tci-service.co.jp${path}">
+  <meta property="og:url" content="https://sva-assist.com${path}">
   <meta property="og:site_name" content="SVA - Special Vehicle Assist">
-  <meta property="og:image" content="https://sva.tci-service.co.jp/static/images/sva-logo.png">
+  <meta property="og:image" content="https://sva-assist.com/static/images/sva-logo.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ja_JP">

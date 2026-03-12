@@ -1,4 +1,4 @@
-const DOMAIN = 'https://sva.tci-service.co.jp'
+const DOMAIN = 'https://sva-assist.com'
 
 // ========================================
 // llms.txt - LLM用サマリー（Anthropic標準準拠）

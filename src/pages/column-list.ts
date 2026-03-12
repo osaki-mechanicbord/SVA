@@ -21,8 +21,8 @@ export function columnListPage(articles: Article[], pagination: Pagination, curr
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva.tci-service.co.jp/" },
-      { "@type": "ListItem", "position": 2, "name": "コラム", "item": "https://sva.tci-service.co.jp/column" }
+      { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva-assist.com/" },
+      { "@type": "ListItem", "position": 2, "name": "コラム", "item": "https://sva-assist.com/column" }
     ]
   })
 

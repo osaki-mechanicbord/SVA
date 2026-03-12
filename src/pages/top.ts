@@ -30,17 +30,17 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
     "@graph": [
       {
         "@type": ["Organization", "LocalBusiness"],
-        "@id": "https://sva.tci-service.co.jp/#organization",
+        "@id": "https://sva-assist.com/#organization",
         "name": "株式会社TCIサービス",
         "alternateName": ["TCI Service Co., Ltd.", "SVA", "Special Vehicle Assist"],
-        "url": "https://sva.tci-service.co.jp",
+        "url": "https://sva-assist.com",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://sva.tci-service.co.jp/static/images/sva-logo.png",
+          "url": "https://sva-assist.com/static/images/sva-logo.png",
           "width": 600,
           "height": 200
         },
-        "image": "https://sva.tci-service.co.jp/static/images/sva-logo.png",
+        "image": "https://sva-assist.com/static/images/sva-logo.png",
         "description": "特殊車両専門の装置取付プラットフォーム「SVA（Special Vehicle Assist）」を運営。フォークリフト・重機・建機・トラック・バスなど乗用車以外のすべての車両にドライブレコーダー・AIカメラ等の特殊装置を全国出張取付。",
         "address": {
           "@type": "PostalAddress",
@@ -83,27 +83,27 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
       },
       {
         "@type": "WebSite",
-        "@id": "https://sva.tci-service.co.jp/#website",
+        "@id": "https://sva-assist.com/#website",
         "name": "SVA - Special Vehicle Assist",
         "alternateName": "SVA 特殊車両装置取付プラットフォーム",
-        "url": "https://sva.tci-service.co.jp",
-        "publisher": { "@id": "https://sva.tci-service.co.jp/#organization" },
+        "url": "https://sva-assist.com",
+        "publisher": { "@id": "https://sva-assist.com/#organization" },
         "description": "日本初・特殊車両専門の装置取付B2Bプラットフォーム。全国47都道府県の公認パートナーが出張対応。",
         "inLanguage": "ja",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://sva.tci-service.co.jp/column?q={search_term_string}",
+          "target": "https://sva-assist.com/column?q={search_term_string}",
           "query-input": "required name=search_term_string"
         }
       },
       {
         "@type": "WebPage",
-        "@id": "https://sva.tci-service.co.jp/",
-        "url": "https://sva.tci-service.co.jp/",
+        "@id": "https://sva-assist.com/",
+        "url": "https://sva-assist.com/",
         "name": "SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム",
         "description": "フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付するB2Bプラットフォーム。公認パートナーも募集中。",
-        "isPartOf": { "@id": "https://sva.tci-service.co.jp/#website" },
-        "about": { "@id": "https://sva.tci-service.co.jp/#organization" },
+        "isPartOf": { "@id": "https://sva-assist.com/#website" },
+        "about": { "@id": "https://sva-assist.com/#organization" },
         "speakable": {
           "@type": "SpeakableSpecification",
           "cssSelector": [".hero-gradient h1", ".hero-gradient p", "#service h2", "#service h3", "#faq"]
@@ -111,9 +111,9 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
       },
       {
         "@type": "Service",
-        "@id": "https://sva.tci-service.co.jp/#service",
+        "@id": "https://sva-assist.com/#service",
         "name": "SVA 特殊車両装置取付サービス",
-        "provider": { "@id": "https://sva.tci-service.co.jp/#organization" },
+        "provider": { "@id": "https://sva-assist.com/#organization" },
         "serviceType": "特殊車両への装置出張取付",
         "areaServed": { "@type": "Country", "name": "Japan" },
         "description": "フォークリフト・重機・建機・トラック・バス・農機・船舶など、乗用車以外のすべての車両にドライブレコーダー、AIカメラ、デジタルタコグラフ等の安全装置を全国出張で取り付けるB2Bプラットフォームです。",
@@ -142,11 +142,11 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
             { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "LEDマーカーランプ取付", "description": "トラック用LEDマーカーランプの取付・視認性向上" }}
           ]
         },
-        "termsOfService": "https://sva.tci-service.co.jp/terms"
+        "termsOfService": "https://sva-assist.com/terms"
       },
       {
         "@type": "HowTo",
-        "@id": "https://sva.tci-service.co.jp/#howto",
+        "@id": "https://sva-assist.com/#howto",
         "name": "特殊車両への装置取付ご依頼の流れ",
         "description": "SVAで特殊車両への装置取付を依頼する手順（お問い合わせから施工完了まで）",
         "totalTime": "P7D",
@@ -156,7 +156,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
             "position": 1,
             "name": "お問い合わせ・ご相談",
             "text": "車両の種類、台数、取り付けたい装置、作業場所をお知らせください。お電話（06-6152-7511）またはWebフォームから受け付けています。",
-            "url": "https://sva.tci-service.co.jp/#contact"
+            "url": "https://sva-assist.com/#contact"
           },
           {
             "@type": "HowToStep",
@@ -180,7 +180,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
       },
       {
         "@type": "FAQPage",
-        "@id": "https://sva.tci-service.co.jp/#faq",
+        "@id": "https://sva-assist.com/#faq",
         "mainEntity": [
           {
             "@type": "Question",
@@ -251,7 +251,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
       {
         "@type": "BreadcrumbList",
         "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva.tci-service.co.jp/" }
+          { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://sva-assist.com/" }
         ]
       }
     ]
@@ -262,18 +262,20 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/static/images/sva-logo.png">
   <title>SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム</title>
   <meta name="description" content="SVA（Special Vehicle Assist）は、フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付するB2Bプラットフォームです。公認パートナーも募集中。">
   <meta name="keywords" content="特殊車両,ドライブレコーダー,AIカメラ,フォークリフト,重機,建機,トラック,バス,出張取付,デジタルタコグラフ,置き去り防止装置,B2B,全国対応,公認パートナー">
-  <link rel="canonical" href="https://sva.tci-service.co.jp/">
-  <link rel="alternate" hreflang="ja" href="https://sva.tci-service.co.jp/">
-  <link rel="alternate" hreflang="x-default" href="https://sva.tci-service.co.jp/">
+  <link rel="canonical" href="https://sva-assist.com/">
+  <link rel="alternate" hreflang="ja" href="https://sva-assist.com/">
+  <link rel="alternate" hreflang="x-default" href="https://sva-assist.com/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta property="og:description" content="フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付。公認パートナーも募集中。">
-  <meta property="og:url" content="https://sva.tci-service.co.jp/">
+  <meta property="og:url" content="https://sva-assist.com/">
   <meta property="og:site_name" content="SVA - Special Vehicle Assist">
-  <meta property="og:image" content="https://sva.tci-service.co.jp/static/images/sva-logo.png">
+  <meta property="og:image" content="https://sva-assist.com/static/images/sva-logo.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ja_JP">

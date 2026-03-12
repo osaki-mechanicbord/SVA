@@ -23,11 +23,11 @@ const app = new Hono<{ Bindings: Bindings }>()
 app.use('*', secureHeaders({
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net"],
+    scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net", "https://static.cloudflareinsights.com"],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
     fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
     imgSrc: ["'self'", "data:", "https:"],
-    connectSrc: ["'self'"],
+    connectSrc: ["'self'", "https://cloudflareinsights.com"],
   },
   strictTransportSecurity: 'max-age=63072000; includeSubDomains; preload',
   xFrameOptions: 'DENY',
