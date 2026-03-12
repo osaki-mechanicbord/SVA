@@ -594,4 +594,94 @@ adminPartnerApi.delete('/invitations/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// ===================== Product Master (製品マスタ) =====================
+
+// List all products (active + inactive, with optional filter)
+adminPartnerApi.get('/products', async (c) => {
+  const active = c.req.query('active') // '' = all, '1' = active only, '0' = inactive only
+  const category = c.req.query('category') || ''
+  const search = c.req.query('search') || ''
+
+  let where = '1=1'
+  const params: any[] = []
+  if (active === '1') { where += ' AND is_active = 1' }
+  else if (active === '0') { where += ' AND is_active = 0' }
+  if (category) { where += ' AND category = ?'; params.push(category) }
+  if (search) { where += ' AND (product_name LIKE ? OR model_number LIKE ? OR description LIKE ?)'; const s = '%' + search + '%'; params.push(s, s, s) }
+
+  const data = await c.env.DB.prepare(
+    `SELECT * FROM product_master WHERE ${where} ORDER BY sort_order ASC, id ASC`
+  ).bind(...params).all()
+  return c.json({ products: data.results })
+})
+
+// Get single product
+adminPartnerApi.get('/products/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const p = await c.env.DB.prepare("SELECT * FROM product_master WHERE id = ?").bind(id).first()
+  if (!p) return c.json({ error: 'Not found' }, 404)
+  return c.json({ product: p })
+})
+
+// Create product
+adminPartnerApi.post('/products', async (c) => {
+  const body = await c.req.json<{
+    product_name: string; model_number?: string; category?: string;
+    description?: string; sort_order?: number; is_active?: number
+  }>()
+  if (!body.product_name) return c.json({ error: 'product_name required' }, 400)
+
+  const validCategories = ['camera', 'sensor', 'light', 'control', 'recorder', 'monitor', 'other']
+  const cat = (body.category && validCategories.includes(body.category)) ? body.category : 'other'
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO product_master (product_name, model_number, category, description, sort_order, is_active) VALUES (?,?,?,?,?,?)"
+  ).bind(body.product_name, body.model_number || '', cat, body.description || '', body.sort_order ?? 0, body.is_active ?? 1).run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
+// Update product
+adminPartnerApi.put('/products/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const p = await c.env.DB.prepare("SELECT * FROM product_master WHERE id = ?").bind(id).first<any>()
+  if (!p) return c.json({ error: 'Not found' }, 404)
+
+  const body = await c.req.json<{
+    product_name?: string; model_number?: string; category?: string;
+    description?: string; sort_order?: number; is_active?: number
+  }>()
+
+  const validCategories = ['camera', 'sensor', 'light', 'control', 'recorder', 'monitor', 'other']
+  const cat = (body.category && validCategories.includes(body.category)) ? body.category : (p.category || 'other')
+
+  await c.env.DB.prepare(
+    "UPDATE product_master SET product_name=?, model_number=?, category=?, description=?, sort_order=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?"
+  ).bind(
+    body.product_name ?? p.product_name,
+    body.model_number ?? p.model_number,
+    cat,
+    body.description ?? p.description,
+    body.sort_order ?? p.sort_order,
+    body.is_active ?? p.is_active,
+    id
+  ).run()
+  return c.json({ success: true })
+})
+
+// Delete product
+adminPartnerApi.delete('/products/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const r = await c.env.DB.prepare("DELETE FROM product_master WHERE id = ?").bind(id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// Public endpoint for active products (used by forms without listing inactive)
+adminPartnerApi.get('/products/active', async (c) => {
+  const data = await c.env.DB.prepare(
+    "SELECT id, product_name, model_number, category FROM product_master WHERE is_active = 1 ORDER BY sort_order ASC, id ASC"
+  ).all()
+  return c.json({ products: data.results })
+})
+
 export { adminPartnerApi }

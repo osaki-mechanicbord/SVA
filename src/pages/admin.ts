@@ -72,6 +72,7 @@ export function adminPage(): string {
         <button id="tabImages" onclick="switchTab('images')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">画像管理</button>
         <button id="tabPartners" onclick="switchTab('partners')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">パートナー管理</button>
         <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
+        <button id="tabProducts" onclick="switchTab('products')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">製品管理</button>
         <button id="tabAccount" onclick="switchTab('account')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 ml-auto">⚙ アカウント</button>
       </div>
     </div>
@@ -314,6 +315,41 @@ export function adminPage(): string {
     </div>
 
     <!-- ============================================ -->
+    <!-- PRODUCTS TAB (製品マスタ管理) -->
+    <!-- ============================================ -->
+    <div id="productsTab" class="hidden">
+      <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div id="productViewTitle" class="text-lg font-bold text-sva-dark">製品マスタ一覧</div>
+          <div class="flex items-center gap-2">
+            <input id="productSearchInput" type="text" placeholder="製品名・型番で検索" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red w-44" oninput="filterProductList()">
+            <select id="productCategoryFilter" onchange="filterProductList()" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全カテゴリ</option>
+              <option value="camera">カメラ</option>
+              <option value="sensor">センサー</option>
+              <option value="light">安全灯</option>
+              <option value="control">制御</option>
+              <option value="recorder">レコーダー</option>
+              <option value="monitor">モニター</option>
+              <option value="other">その他</option>
+            </select>
+            <select id="productActiveFilter" onchange="filterProductList()" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全ステータス</option>
+              <option value="1">有効のみ</option>
+              <option value="0">無効のみ</option>
+            </select>
+            <button id="backToProductListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadProductMaster()">一覧に戻る</button>
+            <button onclick="showNewProductForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規製品追加</button>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div id="productListView"><div id="productList" class="space-y-2"></div></div>
+        <div id="productDetailView" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- ACCOUNT TAB -->
     <!-- ============================================ -->
     <div id="accountTab" class="hidden">
@@ -398,7 +434,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadArticles(1); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadArticles(1); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -413,7 +449,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadArticles(1);
+        showDashboard(); loadProductMasterData(); loadArticles(1);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -432,7 +468,7 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs','account'];
+    const TABS = ['articles','images','partners','jobs','products','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
@@ -443,6 +479,7 @@ export function adminPage(): string {
       if (tab === 'images') loadImages(1);
       if (tab === 'partners') loadPartners(1);
       if (tab === 'jobs') loadJobs(1);
+      if (tab === 'products') loadProductMaster();
     }
 
     // ===== Article List =====
@@ -1081,8 +1118,18 @@ export function adminPage(): string {
     // ===== 都道府県一覧 =====
     var PREFECTURES = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
 
-    // ===== 取付製品マスタ =====
-    var PRODUCT_MASTER = ['人検知AIカメラ FLC-1','人検知AIカメラ FLC-2','フォークリフト用バックカメラ','衝突防止センサー','安全灯（ブルーライト）','安全灯（レッドゾーンライト）','速度制限装置','ドライブレコーダー DR-100','タイヤ空気圧モニター','バッテリーモニター'];
+    // ===== 取付製品マスタ (DB連動) =====
+    var PRODUCT_MASTER = [];
+    var PRODUCT_MASTER_FULL = []; // {id, product_name, model_number, category}
+
+    async function loadProductMasterData() {
+      try {
+        var res = await fetch(API + '/admin/products?active=1', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        PRODUCT_MASTER_FULL = data.products || [];
+        PRODUCT_MASTER = PRODUCT_MASTER_FULL.map(function(p){ return p.product_name; });
+      } catch(e) { PRODUCT_MASTER = []; PRODUCT_MASTER_FULL = []; }
+    }
 
     // 車両データ配列
     var njVehicles = [];
@@ -1096,8 +1143,9 @@ export function adminPage(): string {
       document.getElementById('backToJobListBtn').classList.remove('hidden');
       document.getElementById('jobViewTitle').textContent = '新規案件作成';
 
-      // パートナー一覧を事前ロード
+      // パートナー一覧と製品マスタを事前ロード
       loadAllPartners();
+      if (PRODUCT_MASTER.length === 0) loadProductMasterData();
 
       document.getElementById('jobDetailView').innerHTML = '<div class="max-w-3xl">'
         + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
@@ -1927,6 +1975,182 @@ export function adminPage(): string {
         }
       } catch(e) { msgEl.textContent = '通信エラーが発生しました'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); }
     });
+    // ===== 製品マスタ管理 (Products Tab) =====
+    var allProductsData = [];
+    var CATEGORY_LABELS = {camera:'カメラ',sensor:'センサー',light:'安全灯',control:'制御',recorder:'レコーダー',monitor:'モニター',other:'その他'};
+    var CATEGORY_COLORS = {camera:'bg-blue-50 text-blue-700',sensor:'bg-amber-50 text-amber-700',light:'bg-yellow-50 text-yellow-700',control:'bg-purple-50 text-purple-700',recorder:'bg-green-50 text-green-700',monitor:'bg-cyan-50 text-cyan-700',other:'bg-gray-100 text-gray-600'};
+
+    async function loadProductMaster() {
+      document.getElementById('productListView').classList.remove('hidden');
+      document.getElementById('productDetailView').classList.add('hidden');
+      document.getElementById('backToProductListBtn').classList.add('hidden');
+      document.getElementById('productViewTitle').textContent = '製品マスタ一覧';
+      try {
+        var res = await fetch(API + '/admin/products', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.status === 401) { authToken = ''; sessionStorage.removeItem('sva_token'); location.reload(); return; }
+        var data = await res.json();
+        allProductsData = data.products || [];
+        filterProductList();
+      } catch(e) {
+        document.getElementById('productList').innerHTML = '<p class="text-sm text-red-500">読み込みに失敗しました</p>';
+      }
+    }
+
+    function filterProductList() {
+      var search = ((document.getElementById('productSearchInput')||{}).value||'').toLowerCase();
+      var cat = ((document.getElementById('productCategoryFilter')||{}).value||'');
+      var active = ((document.getElementById('productActiveFilter')||{}).value||'');
+      var filtered = allProductsData.filter(function(p) {
+        if (search && (p.product_name||'').toLowerCase().indexOf(search) === -1 && (p.model_number||'').toLowerCase().indexOf(search) === -1) return false;
+        if (cat && p.category !== cat) return false;
+        if (active !== '' && String(p.is_active) !== active) return false;
+        return true;
+      });
+      renderProductList(filtered);
+    }
+
+    function renderProductList(products) {
+      var el = document.getElementById('productList');
+      if (!products || products.length === 0) {
+        el.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><p class="text-sm">該当する製品がありません</p></div>';
+        return;
+      }
+      el.innerHTML = products.map(function(p) {
+        var catLabel = CATEGORY_LABELS[p.category] || p.category;
+        var catColor = CATEGORY_COLORS[p.category] || 'bg-gray-100 text-gray-600';
+        var statusBadge = p.is_active ? '<span class="px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded">有効</span>' : '<span class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded">無効</span>';
+        var modelNum = p.model_number ? '<span class="text-xs text-gray-400 font-mono ml-2">' + esc(p.model_number) + '</span>' : '';
+        var sortBadge = '<span class="text-[10px] text-gray-400 mr-2">並び順:' + p.sort_order + '</span>';
+        return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-4 hover:border-gray-300 transition-colors cursor-pointer" onclick="editProduct(' + p.id + ')">'
+          + '<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sva-red/10 to-red-50 flex items-center justify-center shrink-0">'
+          + '<svg class="w-5 h-5 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>'
+          + '<div class="min-w-0 flex-1">'
+          + '<div class="flex items-center gap-2 mb-0.5">' + statusBadge + '<span class="px-2 py-0.5 ' + catColor + ' text-xs font-medium rounded">' + catLabel + '</span></div>'
+          + '<p class="text-sm font-medium text-gray-800">' + esc(p.product_name) + modelNum + '</p>'
+          + '<p class="text-xs text-gray-400 mt-0.5">' + sortBadge + (p.description ? esc(p.description).substring(0, 60) : '-') + '</p>'
+          + '</div>'
+          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>';
+      }).join('');
+    }
+
+    function showNewProductForm() {
+      showProductEditor(null);
+    }
+
+    async function editProduct(id) {
+      try {
+        var res = await fetch(API + '/admin/products/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        if (!data.product) { showToast('製品が見つかりません', true); return; }
+        showProductEditor(data.product);
+      } catch(e) { showToast('読み込み失敗', true); }
+    }
+
+    function showProductEditor(product) {
+      var isNew = !product;
+      document.getElementById('productListView').classList.add('hidden');
+      document.getElementById('productDetailView').classList.remove('hidden');
+      document.getElementById('backToProductListBtn').classList.remove('hidden');
+      document.getElementById('productViewTitle').textContent = isNew ? '新規製品追加' : '製品編集';
+
+      var p = product || { id:0, product_name:'', model_number:'', category:'camera', description:'', sort_order:0, is_active:1 };
+
+      var catOptions = [
+        {v:'camera',l:'カメラ'},{v:'sensor',l:'センサー'},{v:'light',l:'安全灯'},
+        {v:'control',l:'制御'},{v:'recorder',l:'レコーダー'},{v:'monitor',l:'モニター'},{v:'other',l:'その他'}
+      ].map(function(c){return '<option value="'+c.v+'"'+(p.category===c.v?' selected':'')+'>'+c.l+'</option>';}).join('');
+
+      document.getElementById('productDetailView').innerHTML = '<div class="max-w-2xl">'
+        + '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">'
+        + '<div class="px-6 py-5 border-b border-gray-100 bg-gray-50"><h3 class="text-base font-bold text-sva-dark">' + (isNew ? '新規製品を登録' : '製品情報を編集') + '</h3>'
+        + '<p class="text-xs text-gray-500 mt-1">' + (isNew ? '製品マスタに新しい製品を追加します' : 'ID: ' + p.id + ' / 更新: ' + (p.updated_at||p.created_at||'-')) + '</p></div>'
+        + '<div class="px-6 py-5 space-y-4">'
+        + '<input type="hidden" id="pm_id" value="' + (p.id||'') + '">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">製品名 <span class="text-red-500">*</span></label>'
+        + '<input id="pm_name" value="' + esc(p.product_name) + '" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="例: 人検知AIカメラ FLC-1"></div>'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">型番</label>'
+        + '<input id="pm_model" value="' + esc(p.model_number) + '" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="例: FLC-1"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">カテゴリ</label>'
+        + '<select id="pm_category" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red">' + catOptions + '</select></div>'
+        + '</div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">説明</label>'
+        + '<textarea id="pm_description" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="製品の説明文...">' + esc(p.description) + '</textarea></div>'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">並び順（小さいほど上に表示）</label>'
+        + '<input id="pm_sort" type="number" value="' + p.sort_order + '" min="0" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="0"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータス</label>'
+        + '<select id="pm_active" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red">'
+        + '<option value="1"' + (p.is_active ? ' selected' : '') + '>有効（案件フォームに表示）</option>'
+        + '<option value="0"' + (!p.is_active ? ' selected' : '') + '>無効（フォーム非表示）</option></select></div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center gap-3">'
+        + '<button onclick="saveProduct()" class="px-6 py-2.5 bg-sva-red text-white text-sm font-bold rounded-lg hover:bg-red-800">' + (isNew ? '製品を登録' : '変更を保存') + '</button>'
+        + (isNew ? '' : '<button onclick="deleteProduct(' + p.id + ')" class="px-4 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50">削除する</button>')
+        + '<span id="pmMsg" class="text-sm"></span>'
+        + '</div></div></div>';
+    }
+
+    async function saveProduct() {
+      var id = document.getElementById('pm_id').value;
+      var name = document.getElementById('pm_name').value.trim();
+      if (!name) { var m = document.getElementById('pmMsg'); m.textContent='製品名は必須です'; m.className='text-sm text-red-600'; return; }
+
+      var payload = {
+        product_name: name,
+        model_number: document.getElementById('pm_model').value.trim(),
+        category: document.getElementById('pm_category').value,
+        description: document.getElementById('pm_description').value.trim(),
+        sort_order: Number(document.getElementById('pm_sort').value) || 0,
+        is_active: Number(document.getElementById('pm_active').value)
+      };
+
+      try {
+        var url = id ? API + '/admin/products/' + id : API + '/admin/products';
+        var method = id ? 'PUT' : 'POST';
+        var res = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (res.ok) {
+          showToast(id ? '製品を更新しました' : '製品を登録しました');
+          // Refresh master data for forms
+          await loadProductMasterData();
+          loadProductMaster();
+        } else {
+          var m = document.getElementById('pmMsg'); m.textContent = data.error || '保存に失敗しました'; m.className = 'text-sm text-red-600';
+        }
+      } catch(e) { var m = document.getElementById('pmMsg'); m.textContent = '通信エラーが発生しました'; m.className = 'text-sm text-red-600'; }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('この製品を削除しますか？\\n\\n※既存の案件で使用中の製品名には影響しません（案件側は製品名テキストで保持されています）')) return;
+      try {
+        var res = await fetch(API + '/admin/products/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (res.ok) {
+          showToast('製品を削除しました');
+          await loadProductMasterData();
+          loadProductMaster();
+        } else {
+          showToast('削除に失敗しました', true);
+        }
+      } catch(e) { showToast('通信エラー', true); }
+    }
+
+    // Make product functions global
+    window.loadProductMaster = loadProductMaster;
+    window.filterProductList = filterProductList;
+    window.showNewProductForm = showNewProductForm;
+    window.editProduct = editProduct;
+    window.saveProduct = saveProduct;
+    window.deleteProduct = deleteProduct;
+
   </script>
 </body>
 </html>`

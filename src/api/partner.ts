@@ -725,4 +725,14 @@ partnerApi.get('/me/stats', async (c) => {
   return c.json({ stats: { pending_jobs: pending?.c || 0, active_jobs: active?.c || 0, total_jobs: total?.c || 0, unread_messages: unread?.c || 0 } })
 })
 
+// ==========================================
+// Product Master (公開 - ログイン不要)
+// ==========================================
+partnerApi.get('/products/active', async (c) => {
+  const data = await c.env.DB.prepare(
+    "SELECT id, product_name, model_number, category FROM product_master WHERE is_active = 1 ORDER BY sort_order ASC, id ASC"
+  ).all()
+  return c.json({ products: data.results })
+})
+
 export { partnerApi }
