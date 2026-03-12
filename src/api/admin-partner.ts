@@ -36,6 +36,21 @@ adminPartnerApi.get('/partners', async (c) => {
   return c.json({ partners: data.results, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } })
 })
 
+// List partners (all, for dropdown selection - light fields only)
+// IMPORTANT: Must be before /partners/:id to avoid route conflict
+adminPartnerApi.get('/partners/all', async (c) => {
+  const region = c.req.query('region') || ''
+  const search = c.req.query('search') || ''
+  let where = "status = 'active'"
+  const params: any[] = []
+  if (region) { where += " AND region LIKE ?"; params.push('%' + region + '%'); }
+  if (search) { where += " AND (company_name LIKE ? OR representative_name LIKE ? OR email LIKE ?)"; const s = '%' + search + '%'; params.push(s, s, s); }
+  const data = await c.env.DB.prepare(
+    `SELECT id, company_name, representative_name, email, phone, region, specialties, rank FROM partners WHERE ${where} ORDER BY company_name ASC LIMIT 200`
+  ).bind(...params).all()
+  return c.json({ partners: data.results })
+})
+
 // Get single partner
 adminPartnerApi.get('/partners/:id', async (c) => {
   const id = Number(c.req.param('id'))
@@ -100,20 +115,6 @@ adminPartnerApi.post('/partners', async (c) => {
   ).bind(body.email, hash, body.company_name || '', body.representative_name || '', body.phone || '', body.region || '', body.specialties || '', body.rank || 'standard', body.postal_code || '', body.address || '', body.invoice_number || '').run()
 
   return c.json({ id: r.meta.last_row_id }, 201)
-})
-
-// List partners (all, for dropdown selection - light fields only)
-adminPartnerApi.get('/partners/all', async (c) => {
-  const region = c.req.query('region') || ''
-  const search = c.req.query('search') || ''
-  let where = "status = 'active'"
-  const params: any[] = []
-  if (region) { where += " AND region LIKE ?"; params.push('%' + region + '%'); }
-  if (search) { where += " AND (company_name LIKE ? OR representative_name LIKE ? OR email LIKE ?)"; const s = '%' + search + '%'; params.push(s, s, s); }
-  const data = await c.env.DB.prepare(
-    `SELECT id, company_name, representative_name, email, phone, region, specialties, rank FROM partners WHERE ${where} ORDER BY company_name ASC LIMIT 200`
-  ).bind(...params).all()
-  return c.json({ partners: data.results })
 })
 
 // ===================== Messages =====================
@@ -706,6 +707,15 @@ adminPartnerApi.get('/products', async (c) => {
   return c.json({ products: data.results })
 })
 
+// Active products endpoint (used by forms without listing inactive)
+// IMPORTANT: Must be before /products/:id to avoid route conflict
+adminPartnerApi.get('/products/active', async (c) => {
+  const data = await c.env.DB.prepare(
+    "SELECT id, product_name, model_number, category FROM product_master WHERE is_active = 1 ORDER BY sort_order ASC, id ASC"
+  ).all()
+  return c.json({ products: data.results })
+})
+
 // Get single product
 adminPartnerApi.get('/products/:id', async (c) => {
   const id = Number(c.req.param('id'))
@@ -765,14 +775,6 @@ adminPartnerApi.delete('/products/:id', async (c) => {
   const r = await c.env.DB.prepare("DELETE FROM product_master WHERE id = ?").bind(id).run()
   if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
   return c.json({ success: true })
-})
-
-// Public endpoint for active products (used by forms without listing inactive)
-adminPartnerApi.get('/products/active', async (c) => {
-  const data = await c.env.DB.prepare(
-    "SELECT id, product_name, model_number, category FROM product_master WHERE is_active = 1 ORDER BY sort_order ASC, id ASC"
-  ).all()
-  return c.json({ products: data.results })
 })
 
 export { adminPartnerApi }
