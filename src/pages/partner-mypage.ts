@@ -574,7 +574,10 @@ export function partnerMypagePage(): string {
             + (j.tracking_number ? '<span class="text-[10px] text-gray-400"><svg class="w-3 h-3 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4"/></svg>送り状有</span>' : '')
             + '<span class="text-xs text-gray-400 ml-auto">' + date + '</span></div>'
             + '<p class="text-sm font-bold text-sva-dark mb-2">' + escH(j.title) + '</p>'
-            + '<div class="flex items-center gap-1.5 flex-wrap mb-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sh[1] + '">製品:' + sh[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sc[1] + '">日程:' + sc[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + wk[1] + '">作業:' + wk[0] + '</span></div>'
+            + '<div class="flex items-center gap-1.5 flex-wrap mb-2"><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sh[1] + '">製品:' + sh[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + sc[1] + '">日程:' + sc[0] + '</span><span class="px-1.5 py-0.5 text-[10px] rounded font-medium ' + wk[1] + '">作業:' + wk[0] + '</span>'
+            + (j.actual_vehicle_count > 0 ? '<span class="px-1.5 py-0.5 text-[10px] rounded font-medium bg-blue-50 text-blue-700">車両 ' + (j.vehicle_done_count||0) + '/' + j.actual_vehicle_count + '台</span>' : '')
+            + (j.product_count > 0 ? '<span class="px-1.5 py-0.5 text-[10px] rounded font-medium bg-purple-50 text-purple-700">商品 ' + j.product_count + '点</span>' : '')
+            + '</div>'
             + '<div class="flex flex-wrap gap-3 text-xs text-gray-500">'
             + (j.vehicle_type ? '<span>車両: ' + escH(j.vehicle_type) + '</span>' : '')
             + (j.device_type ? '<span>装置: ' + escH(j.device_type) + '</span>' : '')

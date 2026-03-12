@@ -1078,19 +1078,41 @@ export function adminPage(): string {
       renderPagination('jobPagination', pag, 'loadJobs');
     }
 
+    // ===== 都道府県一覧 =====
+    var PREFECTURES = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+
+    // ===== 取付製品マスタ =====
+    var PRODUCT_MASTER = ['人検知AIカメラ FLC-1','人検知AIカメラ FLC-2','フォークリフト用バックカメラ','衝突防止センサー','安全灯（ブルーライト）','安全灯（レッドゾーンライト）','速度制限装置','ドライブレコーダー DR-100','タイヤ空気圧モニター','バッテリーモニター'];
+
+    // 車両データ配列
+    var njVehicles = [];
+    var njVehicleSeq = 0;
+
     function showNewJobForm() {
+      njVehicles = [];
+      njVehicleSeq = 0;
       document.getElementById('jobListView').classList.add('hidden');
       document.getElementById('jobDetailView').classList.remove('hidden');
       document.getElementById('backToJobListBtn').classList.remove('hidden');
       document.getElementById('jobViewTitle').textContent = '新規案件作成';
-      document.getElementById('jobDetailView').innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">'
+
+      // パートナー一覧を事前ロード
+      loadAllPartners();
+
+      document.getElementById('jobDetailView').innerHTML = '<div class="max-w-3xl">'
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
         + '<h3 class="font-bold text-sva-dark text-base mb-4">案件依頼を作成</h3>'
-        + '<div class="mb-4"><label class="block text-xs font-medium text-gray-600 mb-1">送信先パートナー <span class="text-red-500">*</span></label>'
-        + '<div class="flex gap-2"><input id="nj_partner_search" placeholder="会社名・名前で検索..." class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red">'
-        + '<button onclick="searchJobPartner()" class="px-4 py-2 bg-gray-100 text-sm rounded-lg hover:bg-gray-200">検索</button></div>'
-        + '<div id="njPartnerResults" class="mt-2 space-y-1"></div>'
+        // パートナー選択セクション
+        + '<div class="mb-5"><label class="block text-xs font-medium text-gray-600 mb-1">送信先パートナー <span class="text-red-500">*</span></label>'
+        + '<div class="grid sm:grid-cols-2 gap-2 mb-2">'
+        + '<div><label class="block text-[10px] text-gray-400 mb-0.5">都道府県で絞り込み</label><select id="nj_pref_filter" onchange="filterPartnerDropdown()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red"><option value="">すべての地域</option>' + PREFECTURES.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('') + '</select></div>'
+        + '<div><label class="block text-[10px] text-gray-400 mb-0.5">テキスト検索</label><input id="nj_partner_text" oninput="filterPartnerDropdown()" placeholder="会社名・担当者名で検索..." class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red"></div>'
+        + '</div>'
+        + '<select id="nj_partner_select" onchange="onPartnerSelect()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red mb-1"><option value="">パートナーを選択してください...</option></select>'
         + '<input type="hidden" id="nj_partner_id" value="">'
-        + '<p id="njSelectedPartner" class="text-sm text-sva-red font-medium mt-2"></p></div>'
+        + '<p id="njSelectedPartner" class="text-sm text-sva-red font-medium"></p>'
+        + '<p id="njPartnerCount" class="text-[10px] text-gray-400"></p></div>'
+        // 基本情報
         + '<div class="space-y-4">'
         + '<div class="grid sm:grid-cols-2 gap-4">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件名 <span class="text-red-500">*</span></label><input id="nj_title" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="例: フォークリフトAIカメラ取付 10台"></div>'
@@ -1103,10 +1125,22 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">希望日程</label><input id="nj_date" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="2026年4月中旬希望"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">予算</label><input id="nj_budget" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="¥500,000"></div>'
         + '</div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="4" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="案件の詳細..."></textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="案件の詳細..."></textarea></div>'
+        + '</div></div>'
+
+        // 車両セクション
+        + '<div class="bg-white rounded-xl border border-blue-200 p-6 mb-4">'
+        + '<div class="flex items-center justify-between mb-4">'
+        + '<h4 class="text-sm font-bold text-sva-dark flex items-center gap-2"><svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>車両明細 <span id="njVehicleBadge" class="px-2 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">0台</span></h4>'
+        + '<button onclick="addNjVehicle()" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>車両を追加</button>'
         + '</div>'
+        + '<p class="text-[10px] text-gray-400 mb-3">1ユーザー様が複数台お持ちの場合は、車両ごとにカードを追加してください。各車両ごとに取付製品を設定できます。</p>'
+        + '<div id="njVehicleList" class="space-y-3"></div>'
+        + '<div id="njNoVehicles" class="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl"><p class="text-sm text-gray-400">車両がまだ追加されていません</p><button onclick="addNjVehicle()" class="mt-2 px-4 py-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100">+ 最初の車両を追加</button></div>'
+        + '</div>'
+
         // お客様詳細情報セクション
-        + '<div class="mt-6 border-t border-gray-200 pt-5">'
+        + '<div class="bg-white rounded-xl border border-orange-200 p-6 mb-4">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2"><svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>お客様詳細情報 <span class="text-[10px] text-orange-500 font-normal">※受諾後にパートナーへ開示</span></h4>'
         + '<div class="grid sm:grid-cols-2 gap-3">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">会社名</label><input id="nj_client_company" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="株式会社〇〇物流"></div>'
@@ -1116,12 +1150,12 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">連絡先（メール）</label><input id="nj_client_email" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="tanaka@example.co.jp"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業場所（詳細住所）</label><input id="nj_work_location" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="大阪府堺市中区〇〇町1-2-3"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">作業希望日時</label><input id="nj_work_datetime" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="2026年4月15日 09:00〜17:00"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両台数</label><input id="nj_vehicle_count" type="number" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-orange-50/30" placeholder="5"></div>'
         + '</div>'
         + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">受諾後 即連絡メモ</label><textarea id="nj_urgent_note" rows="2" class="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm resize-none bg-orange-50/30" placeholder="受諾後、48時間以内にお客様担当者へ電話連絡してください"></textarea></div>'
         + '</div>'
-        // 取付製品セクション
-        + '<div class="mt-5 border-t border-gray-200 pt-5">'
+
+        // 取付製品（準備区分）
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付製品（準備区分）</h4>'
         + '<div class="grid sm:grid-cols-2 gap-3">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メーカー準備</label><textarea id="nj_prod_maker" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="AIカメラ FLC-1 x5台"></textarea></div>'
@@ -1129,49 +1163,190 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">公認パートナー準備</label><textarea id="nj_prod_partner" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="配線部材一式"></textarea></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">現地調達</label><textarea id="nj_prod_local" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="なし"></textarea></div>'
         + '</div></div>'
+
         // 費用セクション
-        + '<div class="mt-5 border-t border-gray-200 pt-5">'
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3">費用情報 <span class="text-[10px] text-gray-400 font-normal">※税抜金額を入力（表示時に10%加算）</span></h4>'
         + '<div class="grid sm:grid-cols-4 gap-3">'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">推定希望工賃</label><input id="nj_cost_labor" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="250000"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">出張費用</label><input id="nj_cost_travel" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="35000"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">その他費用</label><input id="nj_cost_other" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="5000"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">事前打合せ工賃</label><input id="nj_cost_prelim" type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="15000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">推定希望工賃</label><input id="nj_cost_labor" type="number" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="250000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">出張費用</label><input id="nj_cost_travel" type="number" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="35000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">その他費用</label><input id="nj_cost_other" type="number" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="5000"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">事前打合せ工賃</label><input id="nj_cost_prelim" type="number" min="0" step="1" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="15000"></div>'
         + '</div>'
         + '<div class="mt-3"><label class="block text-xs font-medium text-gray-600 mb-1">費用メモ</label><textarea id="nj_cost_memo" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="備考..."></textarea></div>'
         + '</div>'
-        + '<div class="flex items-center gap-3 mt-5"><button onclick="createJob()" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">案件を送信</button><span id="njMsg" class="text-sm"></span></div></div>';
+
+        // 送信ボタン
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
+        + '<div class="flex items-center gap-3"><button onclick="createJob()" class="px-8 py-2.5 bg-sva-red text-white text-sm font-bold rounded-lg hover:bg-red-800">案件を送信</button><span id="njMsg" class="text-sm"></span></div>'
+        + '</div></div>';
+      renderNjVehicles();
     }
 
-    async function searchJobPartner() {
-      var q = document.getElementById('nj_partner_search').value;
-      if (!q) return;
-      var res = await fetch(API + '/admin/partners?search=' + encodeURIComponent(q), { headers: { 'Authorization': 'Bearer ' + authToken } });
-      var data = await res.json();
-      var el = document.getElementById('njPartnerResults');
-      if (!data.partners || !data.partners.length) { el.innerHTML = '<p class="text-xs text-gray-400">見つかりません</p>'; return; }
-      el.innerHTML = data.partners.slice(0, 5).map(function(p) {
-        return '<button onclick="selectJobPartner(' + p.id + ',\\'' + esc(p.company_name || p.representative_name) + '\\')" class="w-full text-left px-3 py-2 bg-gray-50 rounded-lg hover:bg-gray-100 text-sm">' + esc(p.company_name || '-') + ' / ' + esc(p.representative_name) + ' <span class="text-gray-400">(' + esc(p.email) + ')</span></button>';
+    // パートナー全一覧データ
+    var allPartnersData = [];
+
+    async function loadAllPartners() {
+      try {
+        var res = await fetch(API + '/admin/partners/all', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        allPartnersData = data.partners || [];
+        filterPartnerDropdown();
+      } catch(e) { allPartnersData = []; }
+    }
+
+    function filterPartnerDropdown() {
+      var pref = (document.getElementById('nj_pref_filter')||{}).value || '';
+      var text = ((document.getElementById('nj_partner_text')||{}).value || '').toLowerCase();
+      var filtered = allPartnersData.filter(function(p) {
+        if (pref && (!p.region || p.region.indexOf(pref) === -1)) return false;
+        if (text && (p.company_name||'').toLowerCase().indexOf(text) === -1 && (p.representative_name||'').toLowerCase().indexOf(text) === -1) return false;
+        return true;
+      });
+      var sel = document.getElementById('nj_partner_select');
+      if (!sel) return;
+      var currentVal = document.getElementById('nj_partner_id').value;
+      sel.innerHTML = '<option value="">パートナーを選択してください... (' + filtered.length + '件)</option>'
+        + filtered.map(function(p) {
+          var region = p.region ? ' [' + p.region + ']' : '';
+          return '<option value="' + p.id + '"' + (String(p.id) === currentVal ? ' selected' : '') + '>' + esc(p.company_name||'-') + ' / ' + esc(p.representative_name||'-') + region + ' (' + esc(p.email) + ')</option>';
+        }).join('');
+      var countEl = document.getElementById('njPartnerCount');
+      if (countEl) countEl.textContent = filtered.length + '件のパートナーが該当' + (pref ? ' (' + pref + ')' : '');
+    }
+
+    function onPartnerSelect() {
+      var sel = document.getElementById('nj_partner_select');
+      var pid = sel.value;
+      document.getElementById('nj_partner_id').value = pid;
+      if (pid) {
+        var p = allPartnersData.find(function(x){return String(x.id) === pid;});
+        document.getElementById('njSelectedPartner').textContent = p ? '選択: ' + (p.company_name||'-') + ' / ' + (p.representative_name||'-') : '';
+      } else {
+        document.getElementById('njSelectedPartner').textContent = '';
+      }
+    }
+
+    // ===== 車両管理 =====
+    function addNjVehicle() {
+      njVehicleSeq++;
+      njVehicles.push({ _id: njVehicleSeq, maker_name: '', car_model: '', car_model_code: '', vehicle_memo: '', products: [] });
+      renderNjVehicles();
+    }
+
+    function removeNjVehicle(vid) {
+      njVehicles = njVehicles.filter(function(v){return v._id !== vid;});
+      renderNjVehicles();
+    }
+
+    function duplicateNjVehicle(vid) {
+      var src = njVehicles.find(function(v){return v._id === vid;});
+      if (!src) return;
+      njVehicleSeq++;
+      njVehicles.push({ _id: njVehicleSeq, maker_name: src.maker_name, car_model: src.car_model, car_model_code: src.car_model_code, vehicle_memo: src.vehicle_memo, products: src.products.map(function(p){return {product_name:p.product_name,quantity:p.quantity};}) });
+      renderNjVehicles();
+    }
+
+    function addNjProduct(vid) {
+      var v = njVehicles.find(function(x){return x._id === vid;});
+      if (!v) return;
+      v.products.push({ product_name: '', quantity: 1 });
+      renderNjVehicles();
+    }
+
+    function removeNjProduct(vid, pidx) {
+      var v = njVehicles.find(function(x){return x._id === vid;});
+      if (!v) return;
+      v.products.splice(pidx, 1);
+      renderNjVehicles();
+    }
+
+    function syncNjVehicleData() {
+      njVehicles.forEach(function(v) {
+        var mk = document.getElementById('nv_maker_'+v._id); if(mk) v.maker_name = mk.value;
+        var md = document.getElementById('nv_model_'+v._id); if(md) v.car_model = md.value;
+        var cd = document.getElementById('nv_code_'+v._id); if(cd) v.car_model_code = cd.value;
+        var me = document.getElementById('nv_memo_'+v._id); if(me) v.vehicle_memo = me.value;
+        v.products.forEach(function(p, idx) {
+          var pn = document.getElementById('nvp_name_'+v._id+'_'+idx); if(pn) p.product_name = pn.value;
+          var pq = document.getElementById('nvp_qty_'+v._id+'_'+idx); if(pq) p.quantity = Number(pq.value)||1;
+        });
+      });
+    }
+
+    function renderNjVehicles() {
+      var el = document.getElementById('njVehicleList');
+      var noEl = document.getElementById('njNoVehicles');
+      var badge = document.getElementById('njVehicleBadge');
+      if (!el) return;
+      if (badge) badge.textContent = njVehicles.length + '台';
+      if (njVehicles.length === 0) { el.innerHTML = ''; if(noEl)noEl.classList.remove('hidden'); return; }
+      if(noEl)noEl.classList.add('hidden');
+      el.innerHTML = njVehicles.map(function(v, idx) {
+        var prodOpts = '<option value="">-- 製品を選択 --</option>' + PRODUCT_MASTER.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+        var prodHtml = v.products.map(function(p, pidx) {
+          return '<div class="flex items-center gap-2 mb-1.5">'
+            + '<select id="nvp_name_'+v._id+'_'+pidx+'" class="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-400">' + PRODUCT_MASTER.map(function(pm){return '<option value="'+esc(pm)+'"'+(pm===p.product_name?' selected':'')+'>'+esc(pm)+'</option>';}).join('') + '<option value="">-- その他（手入力） --</option></select>'
+            + '<input type="number" id="nvp_qty_'+v._id+'_'+pidx+'" value="'+p.quantity+'" min="1" class="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-center" placeholder="数量">'
+            + '<button onclick="syncNjVehicleData();removeNjProduct('+v._id+','+pidx+')" class="text-red-400 hover:text-red-600 text-xs px-1">✕</button></div>';
+        }).join('');
+
+        return '<div class="bg-blue-50/50 rounded-xl border border-blue-100 p-4">'
+          + '<div class="flex items-center gap-2 mb-3">'
+          + '<span class="w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center">' + (idx+1) + '</span>'
+          + '<span class="text-sm font-bold text-sva-dark flex-1">車両 #' + (idx+1) + '</span>'
+          + '<button onclick="syncNjVehicleData();duplicateNjVehicle('+v._id+')" class="px-2 py-1 text-[10px] text-blue-600 bg-blue-100 rounded hover:bg-blue-200" title="複製">複製</button>'
+          + '<button onclick="syncNjVehicleData();removeNjVehicle('+v._id+')" class="px-2 py-1 text-[10px] text-red-500 bg-red-50 rounded hover:bg-red-100">削除</button>'
+          + '</div>'
+          + '<div class="grid grid-cols-3 gap-2 mb-3">'
+          + '<div><label class="block text-[10px] text-gray-500 mb-0.5">メーカー</label><input id="nv_maker_'+v._id+'" value="'+esc(v.maker_name)+'" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-400" placeholder="トヨタ"></div>'
+          + '<div><label class="block text-[10px] text-gray-500 mb-0.5">車種</label><input id="nv_model_'+v._id+'" value="'+esc(v.car_model)+'" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-400" placeholder="8FBN25"></div>'
+          + '<div><label class="block text-[10px] text-gray-500 mb-0.5">型式</label><input id="nv_code_'+v._id+'" value="'+esc(v.car_model_code)+'" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-400" placeholder="8FBN25-60001"></div>'
+          + '</div>'
+          + '<div class="mb-3"><label class="block text-[10px] text-gray-500 mb-0.5">メモ</label><input id="nv_memo_'+v._id+'" value="'+esc(v.vehicle_memo)+'" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-400" placeholder="特記事項（任意）"></div>'
+          + '<div class="bg-white rounded-lg border border-gray-100 p-3">'
+          + '<div class="flex items-center justify-between mb-2"><span class="text-[10px] font-bold text-gray-500 uppercase">取付製品</span><button onclick="syncNjVehicleData();addNjProduct('+v._id+')" class="px-2 py-0.5 text-[10px] text-purple-600 bg-purple-50 rounded hover:bg-purple-100">+ 製品追加</button></div>'
+          + (prodHtml || '<p class="text-[10px] text-gray-400 text-center py-2">製品未追加</p>')
+          + '</div></div>';
       }).join('');
     }
 
-    function selectJobPartner(id, name) {
-      document.getElementById('nj_partner_id').value = id;
-      document.getElementById('njSelectedPartner').textContent = '選択: ' + name;
-      document.getElementById('njPartnerResults').innerHTML = '';
-    }
-
     async function createJob() {
+      syncNjVehicleData();
       var pid = document.getElementById('nj_partner_id').value;
       var title = document.getElementById('nj_title').value;
       if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと案件名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
+
+      // Build vehicles payload
+      var vehiclesPayload = njVehicles.map(function(v) {
+        return {
+          maker_name: v.maker_name, car_model: v.car_model, car_model_code: v.car_model_code, vehicle_memo: v.vehicle_memo,
+          products: v.products.filter(function(p){return p.product_name;}).map(function(p){return {product_name:p.product_name,quantity:p.quantity||1};})
+        };
+      });
+
       try {
         var res = await fetch(API + '/admin/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-          body: JSON.stringify({ partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value, vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value, location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value, budget: document.getElementById('nj_budget').value, job_number: document.getElementById('nj_job_number').value, client_company: document.getElementById('nj_client_company').value, client_branch: document.getElementById('nj_client_branch').value, client_contact_name: document.getElementById('nj_client_contact').value, client_contact_phone: document.getElementById('nj_client_phone').value, client_contact_email: document.getElementById('nj_client_email').value, work_location_detail: document.getElementById('nj_work_location').value, work_datetime: document.getElementById('nj_work_datetime').value, vehicle_count: Number(document.getElementById('nj_vehicle_count').value)||0, urgent_contact_note: document.getElementById('nj_urgent_note').value, products_maker: document.getElementById('nj_prod_maker').value, products_customer: document.getElementById('nj_prod_customer').value, products_partner: document.getElementById('nj_prod_partner').value, products_local: document.getElementById('nj_prod_local').value, cost_labor: Number(document.getElementById('nj_cost_labor').value)||0, cost_travel: Number(document.getElementById('nj_cost_travel').value)||0, cost_other: Number(document.getElementById('nj_cost_other').value)||0, cost_preliminary: Number(document.getElementById('nj_cost_prelim').value)||0, cost_memo: document.getElementById('nj_cost_memo').value })
+          body: JSON.stringify({
+            partner_id: Number(pid), title: title, description: document.getElementById('nj_desc').value,
+            vehicle_type: document.getElementById('nj_vehicle').value, device_type: document.getElementById('nj_device').value,
+            location: document.getElementById('nj_location').value, preferred_date: document.getElementById('nj_date').value,
+            budget: document.getElementById('nj_budget').value, job_number: document.getElementById('nj_job_number').value,
+            client_company: document.getElementById('nj_client_company').value, client_branch: document.getElementById('nj_client_branch').value,
+            client_contact_name: document.getElementById('nj_client_contact').value, client_contact_phone: document.getElementById('nj_client_phone').value,
+            client_contact_email: document.getElementById('nj_client_email').value, work_location_detail: document.getElementById('nj_work_location').value,
+            work_datetime: document.getElementById('nj_work_datetime').value, urgent_contact_note: document.getElementById('nj_urgent_note').value,
+            products_maker: document.getElementById('nj_prod_maker').value, products_customer: document.getElementById('nj_prod_customer').value,
+            products_partner: document.getElementById('nj_prod_partner').value, products_local: document.getElementById('nj_prod_local').value,
+            cost_labor: Number(document.getElementById('nj_cost_labor').value)||0, cost_travel: Number(document.getElementById('nj_cost_travel').value)||0,
+            cost_other: Number(document.getElementById('nj_cost_other').value)||0, cost_preliminary: Number(document.getElementById('nj_cost_prelim').value)||0,
+            cost_memo: document.getElementById('nj_cost_memo').value,
+            vehicles: vehiclesPayload
+          })
         });
         var data = await res.json();
         if (!res.ok) { document.getElementById('njMsg').textContent = data.error || '作成失敗'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
-        showToast('案件を送信しました（パートナーに通知済み）');
+        showToast('案件を送信しました（パートナーに通知済み）' + (vehiclesPayload.length > 0 ? ' 車両' + vehiclesPayload.length + '台登録' : ''));
         loadJobs(1);
       } catch(e) { document.getElementById('njMsg').textContent = 'エラー'; document.getElementById('njMsg').className = 'text-sm text-red-600'; }
     }

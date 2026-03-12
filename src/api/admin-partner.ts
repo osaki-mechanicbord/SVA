@@ -102,6 +102,20 @@ adminPartnerApi.post('/partners', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
+// List partners (all, for dropdown selection - light fields only)
+adminPartnerApi.get('/partners/all', async (c) => {
+  const region = c.req.query('region') || ''
+  const search = c.req.query('search') || ''
+  let where = "status = 'active'"
+  const params: any[] = []
+  if (region) { where += " AND region LIKE ?"; params.push('%' + region + '%'); }
+  if (search) { where += " AND (company_name LIKE ? OR representative_name LIKE ? OR email LIKE ?)"; const s = '%' + search + '%'; params.push(s, s, s); }
+  const data = await c.env.DB.prepare(
+    `SELECT id, company_name, representative_name, email, phone, region, specialties, rank FROM partners WHERE ${where} ORDER BY company_name ASC LIMIT 200`
+  ).bind(...params).all()
+  return c.json({ partners: data.results })
+})
+
 // ===================== Messages =====================
 
 // List messages for a partner
@@ -160,7 +174,7 @@ adminPartnerApi.get('/jobs', async (c) => {
   return c.json({ jobs: data.results, pagination: { page, limit, total: cnt?.total || 0, totalPages: Math.ceil((cnt?.total || 0) / limit) } })
 })
 
-// Create job (send to partner)
+// Create job (send to partner) - supports vehicles[] with nested products
 adminPartnerApi.post('/jobs', async (c) => {
   const body = await c.req.json<{
     partner_id: number; title: string; description?: string; vehicle_type?: string;
@@ -171,25 +185,55 @@ adminPartnerApi.post('/jobs', async (c) => {
     work_location_detail?: string; work_datetime?: string; vehicle_count?: number;
     urgent_contact_note?: string;
     products_maker?: string; products_customer?: string; products_partner?: string; products_local?: string;
-    cost_labor?: number; cost_travel?: number; cost_other?: number; cost_preliminary?: number; cost_memo?: string
+    cost_labor?: number; cost_travel?: number; cost_other?: number; cost_preliminary?: number; cost_memo?: string;
+    vehicles?: Array<{
+      maker_name?: string; car_model?: string; car_model_code?: string; vehicle_memo?: string;
+      products?: Array<{ product_name: string; quantity?: number; serial_number?: string; memo?: string }>
+    }>
   }>()
   if (!body.partner_id || !body.title) return c.json({ error: 'partner_id and title required' }, 400)
 
   const p = await c.env.DB.prepare("SELECT id FROM partners WHERE id = ?").bind(body.partner_id).first()
   if (!p) return c.json({ error: 'Partner not found' }, 404)
 
+  // Auto-set vehicle_count from vehicles array if provided
+  const vehicleCount = (body.vehicles && body.vehicles.length > 0) ? body.vehicles.length : (body.vehicle_count || 0)
+
   const r = await c.env.DB.prepare(
     `INSERT INTO jobs (partner_id, title, description, vehicle_type, device_type, location, preferred_date, budget, job_number, client_company, client_branch, client_contact_name, client_contact_phone, client_contact_email, work_location_detail, work_datetime, vehicle_count, urgent_contact_note, products_maker, products_customer, products_partner, products_local, cost_labor, cost_travel, cost_other, cost_preliminary, cost_memo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(body.partner_id, body.title, body.description||'', body.vehicle_type||'', body.device_type||'', body.location||'', body.preferred_date||'', body.budget||'', body.job_number||'', body.client_company||'', body.client_branch||'', body.client_contact_name||'', body.client_contact_phone||'', body.client_contact_email||'', body.work_location_detail||'', body.work_datetime||'', body.vehicle_count||0, body.urgent_contact_note||'', body.products_maker||'', body.products_customer||'', body.products_partner||'', body.products_local||'', body.cost_labor||0, body.cost_travel||0, body.cost_other||0, body.cost_preliminary||0, body.cost_memo||'').run()
+  ).bind(body.partner_id, body.title, body.description||'', body.vehicle_type||'', body.device_type||'', body.location||'', body.preferred_date||'', body.budget||'', body.job_number||'', body.client_company||'', body.client_branch||'', body.client_contact_name||'', body.client_contact_phone||'', body.client_contact_email||'', body.work_location_detail||'', body.work_datetime||'', vehicleCount, body.urgent_contact_note||'', body.products_maker||'', body.products_customer||'', body.products_partner||'', body.products_local||'', body.cost_labor||0, body.cost_travel||0, body.cost_other||0, body.cost_preliminary||0, body.cost_memo||'').run()
+
+  const jobId = r.meta.last_row_id as number
+
+  // Insert vehicles and their products
+  if (body.vehicles && body.vehicles.length > 0) {
+    for (let seq = 0; seq < body.vehicles.length; seq++) {
+      const v = body.vehicles[seq]
+      const vr = await c.env.DB.prepare(
+        "INSERT INTO job_vehicles (job_id, seq, maker_name, car_model, car_model_code, vehicle_memo) VALUES (?,?,?,?,?,?)"
+      ).bind(jobId, seq + 1, v.maker_name||'', v.car_model||'', v.car_model_code||'', v.vehicle_memo||'').run()
+      const vehicleId = vr.meta.last_row_id as number
+
+      if (v.products && v.products.length > 0) {
+        for (const prod of v.products) {
+          if (!prod.product_name) continue
+          await c.env.DB.prepare(
+            "INSERT INTO vehicle_products (vehicle_id, product_name, quantity, serial_number, memo) VALUES (?,?,?,?,?)"
+          ).bind(vehicleId, prod.product_name, prod.quantity||1, prod.serial_number||'', prod.memo||'').run()
+        }
+      }
+    }
+  }
 
   // Auto-send notification message
+  const vehInfo = vehicleCount > 0 ? '\n車両台数: ' + vehicleCount + '台' : ''
   await c.env.DB.prepare(
     "INSERT INTO messages (partner_id, direction, subject, body) VALUES (?, 'to_partner', ?, ?)"
   ).bind(body.partner_id, '新しい案件が届きました: ' + body.title,
-    '新しい案件依頼が届きました。マイページの「案件一覧」からご確認ください。\n\n案件名: ' + body.title + '\n場所: ' + (body.location || '未定') + '\n車両: ' + (body.vehicle_type || '-') + '\n装置: ' + (body.device_type || '-')
+    '新しい案件依頼が届きました。マイページの「案件一覧」からご確認ください。\n\n案件名: ' + body.title + '\n場所: ' + (body.location || '未定') + '\n車両: ' + (body.vehicle_type || '-') + '\n装置: ' + (body.device_type || '-') + vehInfo
   ).run()
 
-  return c.json({ id: r.meta.last_row_id }, 201)
+  return c.json({ id: jobId }, 201)
 })
 
 // Update job (basic fields + client details + costs)

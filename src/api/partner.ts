@@ -286,7 +286,11 @@ partnerApi.get('/me/jobs', async (c) => {
 
   const [cnt, data] = await Promise.all([
     c.env.DB.prepare(`SELECT COUNT(*) as total FROM jobs WHERE ${where}`).bind(...params).first<{ total: number }>(),
-    c.env.DB.prepare(`SELECT * FROM jobs WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...params, limit, offset).all()
+    c.env.DB.prepare(`SELECT j.*,
+      (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id) as actual_vehicle_count,
+      (SELECT COUNT(*) FROM job_vehicles WHERE job_id = j.id AND status = 'completed') as vehicle_done_count,
+      (SELECT COUNT(*) FROM vehicle_products vp JOIN job_vehicles jv ON vp.vehicle_id = jv.id WHERE jv.job_id = j.id) as product_count
+      FROM jobs j WHERE j.${where} ORDER BY j.created_at DESC LIMIT ? OFFSET ?`).bind(...params, limit, offset).all()
   ])
   return c.json({ jobs: data.results, pagination: { page, limit, total: cnt?.total || 0, totalPages: Math.ceil((cnt?.total || 0) / limit) } })
 })
