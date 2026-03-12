@@ -592,7 +592,7 @@ partnerApi.post('/me/jobs/:id/photos', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// 写真一覧取得 (メタデータのみ、データは含まない)
+// 写真一覧取得 (メタデータのみ、データは含まない) - 車両情報も含む
 partnerApi.get('/me/jobs/:id/photos', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -601,9 +601,38 @@ partnerApi.get('/me/jobs/:id/photos', async (c) => {
   if (!job) return c.json({ error: 'Not found' }, 404)
 
   const photos = await c.env.DB.prepare(
-    "SELECT id, job_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? ORDER BY category, created_at"
+    `SELECT jp.id, jp.job_id, jp.vehicle_id, jp.category, jp.mime_type, jp.file_name, jp.caption, jp.uploaded_by, jp.created_at,
+     jv.seq as vehicle_seq, jv.maker_name as vehicle_maker, jv.car_model as vehicle_model
+     FROM job_photos jp LEFT JOIN job_vehicles jv ON jp.vehicle_id = jv.id
+     WHERE jp.job_id = ? ORDER BY jp.vehicle_id NULLS FIRST, jp.category, jp.created_at`
   ).bind(id).all()
   return c.json({ photos: photos.results })
+})
+
+// 写真をバイナリ画像として取得（<img src>で直接表示可能）
+partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
+  const pid = await getPartnerId(c)
+  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const photo = await c.env.DB.prepare(
+    "SELECT photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
+  ).bind(photoId, id).first<any>()
+  if (!photo || !photo.photo_data) return c.notFound()
+
+  const binaryStr = atob(photo.photo_data)
+  const bytes = new Uint8Array(binaryStr.length)
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': photo.mime_type || 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  })
 })
 
 // 写真データ取得 (個別)

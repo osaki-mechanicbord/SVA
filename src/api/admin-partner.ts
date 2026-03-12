@@ -315,7 +315,46 @@ adminPartnerApi.get('/jobs/:id', async (c) => {
   return c.json({ job: j, vehicles: vehicleDetails, photos: legacyPhotos.results, attachments: attachments.results })
 })
 
-// Get job photo data (individual)
+// ===================== Photo Gallery API (写真管理) =====================
+// IMPORTANT: Static routes MUST come before dynamic :photoId routes
+
+// Get ALL photos for a job (all vehicles + legacy) with metadata
+adminPartnerApi.get('/jobs/:id/photos/all', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const job = await c.env.DB.prepare("SELECT id, title, job_number FROM jobs WHERE id = ?").bind(jobId).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+
+  const photos = await c.env.DB.prepare(
+    `SELECT jp.id, jp.job_id, jp.vehicle_id, jp.category, jp.mime_type, jp.file_name, jp.caption, jp.uploaded_by, jp.created_at,
+     jv.seq as vehicle_seq, jv.maker_name as vehicle_maker, jv.car_model as vehicle_model
+     FROM job_photos jp LEFT JOIN job_vehicles jv ON jp.vehicle_id = jv.id
+     WHERE jp.job_id = ? ORDER BY jp.vehicle_id NULLS FIRST, jp.category, jp.created_at`
+  ).bind(jobId).all()
+  return c.json({ job, photos: photos.results })
+})
+
+// Get photo as binary image (for <img src> direct use)
+adminPartnerApi.get('/jobs/:id/photos/:photoId/image', async (c) => {
+  const id = Number(c.req.param('id'))
+  const photoId = Number(c.req.param('photoId'))
+  const photo = await c.env.DB.prepare(
+    "SELECT photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
+  ).bind(photoId, id).first<any>()
+  if (!photo || !photo.photo_data) return c.notFound()
+
+  const binaryStr = atob(photo.photo_data)
+  const bytes = new Uint8Array(binaryStr.length)
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': photo.mime_type || 'image/jpeg',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  })
+})
+
+// Get job photo data (individual JSON)
 adminPartnerApi.get('/jobs/:id/photos/:photoId', async (c) => {
   const id = Number(c.req.param('id'))
   const photoId = Number(c.req.param('photoId'))

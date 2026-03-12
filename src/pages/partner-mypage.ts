@@ -295,9 +295,30 @@ export function partnerMypagePage(): string {
               <div id="jobDetailContent" class="p-6"></div>
             </div>
           </div>
-          <!-- Photo preview modal -->
-          <div id="photoPreviewModal" class="hidden fixed inset-0 bg-black/80 z-[95] flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-            <img id="photoPreviewImg" src="" class="max-w-full max-h-full rounded-lg shadow-2xl" onclick="event.stopPropagation()">
+          <!-- Photo preview modal (メルカリ風フルスクリーン) -->
+          <div id="photoPreviewModal" class="hidden fixed inset-0 bg-black z-[95] flex flex-col">
+            <div class="flex items-center justify-between px-4 py-3 bg-black/80">
+              <span id="photoPreviewLabel" class="text-white text-sm font-medium"></span>
+              <button onclick="closePhotoPreview()" class="text-white/80 hover:text-white p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <div class="flex-1 flex items-center justify-center p-4 overflow-auto">
+              <img id="photoPreviewImg" src="" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain">
+            </div>
+            <div class="flex items-center justify-center gap-4 px-4 py-3 bg-black/80">
+              <button onclick="navigatePhoto(-1)" class="text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+              <span id="photoCounter" class="text-white/60 text-sm"></span>
+              <button onclick="navigatePhoto(1)" class="text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+            </div>
+          </div>
+          <!-- Photo Grid modal (全写真一覧) -->
+          <div id="photoGridModal" class="hidden fixed inset-0 bg-black/50 z-[92] flex items-end sm:items-center justify-center">
+            <div class="bg-white w-full sm:w-[90vw] sm:max-w-3xl sm:rounded-xl max-h-[90vh] overflow-auto rounded-t-2xl">
+              <div class="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10">
+                <span class="text-sm font-bold text-sva-dark">全写真一覧</span>
+                <button onclick="document.getElementById('photoGridModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+              </div>
+              <div id="photoGridContent" class="p-4"></div>
+            </div>
           </div>
         </div>
 
@@ -608,6 +629,7 @@ export function partnerMypagePage(): string {
         var pRes = await fetch('/api/partner/me/jobs/' + id + '/photos', { headers: { 'Authorization': 'Bearer ' + token } });
         var pData = await pRes.json();
         var photos = pData.photos || [];
+        window._currentPhotoList = photos;
         renderJobDetail(j, photos, data);
       } catch(e) { content.innerHTML = '<p class="text-sm text-red-500">読み込み失敗</p>'; }
     }
@@ -864,7 +886,7 @@ export function partnerMypagePage(): string {
         + (j.last_status_updated_at ? '<p class="text-[10px] text-gray-400 mt-1">最終更新: ' + updatedBy + ' (' + fmtDt(j.last_status_updated_at) + ')</p>' : '')
         + '</div></div>';
 
-      // ===== TAB: 写真 =====
+      // ===== TAB: 写真 (メルカリ風UI) =====
       var normalCats = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真']];
       var claimCats = [['claim_caution_plate','コーションプレート'],['claim_fault','故障原因箇所(不良個所)'],['claim_repair','修理内容']];
 
@@ -873,32 +895,46 @@ export function partnerMypagePage(): string {
           var existing = photosArr.filter(function(p) { return p.category === c[0]; });
           var thumbs = existing.map(function(p) {
             return '<div class="relative group">'
-              + '<div class="w-16 h-16 rounded-lg border border-gray-200 overflow-hidden cursor-pointer bg-gray-50" onclick="viewPhoto(' + j.id + ',' + p.id + ')">'
-              + '<div class="w-full h-full flex items-center justify-center text-[10px] text-gray-400">📷</div></div>'
-              + '<button onclick="deletePhoto(' + j.id + ',' + p.id + ')" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] hidden group-hover:flex items-center justify-center">&times;</button>'
-              + '<p class="text-[9px] text-gray-400 mt-0.5 truncate w-16">' + fmtDt(p.created_at).split(' ')[0] + '</p></div>';
+              + '<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border-2 border-gray-100 overflow-hidden cursor-pointer bg-gray-50 shadow-sm hover:shadow-md transition-shadow" onclick="viewPhotoImage(' + j.id + ',' + p.id + ')">'
+              + '<img src="/api/partner/me/jobs/' + j.id + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.parentNode.innerHTML=\\'<div class=\\\\\\'w-full h-full flex items-center justify-center text-gray-300\\\\\\'><svg class=\\\\\\'w-6 h-6\\\\\\' fill=\\\\\\'none\\\\\\' stroke=\\\\\\'currentColor\\\\\\' viewBox=\\\\\\'0 0 24 24\\\\\\'><path stroke-linecap=\\\\\\'round\\\\\\' stroke-linejoin=\\\\\\'round\\\\\\' stroke-width=\\\\\\'1.5\\\\\\' d=\\\\\\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\\\\\\'/></svg></div>\\'">'
+              + '</div>'
+              + '<button onclick="event.stopPropagation();deletePhoto(' + j.id + ',' + p.id + ')" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex items-center justify-center transition-opacity" style="opacity:0.8">&times;</button>'
+              + '<p class="text-[8px] text-gray-400 mt-0.5 text-center truncate w-20 sm:w-24">' + (p.file_name ? escH(p.file_name).substring(0,12) : fmtDt(p.created_at).split(' ')[0]) + '</p></div>';
           }).join('');
-          return '<div class="flex items-start gap-3 py-2 border-b border-gray-50 last:border-0">'
-            + '<div class="w-32 shrink-0"><p class="text-xs font-medium text-gray-700">' + c[1] + '</p>'
-            + '<p class="text-[10px] text-gray-400">' + existing.length + '枚</p></div>'
-            + '<div class="flex gap-2 flex-wrap flex-1">' + thumbs
-            + '<label class="w-16 h-16 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red transition-colors">'
-            + '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
-            + '<span class="text-[9px] text-gray-400 mt-0.5">撮影</span>'
+          return '<div class="py-3 border-b border-gray-50 last:border-0">'
+            + '<div class="flex items-center gap-2 mb-2"><span class="text-xs font-bold text-gray-700">' + c[1] + '</span>'
+            + '<span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium ' + (existing.length > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400') + '">' + existing.length + '枚</span></div>'
+            + '<div class="flex gap-2.5 flex-wrap">' + thumbs
+            + '<label class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red hover:bg-red-50/30 transition-all active:scale-95">'
+            + '<svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>'
+            + '<span class="text-[9px] text-gray-400 mt-1">追加</span>'
             + '<input type="file" accept="image/*" capture="environment" class="hidden" onchange="uploadJobPhoto(' + j.id + ',\\'' + c[0] + '\\',this)">'
             + '</label></div></div>';
         }).join('');
       }
 
+      var photoCount = photos.length;
       var photosTab = '<div id="jt_panel_photos" class="hidden">'
-        + '<div class="mb-4"><h5 class="text-sm font-bold text-sva-dark mb-1">通常作業</h5>'
-        + '<p class="text-[10px] text-gray-400 mb-2">コーションプレート→取付前製品→電源取得箇所→アース取得箇所→取付完了写真の順に撮影してください</p>'
-        + '<div class="space-y-0">' + buildPhotoSlots(normalCats, photos) + '</div></div>'
-        + '<div class="border-t border-gray-100 pt-4"><h5 class="text-sm font-bold text-sva-dark mb-1">クレーム作業時</h5>'
-        + '<p class="text-[10px] text-gray-400 mb-2">コーションプレート→故障原因箇所→修理内容の順に撮影してください</p>'
-        + '<div class="space-y-0">' + buildPhotoSlots(claimCats, photos) + '</div></div>'
-        + '<div class="border-t border-gray-100 pt-4"><h5 class="text-sm font-bold text-sva-dark mb-1">その他</h5>'
-        + '<div>' + buildPhotoSlots([['other','その他の写真']], photos) + '</div></div>'
+        // サマリーバー
+        + '<div class="flex items-center justify-between mb-4 bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 border border-gray-100">'
+        + '<div class="flex items-center gap-2"><svg class="w-5 h-5 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>'
+        + '<span class="text-sm font-bold text-sva-dark">作業写真</span><span class="text-xs text-gray-500">' + photoCount + '枚</span></div>'
+        + '<button onclick="openPhotoGrid(' + j.id + ')" class="px-3 py-1.5 text-[10px] font-medium bg-sva-red text-white rounded-lg hover:bg-red-800 flex items-center gap-1">'
+        + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>全写真一覧</button></div>'
+        // 通常作業
+        + '<div class="bg-white rounded-xl border border-gray-100 p-4 mb-4">'
+        + '<div class="flex items-center gap-2 mb-1"><div class="w-1 h-4 bg-blue-500 rounded-full"></div><h5 class="text-sm font-bold text-sva-dark">通常作業</h5></div>'
+        + '<p class="text-[10px] text-gray-400 mb-3 ml-3">コーションプレート→取付前→電源→アース→完了の順に撮影</p>'
+        + buildPhotoSlots(normalCats, photos) + '</div>'
+        // クレーム作業
+        + '<div class="bg-white rounded-xl border border-gray-100 p-4 mb-4">'
+        + '<div class="flex items-center gap-2 mb-1"><div class="w-1 h-4 bg-red-500 rounded-full"></div><h5 class="text-sm font-bold text-sva-dark">クレーム作業時</h5></div>'
+        + '<p class="text-[10px] text-gray-400 mb-3 ml-3">コーションプレート→故障原因→修理内容の順に撮影</p>'
+        + buildPhotoSlots(claimCats, photos) + '</div>'
+        // その他
+        + '<div class="bg-white rounded-xl border border-gray-100 p-4">'
+        + '<div class="flex items-center gap-2 mb-1"><div class="w-1 h-4 bg-gray-400 rounded-full"></div><h5 class="text-sm font-bold text-sva-dark">その他</h5></div>'
+        + buildPhotoSlots([['other','その他の写真']], photos) + '</div>'
         + '</div>';
 
       // ===== TAB: 作業報告 =====
@@ -1055,17 +1091,88 @@ export function partnerMypagePage(): string {
     }
     window.uploadJobPhoto = uploadJobPhoto;
 
-    async function viewPhoto(jobId, photoId) {
+    async function viewPhotoImage(jobId, photoId) {
+      var modal = document.getElementById('photoPreviewModal');
+      var img = document.getElementById('photoPreviewImg');
+      var label = document.getElementById('photoPreviewLabel');
+      img.src = '/api/partner/me/jobs/' + jobId + '/photos/' + photoId + '/image';
+      label.textContent = '写真プレビュー';
+      // Find photo index for navigation
+      window._photoViewJobId = jobId;
+      window._photoViewList = window._currentPhotoList || [];
+      var idx = window._photoViewList.findIndex(function(p){return p.id===photoId;});
+      window._photoViewIdx = idx >= 0 ? idx : 0;
+      updatePhotoCounter();
+      modal.classList.remove('hidden');
+    }
+    window.viewPhotoImage = viewPhotoImage;
+
+    function closePhotoPreview() {
+      document.getElementById('photoPreviewModal').classList.add('hidden');
+    }
+    window.closePhotoPreview = closePhotoPreview;
+
+    function navigatePhoto(dir) {
+      var list = window._photoViewList || [];
+      if (list.length === 0) return;
+      window._photoViewIdx = (window._photoViewIdx + dir + list.length) % list.length;
+      var p = list[window._photoViewIdx];
+      var img = document.getElementById('photoPreviewImg');
+      img.src = '/api/partner/me/jobs/' + window._photoViewJobId + '/photos/' + p.id + '/image';
+      var catName = PHOTO_CATS[p.category] || p.category;
+      document.getElementById('photoPreviewLabel').textContent = catName;
+      updatePhotoCounter();
+    }
+    window.navigatePhoto = navigatePhoto;
+
+    function updatePhotoCounter() {
+      var list = window._photoViewList || [];
+      var counter = document.getElementById('photoCounter');
+      if (list.length > 0) counter.textContent = (window._photoViewIdx + 1) + ' / ' + list.length;
+      else counter.textContent = '';
+    }
+
+    async function openPhotoGrid(jobId) {
+      var modal = document.getElementById('photoGridModal');
+      var content = document.getElementById('photoGridContent');
+      modal.classList.remove('hidden');
+      content.innerHTML = '<div class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       try {
-        var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos/' + photoId, { headers: { 'Authorization': 'Bearer ' + token } });
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos', { headers: { 'Authorization': 'Bearer ' + token } });
         var data = await res.json();
-        if (data.photo && data.photo.photo_data) {
-          var modal = document.getElementById('photoPreviewModal');
-          var img = document.getElementById('photoPreviewImg');
-          img.src = 'data:' + (data.photo.mime_type || 'image/jpeg') + ';base64,' + data.photo.photo_data;
-          modal.classList.remove('hidden');
+        var photos = data.photos || [];
+        window._currentPhotoList = photos;
+        if (photos.length === 0) {
+          content.innerHTML = '<div class="text-center py-12 text-gray-400"><svg class="w-12 h-12 mx-auto mb-2 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm">まだ写真がありません</p></div>';
+          return;
         }
-      } catch(e) { showToast('写真の読み込みに失敗しました', true); }
+        // Group by category
+        var grouped = {};
+        photos.forEach(function(p) {
+          var cat = p.category || 'other';
+          if (!grouped[cat]) grouped[cat] = [];
+          grouped[cat].push(p);
+        });
+        var html = '<div class="text-xs text-gray-500 mb-3">合計 ' + photos.length + '枚</div>';
+        Object.keys(grouped).forEach(function(cat) {
+          var catName = PHOTO_CATS[cat] || cat;
+          html += '<div class="mb-4"><p class="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sva-red"></span>' + catName + ' (' + grouped[cat].length + ')</p>';
+          html += '<div class="grid grid-cols-3 sm:grid-cols-4 gap-2">';
+          grouped[cat].forEach(function(p) {
+            html += '<div class="aspect-square rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:shadow-md transition-shadow bg-gray-50" onclick="viewPhotoImage(' + jobId + ',' + p.id + ')">'
+              + '<img src="/api/partner/me/jobs/' + jobId + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
+              + '</div>';
+          });
+          html += '</div></div>';
+        });
+        content.innerHTML = html;
+      } catch(e) { content.innerHTML = '<p class="text-sm text-red-500 text-center">読み込み失敗</p>'; }
+    }
+    window.openPhotoGrid = openPhotoGrid;
+
+    async function viewPhoto(jobId, photoId) {
+      // Legacy: fallback to image endpoint
+      viewPhotoImage(jobId, photoId);
     }
     window.viewPhoto = viewPhoto;
 

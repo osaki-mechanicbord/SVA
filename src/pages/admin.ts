@@ -78,6 +78,7 @@ export function adminPage(): string {
         <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
         <button id="tabProducts" onclick="switchTab('products')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">製品管理</button>
         <button id="tabInquiries" onclick="switchTab('inquiries')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 relative">お問い合わせ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
+        <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">写真管理</button>
         <button id="tabAccount" onclick="switchTab('account')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 ml-auto">⚙ アカウント</button>
       </div>
     </div>
@@ -383,6 +384,57 @@ export function adminPage(): string {
     </div>
 
     <!-- ============================================ -->
+    <!-- PHOTO GALLERY TAB (写真管理) -->
+    <!-- ============================================ -->
+    <div id="photogalleryTab" class="hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold text-sva-dark flex items-center gap-2">
+            <svg class="w-5 h-5 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
+            案件写真管理
+          </h2>
+          <div class="text-xs text-gray-400">案件を選択して写真を管理</div>
+        </div>
+        <!-- Job selector for photos -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
+          <div class="flex items-center gap-3 flex-wrap">
+            <label class="text-sm font-medium text-gray-700">案件選択:</label>
+            <select id="pgJobSelect" onchange="loadPhotoGallery(this.value)" class="flex-1 min-w-[200px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red">
+              <option value="">-- 案件を選択してください --</option>
+            </select>
+            <button onclick="refreshPhotoJobList()" class="px-3 py-2 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">更新</button>
+          </div>
+        </div>
+        <!-- Photo gallery content -->
+        <div id="pgContent">
+          <div class="text-center py-16 text-gray-400">
+            <svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+            <p class="text-sm">上部の案件選択プルダウンから案件を選択してください</p>
+            <p class="text-xs text-gray-300 mt-1">パートナーがアップロードした写真を確認・管理できます</p>
+          </div>
+        </div>
+      </div>
+      <!-- Admin photo preview modal -->
+      <div id="adminPhotoPreview" class="hidden fixed inset-0 bg-black z-[95] flex flex-col">
+        <div class="flex items-center justify-between px-4 py-3 bg-black/80">
+          <span id="adminPhotoLabel" class="text-white text-sm font-medium"></span>
+          <div class="flex items-center gap-3">
+            <button onclick="adminDeleteCurrentPhoto()" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-500/50 rounded">削除</button>
+            <button onclick="document.getElementById('adminPhotoPreview').classList.add('hidden')" class="text-white/80 hover:text-white p-1"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+        <div class="flex-1 flex items-center justify-center p-4 overflow-auto">
+          <img id="adminPhotoImg" src="" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain">
+        </div>
+        <div class="flex items-center justify-center gap-4 px-4 py-3 bg-black/80">
+          <button onclick="adminNavigatePhoto(-1)" class="text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+          <span id="adminPhotoCounter" class="text-white/60 text-sm"></span>
+          <button onclick="adminNavigatePhoto(1)" class="text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- ACCOUNT TAB -->
     <!-- ============================================ -->
     <div id="accountTab" class="hidden">
@@ -501,7 +553,7 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs','products','inquiries','account'];
+    const TABS = ['articles','images','partners','jobs','products','inquiries','photogallery','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
@@ -514,6 +566,7 @@ export function adminPage(): string {
       if (tab === 'jobs') loadJobs(1);
       if (tab === 'products') loadProductMaster();
       if (tab === 'inquiries') loadInquiries(1);
+      if (tab === 'photogallery') refreshPhotoJobList();
     }
 
     // ===== Article List =====
@@ -1935,6 +1988,154 @@ export function adminPage(): string {
         if (res.ok) { msgEl.textContent = '更新しました'; msgEl.className = 'text-sm text-green-600'; showToast('トラッキングステータスを更新しました'); viewJob(jobId); }
         else { var d = await res.json(); msgEl.textContent = d.error || '更新失敗'; msgEl.className = 'text-sm text-red-600'; }
       } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-sm text-red-600'; }
+    }
+
+    // ==========================================
+    // PHOTO GALLERY MANAGEMENT (写真管理)
+    // ==========================================
+    var PHOTO_CAT_LABELS = {
+      'caution_plate': 'コーションプレート', 'pre_install': '取付前製品', 'power_source': '電源取得箇所',
+      'ground_point': 'アース取得箇所', 'completed': '取付完了写真',
+      'claim_caution_plate': 'コーションプレート(クレーム)', 'claim_fault': '故障原因箇所', 'claim_repair': '修理内容', 'other': 'その他'
+    };
+    var _adminPhotoList = [];
+    var _adminPhotoIdx = 0;
+    var _adminPhotoJobId = 0;
+
+    async function refreshPhotoJobList() {
+      var sel = document.getElementById('pgJobSelect');
+      if (!sel) return;
+      try {
+        var res = await fetch(API + '/admin/jobs?limit=200', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var jobs = data.jobs || [];
+        var currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- 案件を選択してください (' + jobs.length + '件) --</option>'
+          + jobs.map(function(j) {
+            var label = (j.job_number||'') + ' ' + esc(j.title) + ' [' + (j.photo_count||0) + '枚]';
+            return '<option value="' + j.id + '"' + (String(j.id) === currentVal ? ' selected' : '') + '>' + label + '</option>';
+          }).join('');
+      } catch(e) {}
+    }
+
+    async function loadPhotoGallery(jobId) {
+      var content = document.getElementById('pgContent');
+      if (!jobId) {
+        content.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm">案件を選択してください</p></div>';
+        return;
+      }
+      _adminPhotoJobId = Number(jobId);
+      content.innerHTML = '<div class="flex justify-center py-12"><div class="w-8 h-8 border-3 border-gray-200 border-t-sva-red rounded-full animate-spin" style="border-width:3px"></div></div>';
+
+      try {
+        var res = await fetch(API + '/admin/jobs/' + jobId + '/photos/all', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var photos = data.photos || [];
+        var job = data.job || {};
+        _adminPhotoList = photos;
+
+        if (photos.length === 0) {
+          content.innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-12 text-center"><svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm text-gray-500">この案件にはまだ写真がアップロードされていません</p><p class="text-xs text-gray-400 mt-1">パートナーが作業写真をアップロードするとここに表示されます</p></div>';
+          return;
+        }
+
+        // Group by vehicle
+        var byVehicle = {};
+        photos.forEach(function(p) {
+          var key = p.vehicle_id ? 'v_' + p.vehicle_id : 'legacy';
+          if (!byVehicle[key]) byVehicle[key] = { vehicle: p.vehicle_id ? { seq: p.vehicle_seq, maker: p.vehicle_maker, model: p.vehicle_model } : null, photos: [] };
+          byVehicle[key].photos.push(p);
+        });
+
+        var html = '<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-4">'
+          + '<div class="flex items-center justify-between mb-4"><div>'
+          + '<h3 class="text-base font-bold text-sva-dark">' + esc(job.title || '') + '</h3>'
+          + (job.job_number ? '<span class="text-xs font-mono text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">' + esc(job.job_number) + '</span>' : '')
+          + '</div><span class="text-sm font-bold text-sva-red">' + photos.length + '枚</span></div>';
+
+        // Stats bar
+        var catCounts = {};
+        photos.forEach(function(p) { catCounts[p.category] = (catCounts[p.category]||0) + 1; });
+        html += '<div class="flex flex-wrap gap-2 mb-4">';
+        Object.keys(catCounts).forEach(function(cat) {
+          html += '<span class="px-2 py-1 text-[10px] rounded-full bg-gray-100 text-gray-600 font-medium">' + (PHOTO_CAT_LABELS[cat]||cat) + ' ' + catCounts[cat] + '</span>';
+        });
+        html += '</div></div>';
+
+        // Render each vehicle group
+        Object.keys(byVehicle).forEach(function(key) {
+          var group = byVehicle[key];
+          var vLabel = group.vehicle ? '#' + group.vehicle.seq + ' ' + esc(group.vehicle.maker||'') + ' ' + esc(group.vehicle.model||'') : '案件全体';
+          html += '<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-4">'
+            + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
+            + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>' + vLabel
+            + '<span class="text-xs text-gray-400 font-normal ml-auto">' + group.photos.length + '枚</span></h4>';
+
+          // Group photos by category within vehicle
+          var byCat = {};
+          group.photos.forEach(function(p) {
+            if (!byCat[p.category]) byCat[p.category] = [];
+            byCat[p.category].push(p);
+          });
+
+          Object.keys(byCat).forEach(function(cat) {
+            html += '<div class="mb-3"><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">' + (PHOTO_CAT_LABELS[cat]||cat) + '</p>'
+              + '<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">';
+            byCat[cat].forEach(function(p, idx) {
+              html += '<div class="aspect-square rounded-xl overflow-hidden border-2 border-gray-100 cursor-pointer hover:border-sva-red hover:shadow-md transition-all bg-gray-50 relative group" onclick="openAdminPhoto(' + jobId + ',' + p.id + ')">'
+                + '<img src="' + API + '/admin/jobs/' + jobId + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
+                + '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">'
+                + '<p class="text-[9px] text-white truncate">' + esc(p.file_name || '') + '</p>'
+                + '<p class="text-[8px] text-white/60">' + new Date(p.created_at).toLocaleDateString('ja-JP') + '</p></div>'
+                + '</div>';
+            });
+            html += '</div></div>';
+          });
+          html += '</div>';
+        });
+
+        content.innerHTML = html;
+      } catch(e) {
+        content.innerHTML = '<p class="text-sm text-red-500 text-center py-8">写真の読み込みに失敗しました</p>';
+      }
+    }
+
+    function openAdminPhoto(jobId, photoId) {
+      _adminPhotoJobId = jobId;
+      var idx = _adminPhotoList.findIndex(function(p){return p.id===photoId;});
+      _adminPhotoIdx = idx >= 0 ? idx : 0;
+      var p = _adminPhotoList[_adminPhotoIdx];
+      document.getElementById('adminPhotoImg').src = API + '/admin/jobs/' + jobId + '/photos/' + photoId + '/image';
+      document.getElementById('adminPhotoLabel').textContent = (PHOTO_CAT_LABELS[p.category]||p.category) + (p.vehicle_seq ? ' (#' + p.vehicle_seq + ' ' + (p.vehicle_maker||'') + ')' : '');
+      document.getElementById('adminPhotoCounter').textContent = (_adminPhotoIdx+1) + ' / ' + _adminPhotoList.length;
+      document.getElementById('adminPhotoPreview').classList.remove('hidden');
+    }
+
+    function adminNavigatePhoto(dir) {
+      if (_adminPhotoList.length === 0) return;
+      _adminPhotoIdx = (_adminPhotoIdx + dir + _adminPhotoList.length) % _adminPhotoList.length;
+      var p = _adminPhotoList[_adminPhotoIdx];
+      document.getElementById('adminPhotoImg').src = API + '/admin/jobs/' + _adminPhotoJobId + '/photos/' + p.id + '/image';
+      document.getElementById('adminPhotoLabel').textContent = (PHOTO_CAT_LABELS[p.category]||p.category) + (p.vehicle_seq ? ' (#' + p.vehicle_seq + ' ' + (p.vehicle_maker||'') + ')' : '');
+      document.getElementById('adminPhotoCounter').textContent = (_adminPhotoIdx+1) + ' / ' + _adminPhotoList.length;
+    }
+
+    async function adminDeleteCurrentPhoto() {
+      if (_adminPhotoList.length === 0) return;
+      var p = _adminPhotoList[_adminPhotoIdx];
+      if (!confirm('この写真を削除しますか？')) return;
+      try {
+        await fetch(API + '/admin/jobs/' + _adminPhotoJobId + '/photos/' + p.id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + authToken } });
+        _adminPhotoList.splice(_adminPhotoIdx, 1);
+        if (_adminPhotoList.length === 0) {
+          document.getElementById('adminPhotoPreview').classList.add('hidden');
+          loadPhotoGallery(_adminPhotoJobId);
+          return;
+        }
+        if (_adminPhotoIdx >= _adminPhotoList.length) _adminPhotoIdx = _adminPhotoList.length - 1;
+        adminNavigatePhoto(0);
+        loadPhotoGallery(_adminPhotoJobId);
+      } catch(e) { alert('削除に失敗しました'); }
     }
 
     // ==========================================
