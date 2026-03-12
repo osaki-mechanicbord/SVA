@@ -688,39 +688,40 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
             <div class="grid sm:grid-cols-2 gap-5">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">お名前 <span class="text-sva-red text-xs">必須</span></label>
-                <input type="text" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="山田 太郎">
+                <input type="text" id="cf_name" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="山田 太郎">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">会社名 <span class="text-sva-red text-xs">必須</span></label>
-                <input type="text" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="株式会社○○">
+                <input type="text" id="cf_company" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="株式会社○○">
               </div>
             </div>
             <div class="grid sm:grid-cols-2 gap-5">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">メールアドレス <span class="text-sva-red text-xs">必須</span></label>
-                <input type="email" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="info@example.co.jp">
+                <input type="email" id="cf_email" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="info@example.co.jp">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1.5">電話番号</label>
-                <input type="tel" class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="06-0000-0000">
+                <input type="tel" id="cf_phone" class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white" placeholder="06-0000-0000">
               </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">お問い合わせ種別 <span class="text-sva-red text-xs">必須</span></label>
-              <select required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white">
+              <select id="cf_category" required class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white">
                 <option value="">選択してください</option>
-                <option>装置取付のご依頼・お見積もり</option>
-                <option>公認パートナーへの応募</option>
-                <option>サービスに関するご質問</option>
-                <option>その他</option>
+                <option value="装置取付のご依頼・お見積もり">装置取付のご依頼・お見積もり</option>
+                <option value="公認パートナーへの応募">公認パートナーへの応募</option>
+                <option value="サービスに関するご質問">サービスに関するご質問</option>
+                <option value="その他">その他</option>
               </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1.5">お問い合わせ内容 <span class="text-sva-red text-xs">必須</span></label>
-              <textarea required rows="5" class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white resize-none" placeholder="車両の種類、台数、取り付けたい装置、ご希望のエリア等をご記入ください。"></textarea>
+              <textarea id="cf_message" required rows="5" class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red transition-colors bg-white resize-none" placeholder="車両の種類、台数、取り付けたい装置、ご希望のエリア等をご記入ください。"></textarea>
             </div>
+            <div id="cf_msg" class="hidden text-sm rounded-lg p-3"></div>
             <div class="text-center pt-2">
-              <button type="submit" class="inline-flex items-center justify-center px-10 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
+              <button type="submit" id="cf_submit" class="inline-flex items-center justify-center px-10 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
                 送信する
               </button>
             </div>
@@ -856,6 +857,50 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
       } else {
         if (loginBtn) loginBtn.style.display = '';
       }
+    })();
+    // Contact form submission
+    (function() {
+      var form = document.getElementById('contactForm');
+      if (!form) return;
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('cf_submit');
+        var msg = document.getElementById('cf_msg');
+        btn.disabled = true;
+        btn.textContent = '送信中...';
+        msg.classList.add('hidden');
+        try {
+          var res = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: document.getElementById('cf_name').value,
+              company: document.getElementById('cf_company').value,
+              email: document.getElementById('cf_email').value,
+              phone: document.getElementById('cf_phone').value,
+              category: document.getElementById('cf_category').value,
+              message: document.getElementById('cf_message').value
+            })
+          });
+          var data = await res.json();
+          if (res.ok) {
+            msg.className = 'text-sm rounded-lg p-3 bg-green-50 text-green-700 border border-green-200';
+            msg.innerHTML = '<strong>お問い合わせありがとうございます。</strong><br>内容を確認の上、担当者よりご連絡いたします。';
+            msg.classList.remove('hidden');
+            form.reset();
+          } else {
+            msg.className = 'text-sm rounded-lg p-3 bg-red-50 text-red-700 border border-red-200';
+            msg.textContent = data.error || '送信に失敗しました。';
+            msg.classList.remove('hidden');
+          }
+        } catch(err) {
+          msg.className = 'text-sm rounded-lg p-3 bg-red-50 text-red-700 border border-red-200';
+          msg.textContent = '通信エラーが発生しました。時間をおいて再度お試しください。';
+          msg.classList.remove('hidden');
+        }
+        btn.disabled = false;
+        btn.textContent = '送信する';
+      });
     })();
   </script>
 </body>

@@ -59,6 +59,10 @@ export function adminPage(): string {
           <h1 class="text-sm font-bold">SVA CMS</h1>
         </div>
         <div class="flex items-center gap-4">
+          <button id="headerInquiryAlert" onclick="switchTab('inquiries')" class="hidden relative text-xs text-gray-400 hover:text-white transition-colors" title="未読のお問い合わせ">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <span id="headerInquiryCount" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+          </button>
           <a href="/column" target="_blank" class="text-xs text-gray-400 hover:text-white transition-colors">サイトを表示</a>
           <button id="logoutBtn" class="text-xs text-gray-400 hover:text-white transition-colors">ログアウト</button>
         </div>
@@ -73,6 +77,7 @@ export function adminPage(): string {
         <button id="tabPartners" onclick="switchTab('partners')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">パートナー管理</button>
         <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
         <button id="tabProducts" onclick="switchTab('products')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">製品管理</button>
+        <button id="tabInquiries" onclick="switchTab('inquiries')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 relative">お問い合わせ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
         <button id="tabAccount" onclick="switchTab('account')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 ml-auto">⚙ アカウント</button>
       </div>
     </div>
@@ -315,6 +320,34 @@ export function adminPage(): string {
     </div>
 
     <!-- ============================================ -->
+    <!-- INQUIRIES TAB (お問い合わせ管理) -->
+    <!-- ============================================ -->
+    <div id="inquiriesTab" class="hidden">
+      <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div id="inquiryViewTitle" class="text-lg font-bold text-sva-dark flex items-center gap-2">お問い合わせ一覧 <span id="inquiryUnreadHeader" class="hidden px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"></span></div>
+          <div class="flex items-center gap-2">
+            <input id="inquirySearchInput" type="text" placeholder="名前・会社名・メールで検索" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red w-52" onkeydown="if(event.key==='Enter')loadInquiries(1)">
+            <select id="inquiryStatusFilter" onchange="loadInquiries(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全ステータス</option>
+              <option value="new">新着（未読）</option>
+              <option value="read">確認済み</option>
+              <option value="replied">返信済み</option>
+              <option value="in_progress">対応中</option>
+              <option value="resolved">解決</option>
+              <option value="spam">スパム</option>
+            </select>
+            <button id="backToInquiryListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadInquiries(1)">一覧に戻る</button>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div id="inquiryListView"><div id="inquiryList" class="space-y-2"></div><div id="inquiryPagination" class="mt-6 flex justify-center gap-2"></div></div>
+        <div id="inquiryDetailView" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- PRODUCTS TAB (製品マスタ管理) -->
     <!-- ============================================ -->
     <div id="productsTab" class="hidden">
@@ -434,7 +467,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadArticles(1); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadArticles(1); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -449,7 +482,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadArticles(1);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadArticles(1);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -468,7 +501,7 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs','products','account'];
+    const TABS = ['articles','images','partners','jobs','products','inquiries','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
@@ -480,6 +513,7 @@ export function adminPage(): string {
       if (tab === 'partners') loadPartners(1);
       if (tab === 'jobs') loadJobs(1);
       if (tab === 'products') loadProductMaster();
+      if (tab === 'inquiries') loadInquiries(1);
     }
 
     // ===== Article List =====
@@ -1975,6 +2009,183 @@ export function adminPage(): string {
         }
       } catch(e) { msgEl.textContent = '通信エラーが発生しました'; msgEl.className = 'text-sm text-red-600'; msgEl.classList.remove('hidden'); }
     });
+    // ===== お問い合わせ管理 (Inquiries Tab) =====
+    var INQ_STATUS = {new:'新着',read:'確認済み',replied:'返信済み',in_progress:'対応中',resolved:'解決',spam:'スパム'};
+    var INQ_STATUS_COLOR = {new:'bg-red-50 text-red-700',read:'bg-blue-50 text-blue-700',replied:'bg-green-50 text-green-700',in_progress:'bg-amber-50 text-amber-700',resolved:'bg-gray-100 text-gray-600',spam:'bg-gray-100 text-gray-400'};
+    var INQ_CAT_COLOR = {'装置取付のご依頼・お見積もり':'bg-sva-red/10 text-sva-red','公認パートナーへの応募':'bg-indigo-50 text-indigo-700','サービスに関するご質問':'bg-cyan-50 text-cyan-700','その他':'bg-gray-100 text-gray-600'};
+
+    async function loadInquiryBadge() {
+      try {
+        var res = await fetch(API + '/admin/inquiries/unread-count', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var cnt = data.count || 0;
+        var badge = document.getElementById('inquiryBadge');
+        var headerBadge = document.getElementById('inquiryUnreadHeader');
+        var headerAlert = document.getElementById('headerInquiryAlert');
+        var headerCount = document.getElementById('headerInquiryCount');
+        if (badge) { if (cnt > 0) { badge.textContent = cnt > 99 ? '99+' : String(cnt); badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); } }
+        if (headerBadge) { if (cnt > 0) { headerBadge.textContent = cnt + '件 未読'; headerBadge.classList.remove('hidden'); } else { headerBadge.classList.add('hidden'); } }
+        if (headerAlert) { if (cnt > 0) { headerAlert.classList.remove('hidden'); } else { headerAlert.classList.add('hidden'); } }
+        if (headerCount) { headerCount.textContent = cnt > 99 ? '99+' : String(cnt); }
+      } catch(e) {}
+    }
+
+    // Refresh badge every 30s
+    setInterval(function(){ if (authToken) loadInquiryBadge(); }, 30000);
+
+    async function loadInquiries(page) {
+      document.getElementById('inquiryListView').classList.remove('hidden');
+      document.getElementById('inquiryDetailView').classList.add('hidden');
+      document.getElementById('backToInquiryListBtn').classList.add('hidden');
+      document.getElementById('inquiryViewTitle').innerHTML = 'お問い合わせ一覧 <span id="inquiryUnreadHeader" class="hidden px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full"></span>';
+      loadInquiryBadge();
+
+      var status = (document.getElementById('inquiryStatusFilter')||{}).value||'';
+      var search = (document.getElementById('inquirySearchInput')||{}).value||'';
+      var q = '?page=' + page;
+      if (status) q += '&status=' + encodeURIComponent(status);
+      if (search) q += '&search=' + encodeURIComponent(search);
+
+      try {
+        var res = await fetch(API + '/admin/inquiries' + q, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.status === 401) { authToken = ''; sessionStorage.removeItem('sva_token'); location.reload(); return; }
+        var data = await res.json();
+        renderInquiryList(data.inquiries, data.pagination);
+      } catch(e) {
+        document.getElementById('inquiryList').innerHTML = '<p class="text-sm text-red-500">読み込みに失敗しました</p>';
+      }
+    }
+
+    function renderInquiryList(items, pag) {
+      var el = document.getElementById('inquiryList');
+      if (!items || items.length === 0) {
+        el.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><p class="text-sm">お問い合わせがありません</p></div>';
+        return;
+      }
+      el.innerHTML = items.map(function(inq) {
+        var isNew = inq.status === 'new';
+        var statusLabel = INQ_STATUS[inq.status] || inq.status;
+        var statusColor = INQ_STATUS_COLOR[inq.status] || 'bg-gray-100 text-gray-600';
+        var catColor = INQ_CAT_COLOR[inq.category] || 'bg-gray-100 text-gray-600';
+        var date = inq.created_at ? new Date(inq.created_at).toLocaleDateString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+        var borderClass = isNew ? 'border-red-200 bg-red-50/30' : 'border-gray-200';
+        var newDot = isNew ? '<span class="w-2.5 h-2.5 bg-red-500 rounded-full shrink-0 animate-pulse"></span>' : '';
+        return '<div class="bg-white rounded-lg border ' + borderClass + ' px-4 py-3 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-pointer" onclick="viewInquiry(' + inq.id + ')">'
+          + newDot
+          + '<div class="min-w-0 flex-1">'
+          + '<div class="flex items-center gap-2 mb-0.5 flex-wrap"><span class="px-2 py-0.5 ' + statusColor + ' text-xs font-medium rounded">' + statusLabel + '</span><span class="px-2 py-0.5 ' + catColor + ' text-[10px] font-medium rounded">' + esc(inq.category || '-') + '</span></div>'
+          + '<p class="text-sm font-medium text-gray-800">' + esc(inq.name) + (inq.company ? ' <span class="text-gray-400 font-normal">/ ' + esc(inq.company) + '</span>' : '') + '</p>'
+          + '<p class="text-xs text-gray-500 mt-0.5 truncate">' + esc((inq.message||'').substring(0, 80)) + '</p>'
+          + '</div>'
+          + '<div class="text-right shrink-0"><p class="text-[10px] text-gray-400">' + date + '</p><p class="text-[10px] text-gray-400">' + esc(inq.email) + '</p></div>'
+          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>';
+      }).join('');
+      renderPagination('inquiryPagination', pag, 'loadInquiries');
+    }
+
+    async function viewInquiry(id) {
+      document.getElementById('inquiryListView').classList.add('hidden');
+      document.getElementById('inquiryDetailView').classList.remove('hidden');
+      document.getElementById('backToInquiryListBtn').classList.remove('hidden');
+      document.getElementById('inquiryViewTitle').textContent = 'お問い合わせ詳細';
+
+      try {
+        var res = await fetch(API + '/admin/inquiries/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        if (!data.inquiry) { showToast('お問い合わせが見つかりません', true); loadInquiries(1); return; }
+        renderInquiryDetail(data.inquiry);
+        loadInquiryBadge(); // refresh badge after reading
+      } catch(e) { showToast('読み込み失敗', true); }
+    }
+
+    function renderInquiryDetail(inq) {
+      var statusLabel = INQ_STATUS[inq.status] || inq.status;
+      var statusColor = INQ_STATUS_COLOR[inq.status] || 'bg-gray-100 text-gray-600';
+      var catColor = INQ_CAT_COLOR[inq.category] || 'bg-gray-100 text-gray-600';
+      var fmtDate = function(d) { return d ? new Date(d).toLocaleString('ja-JP') : '-'; };
+
+      var statusOpts = Object.keys(INQ_STATUS).map(function(k) {
+        return '<option value="' + k + '"' + (inq.status===k?' selected':'') + '>' + INQ_STATUS[k] + '</option>';
+      }).join('');
+
+      document.getElementById('inquiryDetailView').innerHTML = '<div class="max-w-3xl">'
+        // Header card
+        + '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">'
+        + '<div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">'
+        + '<div class="flex items-center gap-3"><span class="px-2 py-0.5 ' + statusColor + ' text-xs font-medium rounded">' + statusLabel + '</span><span class="px-2 py-0.5 ' + catColor + ' text-xs font-medium rounded">' + esc(inq.category) + '</span><span class="text-xs text-gray-400">ID: ' + inq.id + '</span></div>'
+        + '<div class="text-xs text-gray-400">' + fmtDate(inq.created_at) + '</div>'
+        + '</div>'
+
+        // Contact info
+        + '<div class="px-6 py-5 border-b border-gray-100">'
+        + '<div class="grid sm:grid-cols-2 gap-4">'
+        + '<div><p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">お名前</p><p class="text-sm font-medium text-sva-dark">' + esc(inq.name) + '</p></div>'
+        + '<div><p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">会社名</p><p class="text-sm font-medium text-sva-dark">' + esc(inq.company || '-') + '</p></div>'
+        + '<div><p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">メール</p><p class="text-sm"><a href="mailto:' + esc(inq.email) + '" class="text-blue-600 hover:underline">' + esc(inq.email) + '</a></p></div>'
+        + '<div><p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">電話</p><p class="text-sm">' + (inq.phone ? '<a href="tel:' + esc(inq.phone) + '" class="text-blue-600 hover:underline">' + esc(inq.phone) + '</a>' : '<span class="text-gray-400">-</span>') + '</p></div>'
+        + '</div></div>'
+
+        // Message content
+        + '<div class="px-6 py-5">'
+        + '<p class="text-[10px] text-gray-400 uppercase tracking-wide mb-2">お問い合わせ内容</p>'
+        + '<div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap border border-gray-100">' + esc(inq.message) + '</div>'
+        + '</div></div>'
+
+        // Status & actions
+        + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-4">ステータス・対応メモ</h4>'
+        + '<div class="grid sm:grid-cols-2 gap-4 mb-4">'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータス</label><select id="inq_status" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:border-sva-red">' + statusOpts + '</select></div>'
+        + '<div class="text-xs text-gray-400 space-y-1 pt-5"><p>受信: ' + fmtDate(inq.created_at) + '</p><p>既読: ' + fmtDate(inq.read_at) + '</p><p>返信: ' + fmtDate(inq.replied_at) + '</p></div>'
+        + '</div>'
+        + '<div class="mb-4"><label class="block text-xs font-medium text-gray-600 mb-1">管理者メモ</label><textarea id="inq_note" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-sva-red" placeholder="対応内容メモ...">' + esc(inq.admin_note||'') + '</textarea></div>'
+        + '<div class="flex items-center gap-3">'
+        + '<button onclick="saveInquiry(' + inq.id + ')" class="px-6 py-2.5 bg-sva-red text-white text-sm font-bold rounded-lg hover:bg-red-800">保存</button>'
+        + '<button onclick="deleteInquiry(' + inq.id + ')" class="px-4 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50">削除</button>'
+        + '<span id="inqMsg" class="text-sm"></span>'
+        + '</div></div>'
+
+        // Metadata
+        + '<div class="bg-gray-50 rounded-xl border border-gray-100 px-6 py-4">'
+        + '<p class="text-[10px] text-gray-400 mb-1">IP: ' + esc(inq.ip_address||'-') + '</p>'
+        + '<p class="text-[10px] text-gray-400 truncate">UA: ' + esc((inq.user_agent||'-').substring(0, 120)) + '</p>'
+        + '</div></div>';
+    }
+
+    async function saveInquiry(id) {
+      try {
+        var res = await fetch(API + '/admin/inquiries/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({
+            status: document.getElementById('inq_status').value,
+            admin_note: document.getElementById('inq_note').value
+          })
+        });
+        if (res.ok) {
+          showToast('保存しました');
+          loadInquiryBadge();
+          var m = document.getElementById('inqMsg'); if(m){m.textContent='保存完了'; m.className='text-sm text-green-600';}
+        } else {
+          var data = await res.json();
+          var m = document.getElementById('inqMsg'); if(m){m.textContent=data.error||'保存失敗'; m.className='text-sm text-red-600';}
+        }
+      } catch(e) { var m = document.getElementById('inqMsg'); if(m){m.textContent='通信エラー'; m.className='text-sm text-red-600';} }
+    }
+
+    async function deleteInquiry(id) {
+      if (!confirm('このお問い合わせを削除しますか？')) return;
+      try {
+        var res = await fetch(API + '/admin/inquiries/' + id, { method:'DELETE', headers:{'Authorization':'Bearer '+authToken} });
+        if (res.ok) { showToast('削除しました'); loadInquiries(1); } else { showToast('削除失敗', true); }
+      } catch(e) { showToast('通信エラー', true); }
+    }
+
+    window.loadInquiries = loadInquiries;
+    window.viewInquiry = viewInquiry;
+    window.saveInquiry = saveInquiry;
+    window.deleteInquiry = deleteInquiry;
+
     // ===== 製品マスタ管理 (Products Tab) =====
     var allProductsData = [];
     var CATEGORY_LABELS = {camera:'カメラ',sensor:'センサー',light:'安全灯',control:'制御',recorder:'レコーダー',monitor:'モニター',other:'その他'};

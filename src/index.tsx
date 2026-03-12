@@ -236,4 +236,55 @@ app.get('/api/health', (c) => {
   return c.json({ status: 'ok', service: 'SVA - Special Vehicle Assist' })
 })
 
+// ==========================================
+// Contact (お問い合わせ) - Public API
+// ==========================================
+app.post('/api/contact', async (c) => {
+  try {
+    const body = await c.req.json<{
+      name: string; company: string; email: string;
+      phone?: string; category: string; message: string
+    }>()
+
+    // Validation
+    if (!body.name || !body.name.trim()) return c.json({ error: 'お名前は必須です' }, 400)
+    if (!body.email || !body.email.trim()) return c.json({ error: 'メールアドレスは必須です' }, 400)
+    if (!body.category) return c.json({ error: 'お問い合わせ種別を選択してください' }, 400)
+    if (!body.message || !body.message.trim()) return c.json({ error: 'お問い合わせ内容は必須です' }, 400)
+
+    // Basic email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+      return c.json({ error: '有効なメールアドレスを入力してください' }, 400)
+    }
+
+    // Rate limiting check: same email within 5 minutes
+    const recent = await c.env.DB.prepare(
+      "SELECT COUNT(*) as cnt FROM inquiries WHERE email = ? AND created_at > datetime('now', '-5 minutes')"
+    ).bind(body.email.trim()).first<{ cnt: number }>()
+    if (recent && recent.cnt >= 3) {
+      return c.json({ error: '短時間に複数回送信されています。しばらくお待ちください。' }, 429)
+    }
+
+    const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || ''
+    const ua = c.req.header('User-Agent') || ''
+
+    const r = await c.env.DB.prepare(
+      "INSERT INTO inquiries (name, company, email, phone, category, message, ip_address, user_agent) VALUES (?,?,?,?,?,?,?,?)"
+    ).bind(
+      body.name.trim(),
+      (body.company || '').trim(),
+      body.email.trim(),
+      (body.phone || '').trim(),
+      body.category,
+      body.message.trim(),
+      ip,
+      ua.substring(0, 500)
+    ).run()
+
+    return c.json({ success: true, id: r.meta.last_row_id })
+  } catch (e) {
+    return c.json({ error: '送信に失敗しました。時間をおいて再度お試しください。' }, 500)
+  }
+})
+
 export default app

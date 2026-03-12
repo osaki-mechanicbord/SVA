@@ -594,6 +594,97 @@ adminPartnerApi.delete('/invitations/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// ===================== Inquiries (お問い合わせ管理) =====================
+
+// List inquiries (with pagination, status filter, search)
+adminPartnerApi.get('/inquiries', async (c) => {
+  const page = Math.max(1, Number(c.req.query('page')) || 1)
+  const limit = 20
+  const offset = (page - 1) * limit
+  const status = c.req.query('status') || ''
+  const search = c.req.query('search') || ''
+
+  let where = '1=1'
+  const params: any[] = []
+  if (status) { where += ' AND status = ?'; params.push(status) }
+  if (search) {
+    where += ' AND (name LIKE ? OR company LIKE ? OR email LIKE ? OR message LIKE ?)'
+    const s = '%' + search + '%'
+    params.push(s, s, s, s)
+  }
+
+  const countQ = `SELECT COUNT(*) as total FROM inquiries WHERE ${where}`
+  const dataQ = `SELECT id, name, company, email, phone, category, message, status, admin_note, read_at, replied_at, created_at, updated_at FROM inquiries WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+
+  const [cnt, data] = await Promise.all([
+    c.env.DB.prepare(countQ).bind(...params).first<{ total: number }>(),
+    c.env.DB.prepare(dataQ).bind(...params, limit, offset).all()
+  ])
+  return c.json({ inquiries: data.results, pagination: { page, limit, total: cnt?.total || 0, totalPages: Math.ceil((cnt?.total || 0) / limit) } })
+})
+
+// Get unread count (for alert badge)
+adminPartnerApi.get('/inquiries/unread-count', async (c) => {
+  const cnt = await c.env.DB.prepare("SELECT COUNT(*) as c FROM inquiries WHERE status = 'new'").first<{ c: number }>()
+  return c.json({ count: cnt?.c || 0 })
+})
+
+// Get single inquiry
+adminPartnerApi.get('/inquiries/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const inq = await c.env.DB.prepare("SELECT * FROM inquiries WHERE id = ?").bind(id).first()
+  if (!inq) return c.json({ error: 'Not found' }, 404)
+
+  // Mark as read if new
+  if (!(inq as any).read_at) {
+    await c.env.DB.prepare("UPDATE inquiries SET read_at = CURRENT_TIMESTAMP, status = CASE WHEN status = 'new' THEN 'read' ELSE status END, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(id).run()
+  }
+
+  return c.json({ inquiry: inq })
+})
+
+// Update inquiry status/note
+adminPartnerApi.put('/inquiries/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const body = await c.req.json<{ status?: string; admin_note?: string }>()
+
+  const inq = await c.env.DB.prepare("SELECT * FROM inquiries WHERE id = ?").bind(id).first<any>()
+  if (!inq) return c.json({ error: 'Not found' }, 404)
+
+  const validStatuses = ['new', 'read', 'replied', 'in_progress', 'resolved', 'spam']
+  if (body.status && !validStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  const newStatus = body.status ?? inq.status
+  const repliedAt = (newStatus === 'replied' && !inq.replied_at) ? new Date().toISOString() : inq.replied_at
+
+  await c.env.DB.prepare(
+    "UPDATE inquiries SET status = ?, admin_note = ?, replied_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+  ).bind(newStatus, body.admin_note ?? inq.admin_note, repliedAt, id).run()
+  return c.json({ success: true })
+})
+
+// Delete inquiry
+adminPartnerApi.delete('/inquiries/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const r = await c.env.DB.prepare("DELETE FROM inquiries WHERE id = ?").bind(id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// Bulk update status (mark multiple as read/spam/resolved)
+adminPartnerApi.post('/inquiries/bulk-update', async (c) => {
+  const body = await c.req.json<{ ids: number[]; status: string }>()
+  if (!body.ids || body.ids.length === 0) return c.json({ error: 'ids required' }, 400)
+  const validStatuses = ['read', 'replied', 'in_progress', 'resolved', 'spam']
+  if (!validStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  const placeholders = body.ids.map(() => '?').join(',')
+  await c.env.DB.prepare(
+    `UPDATE inquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders})`
+  ).bind(body.status, ...body.ids).run()
+  return c.json({ success: true, updated: body.ids.length })
+})
+
 // ===================== Product Master (製品マスタ) =====================
 
 // List all products (active + inactive, with optional filter)
