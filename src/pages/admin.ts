@@ -385,6 +385,9 @@ export function adminPage(): string {
     </div>
 
   </div>
+  <script>
+    const API = '/api';
+    let authToken = sessionStorage.getItem('sva_token') || '';
     let currentPage = 1;
     let imgPage = 1;
     let pickerCallback = null;
