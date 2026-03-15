@@ -24,6 +24,29 @@ export function adminPage(): string {
   <style>
     * { font-family: 'Noto Sans JP', sans-serif; }
     .drop-active { border-color: #C41E3A !important; background-color: rgba(196, 30, 58, 0.04) !important; }
+
+    /* Mobile tab navigation */
+    .tab-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; scrollbar-width: none; }
+    .tab-scroll::-webkit-scrollbar { display: none; }
+    .tab-scroll-wrap { position: relative; }
+    .tab-scroll-wrap::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 32px; background: linear-gradient(to right, transparent, white); pointer-events: none; z-index: 1; }
+    .tab-scroll-wrap.scrolled-end::after { display: none; }
+    .tab-scroll-wrap::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 32px; background: linear-gradient(to left, transparent, white); pointer-events: none; z-index: 1; display: none; }
+    .tab-scroll-wrap.scrolled-start::before { display: none; }
+    .tab-scroll-wrap.scrolled-mid::before { display: block; }
+
+    /* Mobile tab button styles */
+    @media (max-width: 767px) {
+      .cms-tab { padding: 8px 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+      .cms-tab svg.tab-icon { width: 14px; height: 14px; display: inline-block; margin-right: 3px; vertical-align: -2px; }
+    }
+    @media (min-width: 768px) {
+      .cms-tab svg.tab-icon { display: none; }
+    }
+
+    /* Job detail sub-tabs mobile scroll */
+    .subtab-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; scrollbar-width: none; }
+    .subtab-scroll::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased">
@@ -70,16 +93,26 @@ export function adminPage(): string {
     </header>
 
     <!-- Tab Navigation -->
-    <div class="bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center gap-0">
-        <button id="tabArticles" onclick="switchTab('articles')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red">記事管理</button>
-        <button id="tabImages" onclick="switchTab('images')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">画像管理</button>
-        <button id="tabPartners" onclick="switchTab('partners')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">パートナー管理</button>
-        <button id="tabJobs" onclick="switchTab('jobs')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">案件依頼</button>
-        <button id="tabProducts" onclick="switchTab('products')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">製品管理</button>
-        <button id="tabInquiries" onclick="switchTab('inquiries')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 relative">お問い合わせ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
-        <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700">写真管理</button>
-        <button id="tabAccount" onclick="switchTab('account')" class="px-5 py-3 text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 ml-auto">⚙ アカウント</button>
+    <div class="bg-white border-b border-gray-200 tab-scroll-wrap" id="tabScrollWrap">
+      <div class="max-w-7xl mx-auto px-2 sm:px-6">
+        <div class="flex items-center gap-0 tab-scroll" id="tabScroll">
+          <button id="tabArticles" onclick="switchTab('articles')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>記事管理</button>
+          <button id="tabImages" onclick="switchTab('images')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>画像</button>
+          <button id="tabPartners" onclick="switchTab('partners')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>パートナー</button>
+          <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>案件</button>
+          <button id="tabProducts" onclick="switchTab('products')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>製品</button>
+          <button id="tabInquiries" onclick="switchTab('inquiries')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>問合せ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
+          <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>写真</button>
+          <button id="tabAccount" onclick="switchTab('account')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 md:ml-auto">
+            <svg class="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>設定</button>
+        </div>
       </div>
     </div>
 
@@ -561,6 +594,12 @@ export function adminPage(): string {
         var btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         if (btn) { btn.classList.toggle('border-sva-red', t === tab); btn.classList.toggle('text-sva-red', t === tab); btn.classList.toggle('border-transparent', t !== tab); btn.classList.toggle('text-gray-500', t !== tab); }
       });
+      // Auto-scroll active tab into view on mobile
+      var activeBtn = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      if (activeBtn) {
+        var scr = document.getElementById('tabScroll');
+        if (scr) { activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); updateTabScrollHints(); }
+      }
       if (tab === 'images') loadImages(1);
       if (tab === 'partners') loadPartners(1);
       if (tab === 'jobs') loadJobs(1);
@@ -568,6 +607,21 @@ export function adminPage(): string {
       if (tab === 'inquiries') loadInquiries(1);
       if (tab === 'photogallery') refreshPhotoJobList();
     }
+
+    // Tab scroll gradient hints
+    function updateTabScrollHints() {
+      var wrap = document.getElementById('tabScrollWrap');
+      var scr = document.getElementById('tabScroll');
+      if (!wrap || !scr) return;
+      var sl = scr.scrollLeft, sw = scr.scrollWidth, cw = scr.clientWidth;
+      wrap.classList.toggle('scrolled-end', sl + cw >= sw - 4);
+      wrap.classList.toggle('scrolled-mid', sl > 4);
+      wrap.classList.toggle('scrolled-start', sl <= 4);
+    }
+    (function() {
+      var scr = document.getElementById('tabScroll');
+      if (scr) { scr.addEventListener('scroll', updateTabScrollHints); window.addEventListener('resize', updateTabScrollHints); setTimeout(updateTabScrollHints, 100); }
+    })();
 
     // ===== Article List =====
     async function loadArticles(page) {
@@ -1543,13 +1597,13 @@ export function adminPage(): string {
         + '</div></div>'
         // Tabs - 5タブ構成（案件概要・お客様情報・車両明細・トラッキング・写真）
         + '<div class="bg-white border border-gray-200 border-t-0">'
-        + '<div class="flex items-center gap-0 px-2 overflow-x-auto">'
-        + '<button onclick="switchJobTab(\\'overview\\')" id="jtab_overview" class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeJobTab==='overview'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">案件概要</button>'
-        + '<button onclick="switchJobTab(\\'client\\')" id="jtab_client" class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeJobTab==='client'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">お客様情報</button>'
-        + '<button onclick="switchJobTab(\\'vehicles\\')" id="jtab_vehicles" class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeJobTab==='vehicles'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">車両明細 <span class="ml-1 px-1.5 py-0.5 bg-sva-red text-white text-[10px] rounded-full font-bold">' + vCount + '</span></button>'
-        + '<button onclick="switchJobTab(\\'tracking\\')" id="jtab_tracking" class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeJobTab==='tracking'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">トラッキング</button>'
-        + '<button onclick="switchJobTab(\\'photos\\')" id="jtab_photos" class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap ' + (activeJobTab==='photos'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">写真 <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full font-bold">' + totalPhotos + '</span></button>'
-        + '</div></div>'
+        + '<div class="subtab-scroll"><div class="flex items-center gap-0 px-2">'
+        + '<button onclick="switchJobTab(\\'overview\\')" id="jtab_overview" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='overview'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">案件概要</button>'
+        + '<button onclick="switchJobTab(\\'client\\')" id="jtab_client" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='client'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">お客様</button>'
+        + '<button onclick="switchJobTab(\\'vehicles\\')" id="jtab_vehicles" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='vehicles'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">車両 <span class="ml-1 px-1.5 py-0.5 bg-sva-red text-white text-[10px] rounded-full font-bold">' + vCount + '</span></button>'
+        + '<button onclick="switchJobTab(\\'tracking\\')" id="jtab_tracking" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='tracking'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">追跡</button>'
+        + '<button onclick="switchJobTab(\\'photos\\')" id="jtab_photos" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='photos'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">写真 <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full font-bold">' + totalPhotos + '</span></button>'
+        + '</div></div></div>'
         + '<div class="bg-white border border-gray-200 border-t-0 rounded-b-xl p-6" id="jobTabContent"></div>';
       switchJobTab(activeJobTab);
     }
@@ -1558,8 +1612,11 @@ export function adminPage(): string {
       activeJobTab = tab;
       ['overview','client','vehicles','tracking','photos'].forEach(function(t) {
         var btn = document.getElementById('jtab_'+t);
-        if (btn) { if(t===tab){btn.className='px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap border-sva-red text-sva-red';}else{btn.className='px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap border-transparent text-gray-500';}}
+        if (btn) { if(t===tab){btn.className='px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 border-sva-red text-sva-red';}else{btn.className='px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 border-transparent text-gray-500';}}
       });
+      // Auto-scroll active sub-tab into view
+      var activeBtn = document.getElementById('jtab_'+tab);
+      if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       var ct = document.getElementById('jobTabContent');
       if (!ct || !currentJobData) return;
       if (tab==='overview') renderOverviewTab(ct);

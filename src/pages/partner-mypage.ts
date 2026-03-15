@@ -22,6 +22,9 @@ export function partnerMypagePage(): string {
     .input-focus:focus { box-shadow: 0 0 0 3px rgba(196,30,58,0.1); }
     .toast { transform: translateY(-100%); opacity: 0; transition: all 0.3s ease; }
     .toast.show { transform: translateY(0); opacity: 1; }
+    /* Mobile sub-tab scrolling */
+    .subtab-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; scrollbar-width: none; }
+    .subtab-scroll::-webkit-scrollbar { display: none; }
   </style>
 
   <!-- Toast notification -->
@@ -656,13 +659,13 @@ export function partnerMypagePage(): string {
 
       // Build tab navigation - 5タブ構成（案件概要・お客様情報・車両・トラッキング・写真）
       var clientAllowed = data.client_info_allowed;
-      var tabNav = '<div class="flex border-b border-gray-200 mb-4 -mx-6 px-6 overflow-x-auto">'
-        + '<button onclick="switchJobTab(\\'info\\',' + j.id + ')" id="jt_tab_info" class="px-4 py-2 text-sm font-medium border-b-2 border-sva-red text-sva-red whitespace-nowrap">案件概要</button>'
-        + '<button onclick="switchJobTab(\\'client\\',' + j.id + ')" id="jt_tab_client" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">お客様情報' + (clientAllowed ? '' : ' <svg class="w-3 h-3 inline text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>') + '</button>'
-        + (vCount > 0 ? '<button onclick="switchJobTab(\\'vehicles\\',' + j.id + ')" id="jt_tab_vehicles" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">車両 <span class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">' + vDone + '/' + vCount + '</span></button>' : '')
-        + '<button onclick="switchJobTab(\\'tracking\\',' + j.id + ')" id="jt_tab_tracking" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap">トラッキング</button>'
-        + '<button onclick="switchJobTab(\\'photos\\',' + j.id + ')" id="jt_tab_photos" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap relative">写真<span id="photoBadge" class="' + (photos.length > 0 ? '' : 'hidden') + ' ml-1 px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full">' + photos.length + '</span></button>'
-        + '</div>';
+      var tabNav = '<div class="subtab-scroll border-b border-gray-200 mb-4 -mx-6 px-4 sm:px-6"><div class="flex items-center gap-0">'
+        + '<button onclick="switchJobTab(\\'info\\',' + j.id + ')" id="jt_tab_info" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 border-sva-red text-sva-red whitespace-nowrap flex-shrink-0">概要</button>'
+        + '<button onclick="switchJobTab(\\'client\\',' + j.id + ')" id="jt_tab_client" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">お客様' + (clientAllowed ? '' : ' <svg class="w-3 h-3 inline text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>') + '</button>'
+        + (vCount > 0 ? '<button onclick="switchJobTab(\\'vehicles\\',' + j.id + ')" id="jt_tab_vehicles" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">車両 <span class="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 rounded-full font-bold">' + vDone + '/' + vCount + '</span></button>' : '')
+        + '<button onclick="switchJobTab(\\'tracking\\',' + j.id + ')" id="jt_tab_tracking" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">追跡</button>'
+        + '<button onclick="switchJobTab(\\'photos\\',' + j.id + ')" id="jt_tab_photos" class="px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">写真<span id="photoBadge" class="' + (photos.length > 0 ? '' : 'hidden') + ' ml-1 px-1.5 py-0.5 text-[10px] bg-sva-red text-white rounded-full">' + photos.length + '</span></button>'
+        + '</div></div>';
 
       // ===== TAB: 基本情報 =====
       var vehicleSummary = '';
@@ -957,6 +960,9 @@ export function partnerMypagePage(): string {
         if (panel) panel.classList.toggle('hidden', t !== tab);
         if (tabBtn) { tabBtn.classList.toggle('border-sva-red', t === tab); tabBtn.classList.toggle('text-sva-red', t === tab); tabBtn.classList.toggle('border-transparent', t !== tab); tabBtn.classList.toggle('text-gray-500', t !== tab); }
       });
+      // Auto-scroll active tab into view on mobile
+      var activeBtn = document.getElementById('jt_tab_' + tab);
+      if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
     window.switchJobTab = switchJobTab;
 
