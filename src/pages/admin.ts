@@ -1840,61 +1840,19 @@ export function adminPage(): string {
     // ===== Photos Tab =====
     function renderPhotosTab(ct) {
       var html = '';
-      // compressImage for admin
-      if (!window._adminCompressImage) {
-        window._adminCompressImage = function(file, maxW, maxH, q) {
-          maxW = maxW || 1920; maxH = maxH || 1920; q = q || 0.80;
-          return new Promise(function(resolve, reject) {
-            var blobUrl = null;
-            function cleanup() { if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch(e){} } }
-            var img = new Image();
-            img.onload = function() {
-              try {
-                var w = img.width, h = img.height;
-                if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
-                var c = document.createElement('canvas'); c.width = w; c.height = h;
-                var ctx = c.getContext('2d'); if (!ctx) { cleanup(); reject(new Error('Canvas error')); return; }
-                ctx.drawImage(img, 0, 0, w, h);
-                var ot = (file.type==='image/png') ? 'image/png' : 'image/jpeg';
-                var du = c.toDataURL(ot, (ot==='image/png')?undefined:q);
-                var b64 = du.split(',')[1];
-                if (!b64 || b64.length < 100) { cleanup(); reject(new Error('Compress fail')); return; }
-                resolve({ base64: b64, mime_type: ot }); c.width=0; c.height=0; cleanup();
-              } catch(e) { cleanup(); reject(e); }
-            };
-            img.onerror = function() {
-              cleanup();
-              var fr = new FileReader();
-              fr.onload = function(ev) {
-                var b = ev.target.result; if(typeof b!=='string'){reject(new Error('Read fail'));return;}
-                var b64 = b.split(',')[1]; if(!b64){reject(new Error('Parse fail'));return;}
-                resolve({ base64: b64, mime_type: file.type||'image/jpeg' });
-              };
-              fr.onerror = function(){reject(new Error('Read fail'));};
-              fr.readAsDataURL(file);
-            };
-            try { blobUrl = URL.createObjectURL(file); img.src = blobUrl; } catch(e) {
-              var fr2 = new FileReader(); fr2.onload = function(ev){img.src=ev.target.result;}; fr2.onerror=function(){reject(new Error('Read fail'));}; fr2.readAsDataURL(file);
-            }
-          });
-        };
-      }
 
-      // Admin upload function for vehicle photos
+      // Admin upload function for vehicle photos (R2 FormData)
       window.adminUploadVehiclePhoto = async function(jobId, vid, category, input) {
         if (!input || !input.files || !input.files[0]) return;
         var file = input.files[0];
-        var fileName = file.name || 'photo.jpg';
-        if (file.size > 20*1024*1024) { showToast('20MB以下の画像を選択してください'); input.value=''; return; }
-        showToast('写真を処理中...');
+        if (file.size > 25*1024*1024) { showToast('25MB以下の画像を選択してください'); input.value=''; return; }
+        showToast('アップロード中...');
         try {
-          var comp = await window._adminCompressImage(file, 1920, 1920, 0.80);
-          if (comp.base64.length > 6500000) comp = await window._adminCompressImage(file, 1280, 1280, 0.65);
-          if (comp.base64.length > 6500000) { showToast('画像が大きすぎます'); input.value=''; return; }
-          showToast('アップロード中...');
+          var fd = new FormData();
+          fd.append('photo', file);
+          fd.append('category', category);
           var res = await fetch(API + '/admin/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
-            method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},
-            body: JSON.stringify({category:category, photo_data:comp.base64, mime_type:comp.mime_type, file_name:fileName})
+            method:'POST', headers:{'Authorization':'Bearer '+authToken}, body: fd
           });
           input.value = '';
           if (res.ok) { showToast('写真をアップロードしました'); viewJob(jobId); }
@@ -1902,21 +1860,18 @@ export function adminPage(): string {
         } catch(e) { input.value=''; showToast('アップロード失敗: '+(e.message||''), true); }
       };
 
-      // Admin upload for job-level photos
+      // Admin upload for job-level photos (R2 FormData)
       window.adminUploadJobPhoto = async function(jobId, category, input) {
         if (!input || !input.files || !input.files[0]) return;
         var file = input.files[0];
-        var fileName = file.name || 'photo.jpg';
-        if (file.size > 20*1024*1024) { showToast('20MB以下の画像を選択してください'); input.value=''; return; }
-        showToast('写真を処理中...');
+        if (file.size > 25*1024*1024) { showToast('25MB以下の画像を選択してください'); input.value=''; return; }
+        showToast('アップロード中...');
         try {
-          var comp = await window._adminCompressImage(file, 1920, 1920, 0.80);
-          if (comp.base64.length > 6500000) comp = await window._adminCompressImage(file, 1280, 1280, 0.65);
-          if (comp.base64.length > 6500000) { showToast('画像が大きすぎます'); input.value=''; return; }
-          showToast('アップロード中...');
+          var fd = new FormData();
+          fd.append('photo', file);
+          fd.append('category', category);
           var res = await fetch(API + '/admin/jobs/' + currentJobId + '/photos', {
-            method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},
-            body: JSON.stringify({category:category, photo_data:comp.base64, mime_type:comp.mime_type, file_name:fileName})
+            method:'POST', headers:{'Authorization':'Bearer '+authToken}, body: fd
           });
           input.value = '';
           if (res.ok) { showToast('写真をアップロードしました'); viewJob(currentJobId); }
@@ -1936,7 +1891,7 @@ export function adminPage(): string {
 
       var jobId = currentJobId;
 
-      // Render vehicle photos with actual images
+      // Render vehicle photos with upload slots
       currentJobVehicles.forEach(function(v) {
         var pc = v.photo_counts||{}; var total=0; Object.values(pc).forEach(function(n){total+=n;});
         html += '<div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">'
@@ -1951,15 +1906,12 @@ export function adminPage(): string {
             + '<span class="text-xs font-bold text-gray-700">' + c[1] + '</span>'
             + '<span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium ' + (cnt>0?'bg-green-100 text-green-700':'bg-gray-100 text-gray-400') + '">' + cnt + '枚</span></div>'
             + '<div class="flex gap-2 flex-wrap">';
-          // Show existing photo thumbnails (loaded lazily from /image endpoint)
           if (cnt > 0) {
             for (var i=0; i<cnt; i++) {
-              // We only have counts, not IDs. Show placeholder that loads on gallery open
               html += '<div class="w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center cursor-pointer hover:border-sva-red text-gray-300" onclick="switchTab(\\'photogallery\\');document.getElementById(\\'pgJobSelect\\').value=\\'' + jobId + '\\';loadPhotoGallery(' + jobId + ')">'
                 + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
             }
           }
-          // Upload button
           html += '<label class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red hover:bg-red-50/30 transition-all">'
             + '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>'
             + '<span class="text-[8px] text-gray-400 mt-0.5">追加</span>'
@@ -1969,7 +1921,7 @@ export function adminPage(): string {
         html += '</div>';
       });
 
-      // Also show job-level photos section
+      // Job-level photos
       html += '<div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
         + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>案件全体の写真</h4>';
@@ -1986,7 +1938,6 @@ export function adminPage(): string {
       });
       html += '</div>';
 
-      // Link to full gallery
       html += '<div class="text-center py-3">'
         + '<button onclick="switchTab(\\'photogallery\\');document.getElementById(\\'pgJobSelect\\').value=\\'' + jobId + '\\';loadPhotoGallery(' + jobId + ')" class="px-6 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">'
         + '<svg class="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>'

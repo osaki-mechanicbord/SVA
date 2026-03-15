@@ -987,90 +987,58 @@ export function partnerMypagePage(): string {
     }
     window.downloadPartnerAttachment = downloadPartnerAttachment;
 
-    // === 画像圧縮ユーティリティ（スマホ高解像度対応） ===
-    function compressImage(file, maxWidth, maxHeight, quality) {
+    // === 画像リサイズユーティリティ（スマホ高解像度対応、Blobで返す） ===
+    function resizeImageToBlob(file, maxWidth, maxHeight, quality) {
       maxWidth = maxWidth || 1920;
       maxHeight = maxHeight || 1920;
-      quality = quality || 0.82;
+      quality = quality || 0.85;
       return new Promise(function(resolve, reject) {
+        // 小さい画像（2MB以下）はリサイズ不要、そのまま返す
+        if (file.size <= 2 * 1024 * 1024) { resolve(file); return; }
         var blobUrl = null;
         function cleanup() { if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch(e){} } }
         var img = new Image();
         img.onload = function() {
           try {
             var w = img.width, h = img.height;
+            // リサイズ不要の場合（既に小さい）
+            if (w <= maxWidth && h <= maxHeight && file.size <= 5 * 1024 * 1024) { cleanup(); resolve(file); return; }
             if (w > maxWidth || h > maxHeight) {
               var ratio = Math.min(maxWidth / w, maxHeight / h);
-              w = Math.round(w * ratio);
-              h = Math.round(h * ratio);
+              w = Math.round(w * ratio); h = Math.round(h * ratio);
             }
             var canvas = document.createElement('canvas');
-            canvas.width = w;
-            canvas.height = h;
+            canvas.width = w; canvas.height = h;
             var ctx = canvas.getContext('2d');
-            if (!ctx) { cleanup(); reject(new Error('Canvas非対応')); return; }
+            if (!ctx) { cleanup(); resolve(file); return; }
             ctx.drawImage(img, 0, 0, w, h);
-            var outputType = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
-            var q = (outputType === 'image/png') ? undefined : quality;
-            var dataUrl = canvas.toDataURL(outputType, q);
-            var base64 = dataUrl.split(',')[1];
-            if (!base64 || base64.length < 100) {
-              cleanup(); reject(new Error('画像変換に失敗しました')); return;
-            }
-            resolve({ base64: base64, mime_type: outputType, width: w, height: h });
-            canvas.width = 0; canvas.height = 0;
-            cleanup();
-          } catch(e) { cleanup(); reject(e); }
+            canvas.toBlob(function(blob) {
+              canvas.width = 0; canvas.height = 0; cleanup();
+              if (blob && blob.size > 0) { resolve(new File([blob], file.name || 'photo.jpg', { type: blob.type })); }
+              else { resolve(file); }
+            }, 'image/jpeg', quality);
+          } catch(e) { cleanup(); resolve(file); }
         };
-        img.onerror = function() {
-          cleanup();
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            try {
-              var result = e.target.result;
-              if (typeof result !== 'string') { reject(new Error('ファイル読込失敗')); return; }
-              var base64 = result.split(',')[1];
-              if (!base64) { reject(new Error('Base64変換失敗')); return; }
-              resolve({ base64: base64, mime_type: file.type || 'image/jpeg', width: 0, height: 0 });
-            } catch(err) { reject(err); }
-          };
-          reader.onerror = function() { reject(new Error('ファイルの読み込みに失敗しました')); };
-          reader.readAsDataURL(file);
-        };
-        try {
-          blobUrl = URL.createObjectURL(file);
-          img.src = blobUrl;
-        } catch(e) {
-          // createObjectURL非対応の場合FileReaderにフォールバック
-          var fr = new FileReader();
-          fr.onload = function(ev) { img.src = ev.target.result; };
-          fr.onerror = function() { reject(new Error('ファイル読込失敗')); };
-          fr.readAsDataURL(file);
-        }
+        img.onerror = function() { cleanup(); resolve(file); };
+        try { blobUrl = URL.createObjectURL(file); img.src = blobUrl; }
+        catch(e) { resolve(file); }
       });
     }
 
     async function uploadVehiclePhoto(jobId, vid, category, input) {
       if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
-      var fileName = file.name || 'photo.jpg';
-      var fileSize = file.size || 0;
-      // 重要: input.value のクリアは最後に行う（モバイルではFileReaderが中断される）
-      if (fileSize > 20 * 1024 * 1024) { showToast('20MB以下の画像を選択してください', true); input.value = ''; return; }
+      if (file.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
       showToast('写真を処理中...');
       try {
-        var compressed = await compressImage(file, 1920, 1920, 0.80);
-        if (compressed.base64.length > 6_500_000) {
-          // より強い圧縮を試みる
-          compressed = await compressImage(file, 1280, 1280, 0.65);
-        }
-        if (compressed.base64.length > 6_500_000) { showToast('画像が大きすぎます。低解像度で撮影してください', true); input.value = ''; return; }
+        var resized = await resizeImageToBlob(file, 1920, 1920, 0.85);
         showToast('アップロード中...');
+        var fd = new FormData();
+        fd.append('photo', resized);
+        fd.append('category', category);
         var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ category: category, photo_data: compressed.base64, mime_type: compressed.mime_type, file_name: fileName })
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
         });
-        // inputクリアは通信完了後
         input.value = '';
         if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
         else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }
@@ -1141,24 +1109,17 @@ export function partnerMypagePage(): string {
     async function uploadJobPhoto(jobId, category, input) {
       if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
-      var fileName = file.name || 'photo.jpg';
-      var fileSize = file.size || 0;
-      // 重要: input.value のクリアは通信完了後に行う（モバイルではFileReader中断防止）
-      if (fileSize > 20 * 1024 * 1024) { showToast('20MB以下の画像を選択してください', true); input.value = ''; return; }
+      if (file.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
       showToast('写真を処理中...');
       try {
-        var compressed = await compressImage(file, 1920, 1920, 0.80);
-        if (compressed.base64.length > 6_500_000) {
-          // より強い圧縮を試みる
-          compressed = await compressImage(file, 1280, 1280, 0.65);
-        }
-        if (compressed.base64.length > 6_500_000) { showToast('画像が大きすぎます。低解像度で撮影してください', true); input.value = ''; return; }
+        var resized = await resizeImageToBlob(file, 1920, 1920, 0.85);
         showToast('アップロード中...');
+        var fd = new FormData();
+        fd.append('photo', resized);
+        fd.append('category', category);
         var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ category: category, photo_data: compressed.base64, mime_type: compressed.mime_type, file_name: fileName })
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
         });
-        // inputクリアは通信完了後
         input.value = '';
         if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
         else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }

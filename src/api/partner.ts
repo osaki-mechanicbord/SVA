@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 
-type Bindings = { DB: D1Database }
+type Bindings = { DB: D1Database; PHOTOS: R2Bucket }
 
 const partnerApi = new Hono<{ Bindings: Bindings }>()
 
@@ -475,7 +475,7 @@ partnerApi.delete('/me/jobs/:id/vehicles/:vid/products/:pid2', async (c) => {
 
 // ========== 車両単位の写真 ==========
 
-// 車両写真アップロード
+// 車両写真アップロード (R2バイナリ保存)
 partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -486,15 +486,26 @@ partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
   const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first()
   if (!v) return c.json({ error: 'Vehicle not found' }, 404)
 
-  const body = await c.req.json<{ category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string }>()
+  const formData = await c.req.formData()
+  const file = formData.get('photo') as File | null
+  const category = formData.get('category') as string
   const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
-  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
-  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
-  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
+  if (!category || !validCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
+  if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
+
+  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+  const r2Key = `jobs/${jobId}/vehicles/${vid}/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+  const mimeType = file.type || 'image/jpeg'
+
+  await c.env.PHOTOS.put(r2Key, file.stream(), {
+    httpMetadata: { contentType: mimeType },
+    customMetadata: { jobId: String(jobId), vehicleId: String(vid), category, uploadedBy: 'partner' }
+  })
 
   const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?,?)"
-  ).bind(jobId, vid, body.category, body.photo_data, body.mime_type||'image/jpeg', body.file_name||'', body.caption||'', 'partner').run()
+    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,'',?,?,?,?,?,?)"
+  ).bind(jobId, vid, category, mimeType, file.name||'', '', 'partner', r2Key, file.size).run()
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
@@ -566,7 +577,7 @@ partnerApi.put('/me/jobs/:id/details', async (c) => {
   return c.json({ success: true })
 })
 
-// 写真アップロード (パートナーが現場で撮影した写真を案件に紐付け)
+// 写真アップロード (R2バイナリ保存 - 案件単位)
 partnerApi.post('/me/jobs/:id/photos', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -574,20 +585,27 @@ partnerApi.post('/me/jobs/:id/photos', async (c) => {
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
-  const body = await c.req.json<{
-    category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string
-  }>()
+  const formData = await c.req.formData()
+  const file = formData.get('photo') as File | null
+  const category = formData.get('category') as string
 
   const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
-  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
-  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
+  if (!category || !validCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
+  if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
 
-  // Limit photo_data size (approx 5MB base64)
-  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます（5MB以下にしてください）' }, 400)
+  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+  const r2Key = `jobs/${id}/photos/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+  const mimeType = file.type || 'image/jpeg'
+
+  await c.env.PHOTOS.put(r2Key, file.stream(), {
+    httpMetadata: { contentType: mimeType },
+    customMetadata: { jobId: String(id), category, uploadedBy: 'partner' }
+  })
 
   const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?)"
-  ).bind(id, body.category, body.photo_data, body.mime_type || 'image/jpeg', body.file_name || '', body.caption || '', 'partner').run()
+    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,'',?,?,?,?,?,?)"
+  ).bind(id, category, mimeType, file.name || '', '', 'partner', r2Key, file.size).run()
 
   return c.json({ id: r.meta.last_row_id }, 201)
 })
@@ -609,7 +627,7 @@ partnerApi.get('/me/jobs/:id/photos', async (c) => {
   return c.json({ photos: photos.results })
 })
 
-// 写真をバイナリ画像として取得（<img src>で直接表示可能）
+// 写真をバイナリ画像として取得（R2優先、レガシーBase64フォールバック）
 partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -619,20 +637,38 @@ partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
   if (!job) return c.json({ error: 'Not found' }, 404)
 
   const photo = await c.env.DB.prepare(
-    "SELECT photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
+    "SELECT r2_key, photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
   ).bind(photoId, id).first<any>()
-  if (!photo || !photo.photo_data) return c.notFound()
+  if (!photo) return c.notFound()
 
-  const binaryStr = atob(photo.photo_data)
-  const bytes = new Uint8Array(binaryStr.length)
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
-
-  return new Response(bytes, {
-    headers: {
-      'Content-Type': photo.mime_type || 'image/jpeg',
-      'Cache-Control': 'public, max-age=86400'
+  // R2から取得（新方式）
+  if (photo.r2_key) {
+    const obj = await c.env.PHOTOS.get(photo.r2_key)
+    if (obj) {
+      return new Response(obj.body, {
+        headers: {
+          'Content-Type': obj.httpMetadata?.contentType || photo.mime_type || 'image/jpeg',
+          'Cache-Control': 'public, max-age=604800',
+          'ETag': obj.etag
+        }
+      })
     }
-  })
+  }
+
+  // レガシーBase64フォールバック
+  if (photo.photo_data) {
+    const binaryStr = atob(photo.photo_data)
+    const bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+    return new Response(bytes, {
+      headers: {
+        'Content-Type': photo.mime_type || 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400'
+      }
+    })
+  }
+
+  return c.notFound()
 })
 
 // 写真データ取得 (個別)
@@ -649,7 +685,7 @@ partnerApi.get('/me/jobs/:id/photos/:photoId', async (c) => {
   return c.json({ photo })
 })
 
-// 写真削除
+// 写真削除 (R2オブジェクトも削除)
 partnerApi.delete('/me/jobs/:id/photos/:photoId', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -658,8 +694,15 @@ partnerApi.delete('/me/jobs/:id/photos/:photoId', async (c) => {
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
-  const r = await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
-  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  // R2キーを取得してから削除
+  const photo = await c.env.DB.prepare("SELECT r2_key FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
+  if (!photo) return c.json({ error: 'Not found' }, 404)
+
+  if (photo.r2_key) {
+    await c.env.PHOTOS.delete(photo.r2_key).catch(() => {})
+  }
+
+  await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
   return c.json({ success: true })
 })
 

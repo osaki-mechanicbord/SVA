@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 
-type Bindings = { DB: D1Database }
+type Bindings = { DB: D1Database; PHOTOS: R2Bucket }
 const adminPartnerApi = new Hono<{ Bindings: Bindings }>()
 
 // Auth middleware (reuse same Bearer token pattern as admin articles)
@@ -333,25 +333,43 @@ adminPartnerApi.get('/jobs/:id/photos/all', async (c) => {
   return c.json({ job, photos: photos.results })
 })
 
-// Get photo as binary image (for <img src> direct use)
+// Get photo as binary image (R2優先、レガシーBase64フォールバック)
 adminPartnerApi.get('/jobs/:id/photos/:photoId/image', async (c) => {
   const id = Number(c.req.param('id'))
   const photoId = Number(c.req.param('photoId'))
   const photo = await c.env.DB.prepare(
-    "SELECT photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
+    "SELECT r2_key, photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
   ).bind(photoId, id).first<any>()
-  if (!photo || !photo.photo_data) return c.notFound()
+  if (!photo) return c.notFound()
 
-  const binaryStr = atob(photo.photo_data)
-  const bytes = new Uint8Array(binaryStr.length)
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
-
-  return new Response(bytes, {
-    headers: {
-      'Content-Type': photo.mime_type || 'image/jpeg',
-      'Cache-Control': 'public, max-age=86400'
+  // R2から取得（新方式）
+  if (photo.r2_key) {
+    const obj = await c.env.PHOTOS.get(photo.r2_key)
+    if (obj) {
+      return new Response(obj.body, {
+        headers: {
+          'Content-Type': obj.httpMetadata?.contentType || photo.mime_type || 'image/jpeg',
+          'Cache-Control': 'public, max-age=604800',
+          'ETag': obj.etag
+        }
+      })
     }
-  })
+  }
+
+  // レガシーBase64フォールバック
+  if (photo.photo_data) {
+    const binaryStr = atob(photo.photo_data)
+    const bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+    return new Response(bytes, {
+      headers: {
+        'Content-Type': photo.mime_type || 'image/jpeg',
+        'Cache-Control': 'public, max-age=86400'
+      }
+    })
+  }
+
+  return c.notFound()
 })
 
 // Get job photo data (individual JSON)
@@ -363,33 +381,49 @@ adminPartnerApi.get('/jobs/:id/photos/:photoId', async (c) => {
   return c.json({ photo })
 })
 
-// Admin can also upload photos
+// Admin photo upload (R2バイナリ保存)
 adminPartnerApi.post('/jobs/:id/photos', async (c) => {
   const id = Number(c.req.param('id'))
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(id).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
-  const body = await c.req.json<{
-    category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string
-  }>()
+  const formData = await c.req.formData()
+  const file = formData.get('photo') as File | null
+  const category = formData.get('category') as string
 
   const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
-  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
-  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
-  if (body.photo_data.length > 7_000_000) return c.json({ error: 'File too large' }, 400)
+  if (!category || !validCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
+  if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
+
+  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+  const r2Key = `jobs/${id}/photos/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+  const mimeType = file.type || 'image/jpeg'
+
+  await c.env.PHOTOS.put(r2Key, file.stream(), {
+    httpMetadata: { contentType: mimeType },
+    customMetadata: { jobId: String(id), category, uploadedBy: 'admin' }
+  })
 
   const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?)"
-  ).bind(id, body.category, body.photo_data, body.mime_type || 'image/jpeg', body.file_name || '', body.caption || '', 'admin').run()
+    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,'',?,?,?,?,?,?)"
+  ).bind(id, category, mimeType, file.name || '', '', 'admin', r2Key, file.size).run()
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
-// Delete photo (admin)
+// Delete photo (admin) - R2オブジェクトも削除
 adminPartnerApi.delete('/jobs/:id/photos/:photoId', async (c) => {
   const id = Number(c.req.param('id'))
   const photoId = Number(c.req.param('photoId'))
-  const r = await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
-  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+
+  const photo = await c.env.DB.prepare("SELECT r2_key FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
+  if (!photo) return c.json({ error: 'Not found' }, 404)
+
+  if (photo.r2_key) {
+    await c.env.PHOTOS.delete(photo.r2_key).catch(() => {})
+  }
+
+  await c.env.DB.prepare("DELETE FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).run()
   return c.json({ success: true })
 })
 
@@ -492,7 +526,7 @@ adminPartnerApi.get('/jobs/:id/vehicles/:vid/photos', async (c) => {
   return c.json({ photos: photos.results })
 })
 
-// Admin upload vehicle photo
+// Admin upload vehicle photo (R2バイナリ保存)
 adminPartnerApi.post('/jobs/:id/vehicles/:vid/photos', async (c) => {
   const jobId = Number(c.req.param('id'))
   const vid = Number(c.req.param('vid'))
@@ -501,15 +535,26 @@ adminPartnerApi.post('/jobs/:id/vehicles/:vid/photos', async (c) => {
   const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first()
   if (!v) return c.json({ error: 'Vehicle not found' }, 404)
 
-  const body = await c.req.json<{ category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string }>()
+  const formData = await c.req.formData()
+  const file = formData.get('photo') as File | null
+  const category = formData.get('category') as string
   const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
-  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
-  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
-  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
+  if (!category || !validCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
+  if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
+
+  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+  const r2Key = `jobs/${jobId}/vehicles/${vid}/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+  const mimeType = file.type || 'image/jpeg'
+
+  await c.env.PHOTOS.put(r2Key, file.stream(), {
+    httpMetadata: { contentType: mimeType },
+    customMetadata: { jobId: String(jobId), vehicleId: String(vid), category, uploadedBy: 'admin' }
+  })
 
   const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?,?)"
-  ).bind(jobId, vid, body.category, body.photo_data, body.mime_type||'image/jpeg', body.file_name||'', body.caption||'', 'admin').run()
+    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,'',?,?,?,?,?,?)"
+  ).bind(jobId, vid, category, mimeType, file.name||'', '', 'admin', r2Key, file.size).run()
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
