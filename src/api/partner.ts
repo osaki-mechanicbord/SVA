@@ -683,12 +683,21 @@ partnerApi.get('/me/jobs/:id/photos', async (c) => {
 })
 
 // 写真をバイナリ画像として取得（Supabase → R2 → Base64フォールバック）
+// <img src> から呼ばれるため ?token= クエリパラメータでも認証可能
 partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
-  const pid = await getPartnerId(c)
-  if (!pid) return c.json({ error: 'Unauthorized' }, 401)
+  // 認証: ヘッダー or クエリパラメータ
+  const authHeader = c.req.header('Authorization')
+  const tokenStr = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : c.req.query('token')
+  if (!tokenStr) return c.json({ error: 'Unauthorized' }, 401)
+  
+  const session = await c.env.DB.prepare(
+    "SELECT partner_id, expires_at FROM partner_sessions WHERE token = ?"
+  ).bind(tokenStr).first<{ partner_id: number; expires_at: string }>()
+  if (!session || new Date(session.expires_at) < new Date()) return c.json({ error: 'Unauthorized' }, 401)
+  
   const id = Number(c.req.param('id'))
   const photoId = Number(c.req.param('photoId'))
-  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, session.partner_id).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
   const photo = await c.env.DB.prepare(

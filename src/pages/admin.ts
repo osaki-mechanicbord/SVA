@@ -1994,7 +1994,9 @@ export function adminPage(): string {
       try {
         var res = await fetch(API + '/admin/jobs/' + jobId + '/photos/' + photoId, { headers: { 'Authorization': 'Bearer ' + authToken } });
         var data = await res.json();
-        if (data.photo && data.photo.photo_data) {
+        if (data.photo && data.photo.supabase_url) {
+          window.open(data.photo.supabase_url, '_blank');
+        } else if (data.photo && data.photo.photo_data) {
           var w = window.open('', '_blank');
           w.document.write('<html><head><title>写真プレビュー</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#111;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="data:' + (data.photo.mime_type || 'image/jpeg') + ';base64,' + data.photo.photo_data + '"></body></html>');
         }
@@ -2101,6 +2103,12 @@ export function adminPage(): string {
     var _adminPhotoIdx = 0;
     var _adminPhotoJobId = 0;
 
+    // Helper: supabase_url があればそれを直接使用、なければ API proxy + token
+    function getPhotoUrl(photo, jobId) {
+      if (photo.supabase_url) return photo.supabase_url;
+      return API + '/admin/jobs/' + jobId + '/photos/' + photo.id + '/image?token=' + encodeURIComponent(authToken);
+    }
+
     async function refreshPhotoJobList() {
       var sel = document.getElementById('pgJobSelect');
       if (!sel) return;
@@ -2182,7 +2190,7 @@ export function adminPage(): string {
               + '<div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">';
             byCat[cat].forEach(function(p, idx) {
               html += '<div class="aspect-square rounded-xl overflow-hidden border-2 border-gray-100 cursor-pointer hover:border-sva-red hover:shadow-md transition-all bg-gray-50 relative group" onclick="openAdminPhoto(' + jobId + ',' + p.id + ')">'
-                + '<img src="' + API + '/admin/jobs/' + jobId + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
+                + '<img src="' + getPhotoUrl(p, jobId) + '" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
                 + '<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">'
                 + '<p class="text-[9px] text-white truncate">' + esc(p.file_name || '') + '</p>'
                 + '<p class="text-[8px] text-white/60">' + new Date(p.created_at).toLocaleDateString('ja-JP') + '</p></div>'
@@ -2204,7 +2212,7 @@ export function adminPage(): string {
       var idx = _adminPhotoList.findIndex(function(p){return p.id===photoId;});
       _adminPhotoIdx = idx >= 0 ? idx : 0;
       var p = _adminPhotoList[_adminPhotoIdx];
-      document.getElementById('adminPhotoImg').src = API + '/admin/jobs/' + jobId + '/photos/' + photoId + '/image';
+      document.getElementById('adminPhotoImg').src = getPhotoUrl(p, jobId);
       document.getElementById('adminPhotoLabel').textContent = (PHOTO_CAT_LABELS[p.category]||p.category) + (p.vehicle_seq ? ' (#' + p.vehicle_seq + ' ' + (p.vehicle_maker||'') + ')' : '');
       document.getElementById('adminPhotoCounter').textContent = (_adminPhotoIdx+1) + ' / ' + _adminPhotoList.length;
       document.getElementById('adminPhotoPreview').classList.remove('hidden');
@@ -2214,7 +2222,7 @@ export function adminPage(): string {
       if (_adminPhotoList.length === 0) return;
       _adminPhotoIdx = (_adminPhotoIdx + dir + _adminPhotoList.length) % _adminPhotoList.length;
       var p = _adminPhotoList[_adminPhotoIdx];
-      document.getElementById('adminPhotoImg').src = API + '/admin/jobs/' + _adminPhotoJobId + '/photos/' + p.id + '/image';
+      document.getElementById('adminPhotoImg').src = getPhotoUrl(p, _adminPhotoJobId);
       document.getElementById('adminPhotoLabel').textContent = (PHOTO_CAT_LABELS[p.category]||p.category) + (p.vehicle_seq ? ' (#' + p.vehicle_seq + ' ' + (p.vehicle_maker||'') + ')' : '');
       document.getElementById('adminPhotoCounter').textContent = (_adminPhotoIdx+1) + ' / ' + _adminPhotoList.length;
     }

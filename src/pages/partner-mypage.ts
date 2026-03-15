@@ -1304,8 +1304,9 @@ export function partnerMypagePage(): string {
           html += '<div class="mb-4"><p class="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sva-red"></span>' + catName + ' (' + grouped[cat].length + ')</p>';
           html += '<div class="grid grid-cols-3 sm:grid-cols-4 gap-2">';
           grouped[cat].forEach(function(p) {
+            var imgUrl = p.supabase_url || ('/api/partner/me/jobs/' + jobId + '/photos/' + p.id + '/image');
             html += '<div class="aspect-square rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:shadow-md transition-shadow bg-gray-50" onclick="viewPhotoImage(' + jobId + ',' + p.id + ')">'
-              + '<img src="/api/partner/me/jobs/' + jobId + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
+              + '<img src="' + imgUrl + '" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\'">'
               + '</div>';
           });
           html += '</div></div>';

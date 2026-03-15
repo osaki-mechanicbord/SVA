@@ -4,11 +4,20 @@ import { getSupabaseConfig, uploadToSupabase, deleteFromSupabase, generateStorag
 type Bindings = { DB: D1Database; PHOTOS?: R2Bucket; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; SUPABASE_SERVICE_KEY?: string }
 const adminPartnerApi = new Hono<{ Bindings: Bindings }>()
 
-// Auth middleware (reuse same Bearer token pattern as admin articles)
+// Auth middleware - Bearer token required
+// Exception: /photos/:id/image endpoints accept ?token= query parameter (for <img src>)
 adminPartnerApi.use('*', async (c, next) => {
   const auth = c.req.header('Authorization')
-  if (!auth || !auth.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401)
-  await next()
+  if (auth && auth.startsWith('Bearer ')) {
+    await next()
+    return
+  }
+  // <img src="...?token=xxx"> 用: 画像エンドポイントのみクエリトークン許可
+  if (c.req.path.endsWith('/image') && c.req.query('token')) {
+    await next()
+    return
+  }
+  return c.json({ error: 'Unauthorized' }, 401)
 })
 
 // ===================== Partners CRUD =====================
@@ -305,7 +314,7 @@ adminPartnerApi.get('/jobs/:id', async (c) => {
 
   // 案件全体の写真（vehicle_id IS NULL の旧データ）
   const legacyPhotos = await c.env.DB.prepare(
-    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id IS NULL ORDER BY category, created_at"
+    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at, supabase_url FROM job_photos WHERE job_id = ? AND vehicle_id IS NULL ORDER BY category, created_at"
   ).bind(id).all()
 
   // 添付ファイル一覧（メタデータのみ）
