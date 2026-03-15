@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
+import { getSupabaseConfig, uploadToSupabase, deleteFromSupabase, generateStoragePath } from './supabase-storage'
 
-type Bindings = { DB: D1Database; PHOTOS?: R2Bucket }
+type Bindings = { DB: D1Database; PHOTOS?: R2Bucket; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; SUPABASE_SERVICE_KEY?: string }
 
 const partnerApi = new Hono<{ Bindings: Bindings }>()
 
@@ -475,7 +476,7 @@ partnerApi.delete('/me/jobs/:id/vehicles/:vid/products/:pid2', async (c) => {
 
 // ========== 車両単位の写真 ==========
 
-// 車両写真アップロード (R2優先、フォールバックはBase64→D1)
+// 車両写真アップロード (Supabase優先 → R2 → Base64フォールバック)
 partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -496,8 +497,23 @@ partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
 
   const mimeType = file.type || 'image/jpeg'
 
+  // 1. Supabase Storage (優先)
+  const supaConfig = getSupabaseConfig(c.env)
+  if (supaConfig) {
+    const storagePath = generateStoragePath(jobId, category, file.name || 'photo.jpg', vid)
+    const result = await uploadToSupabase(supaConfig, storagePath, file.stream(), mimeType)
+    if (result.success) {
+      const r = await c.env.DB.prepare(
+        "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,?,'',?,?,?,?,'',?,?)"
+      ).bind(jobId, vid, category, mimeType, file.name||'', '', 'partner', file.size, result.publicUrl).run()
+      return c.json({ id: r.meta.last_row_id, url: result.publicUrl }, 201)
+    }
+    // Supabase失敗時は次のストレージにフォールスルー
+    console.error('Supabase upload failed:', result.error)
+  }
+
+  // 2. R2 (バックアップ)
   if (c.env.PHOTOS) {
-    // R2保存
     const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
     const r2Key = `jobs/${jobId}/vehicles/${vid}/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
     await c.env.PHOTOS.put(r2Key, file.stream(), {
@@ -505,21 +521,21 @@ partnerApi.post('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
       customMetadata: { jobId: String(jobId), vehicleId: String(vid), category, uploadedBy: 'partner' }
     })
     const r = await c.env.DB.prepare(
-      "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,'',?,?,?,?,?,?)"
+      "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,?,'',?,?,?,?,?,?,'') "
     ).bind(jobId, vid, category, mimeType, file.name||'', '', 'partner', r2Key, file.size).run()
     return c.json({ id: r.meta.last_row_id }, 201)
-  } else {
-    // フォールバック: Base64でD1保存
-    const buf = await file.arrayBuffer()
-    const bytes = new Uint8Array(buf)
-    let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-    const b64 = btoa(binary)
-    if (b64.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
-    const r = await c.env.DB.prepare(
-      "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,?,?,?,?,?,'',?)"
-    ).bind(jobId, vid, category, b64, mimeType, file.name||'', '', 'partner', file.size).run()
-    return c.json({ id: r.meta.last_row_id }, 201)
   }
+
+  // 3. Base64フォールバック (最終手段、小さいファイルのみ)
+  const buf = await file.arrayBuffer()
+  const bytes = new Uint8Array(buf)
+  if (bytes.length > 800_000) return c.json({ error: 'ストレージが未設定のため800KB以下のファイルのみ対応です。管理者に連絡してください。' }, 400)
+  let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  const b64 = btoa(binary)
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,?,?,?,?,?,?,'',?,'') "
+  ).bind(jobId, vid, category, b64, mimeType, file.name||'', '', 'partner', file.size).run()
+  return c.json({ id: r.meta.last_row_id }, 201)
 })
 
 // 車両写真一覧
@@ -531,7 +547,7 @@ partnerApi.get('/me/jobs/:id/vehicles/:vid/photos', async (c) => {
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(jobId, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
   const photos = await c.env.DB.prepare(
-    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at FROM job_photos WHERE job_id = ? AND vehicle_id = ? ORDER BY category, created_at"
+    "SELECT id, job_id, vehicle_id, category, mime_type, file_name, caption, uploaded_by, created_at, supabase_url FROM job_photos WHERE job_id = ? AND vehicle_id = ? ORDER BY category, created_at"
   ).bind(jobId, vid).all()
   return c.json({ photos: photos.results })
 })
@@ -590,7 +606,7 @@ partnerApi.put('/me/jobs/:id/details', async (c) => {
   return c.json({ success: true })
 })
 
-// 写真アップロード (R2優先、フォールバックBase64→D1)
+// 写真アップロード (Supabase優先 → R2 → Base64フォールバック)
 partnerApi.post('/me/jobs/:id/photos', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -609,6 +625,21 @@ partnerApi.post('/me/jobs/:id/photos', async (c) => {
 
   const mimeType = file.type || 'image/jpeg'
 
+  // 1. Supabase Storage (優先)
+  const supaConfig = getSupabaseConfig(c.env)
+  if (supaConfig) {
+    const storagePath = generateStoragePath(id, category, file.name || 'photo.jpg')
+    const result = await uploadToSupabase(supaConfig, storagePath, file.stream(), mimeType)
+    if (result.success) {
+      const r = await c.env.DB.prepare(
+        "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,'',?,?,?,?,'',?,?)"
+      ).bind(id, category, mimeType, file.name || '', '', 'partner', file.size, result.publicUrl).run()
+      return c.json({ id: r.meta.last_row_id, url: result.publicUrl }, 201)
+    }
+    console.error('Supabase upload failed:', result.error)
+  }
+
+  // 2. R2 (バックアップ)
   if (c.env.PHOTOS) {
     const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
     const r2Key = `jobs/${id}/photos/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
@@ -617,20 +648,21 @@ partnerApi.post('/me/jobs/:id/photos', async (c) => {
       customMetadata: { jobId: String(id), category, uploadedBy: 'partner' }
     })
     const r = await c.env.DB.prepare(
-      "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,'',?,?,?,?,?,?)"
+      "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,'',?,?,?,?,?,?,'') "
     ).bind(id, category, mimeType, file.name || '', '', 'partner', r2Key, file.size).run()
     return c.json({ id: r.meta.last_row_id }, 201)
-  } else {
-    const buf = await file.arrayBuffer()
-    const bytes = new Uint8Array(buf)
-    let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-    const b64 = btoa(binary)
-    if (b64.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます（5MB以下にしてください）' }, 400)
-    const r = await c.env.DB.prepare(
-      "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,?,?,?,?,'',?)"
-    ).bind(id, category, b64, mimeType, file.name || '', '', 'partner', file.size).run()
-    return c.json({ id: r.meta.last_row_id }, 201)
   }
+
+  // 3. Base64フォールバック
+  const buf = await file.arrayBuffer()
+  const bytes = new Uint8Array(buf)
+  if (bytes.length > 800_000) return c.json({ error: 'ストレージが未設定のため800KB以下のファイルのみ対応です。管理者に連絡してください。' }, 400)
+  let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  const b64 = btoa(binary)
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size, supabase_url) VALUES (?,?,?,?,?,?,?,'',?,'') "
+  ).bind(id, category, b64, mimeType, file.name || '', '', 'partner', file.size).run()
+  return c.json({ id: r.meta.last_row_id }, 201)
 })
 
 // 写真一覧取得 (メタデータのみ、データは含まない) - 車両情報も含む
@@ -642,7 +674,7 @@ partnerApi.get('/me/jobs/:id/photos', async (c) => {
   if (!job) return c.json({ error: 'Not found' }, 404)
 
   const photos = await c.env.DB.prepare(
-    `SELECT jp.id, jp.job_id, jp.vehicle_id, jp.category, jp.mime_type, jp.file_name, jp.caption, jp.uploaded_by, jp.created_at,
+    `SELECT jp.id, jp.job_id, jp.vehicle_id, jp.category, jp.mime_type, jp.file_name, jp.caption, jp.uploaded_by, jp.created_at, jp.supabase_url,
      jv.seq as vehicle_seq, jv.maker_name as vehicle_maker, jv.car_model as vehicle_model
      FROM job_photos jp LEFT JOIN job_vehicles jv ON jp.vehicle_id = jv.id
      WHERE jp.job_id = ? ORDER BY jp.vehicle_id NULLS FIRST, jp.category, jp.created_at`
@@ -650,7 +682,7 @@ partnerApi.get('/me/jobs/:id/photos', async (c) => {
   return c.json({ photos: photos.results })
 })
 
-// 写真をバイナリ画像として取得（R2優先、レガシーBase64フォールバック）
+// 写真をバイナリ画像として取得（Supabase → R2 → Base64フォールバック）
 partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -660,11 +692,16 @@ partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
   if (!job) return c.json({ error: 'Not found' }, 404)
 
   const photo = await c.env.DB.prepare(
-    "SELECT r2_key, photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
+    "SELECT supabase_url, r2_key, photo_data, mime_type FROM job_photos WHERE id = ? AND job_id = ?"
   ).bind(photoId, id).first<any>()
   if (!photo) return c.notFound()
 
-  // R2から取得（新方式）
+  // 1. Supabase URL → リダイレクト (最速、CDN配信)
+  if (photo.supabase_url) {
+    return c.redirect(photo.supabase_url, 302)
+  }
+
+  // 2. R2から取得
   if (photo.r2_key && c.env.PHOTOS) {
     const obj = await c.env.PHOTOS.get(photo.r2_key)
     if (obj) {
@@ -678,7 +715,7 @@ partnerApi.get('/me/jobs/:id/photos/:photoId/image', async (c) => {
     }
   }
 
-  // レガシーBase64フォールバック
+  // 3. Base64フォールバック
   if (photo.photo_data) {
     const binaryStr = atob(photo.photo_data)
     const bytes = new Uint8Array(binaryStr.length)
@@ -708,7 +745,7 @@ partnerApi.get('/me/jobs/:id/photos/:photoId', async (c) => {
   return c.json({ photo })
 })
 
-// 写真削除 (R2オブジェクトも削除)
+// 写真削除 (Supabase/R2/D1全て対応)
 partnerApi.delete('/me/jobs/:id/photos/:photoId', async (c) => {
   const pid = await getPartnerId(c)
   if (!pid) return c.json({ error: 'Unauthorized' }, 401)
@@ -717,10 +754,23 @@ partnerApi.delete('/me/jobs/:id/photos/:photoId', async (c) => {
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
-  // R2キーを取得してから削除
-  const photo = await c.env.DB.prepare("SELECT r2_key FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
+  const photo = await c.env.DB.prepare("SELECT r2_key, supabase_url FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
   if (!photo) return c.json({ error: 'Not found' }, 404)
 
+  // Supabase削除
+  if (photo.supabase_url) {
+    const supaConfig = getSupabaseConfig(c.env)
+    if (supaConfig) {
+      // URLからパスを抽出
+      const prefix = `${supaConfig.url}/storage/v1/object/public/${supaConfig.bucket}/`
+      if (photo.supabase_url.startsWith(prefix)) {
+        const path = photo.supabase_url.slice(prefix.length)
+        await deleteFromSupabase(supaConfig, [path]).catch(() => {})
+      }
+    }
+  }
+
+  // R2削除
   if (photo.r2_key && c.env.PHOTOS) {
     await c.env.PHOTOS.delete(photo.r2_key).catch(() => {})
   }

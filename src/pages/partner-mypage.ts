@@ -894,9 +894,11 @@ export function partnerMypagePage(): string {
         return cats.map(function(c) {
           var existing = photosArr.filter(function(p) { return p.category === c[0]; });
           var thumbs = existing.map(function(p) {
+            // Supabase URLがある場合は直接CDNから取得（高速）、なければAPI経由
+            var imgUrl = p.supabase_url || ('/api/partner/me/jobs/' + j.id + '/photos/' + p.id + '/image');
             return '<div class="relative group">'
               + '<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border-2 border-gray-100 overflow-hidden cursor-pointer bg-gray-50 shadow-sm hover:shadow-md transition-shadow" onclick="viewPhotoImage(' + j.id + ',' + p.id + ')">'
-              + '<img src="/api/partner/me/jobs/' + j.id + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\';this.parentNode.style.cssText=\\'display:flex;align-items:center;justify-content:center;\\';this.parentNode.insertAdjacentHTML(\\'beforeend\\',\\'<span style=color:#ccc;font-size:24px>📷</span>\\')">'
+              + '<img src="' + imgUrl + '" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\';this.parentNode.style.cssText=\\'display:flex;align-items:center;justify-content:center;\\';this.parentNode.insertAdjacentHTML(\\'beforeend\\',\\'<span style=color:#ccc;font-size:24px>📷</span>\\')">'
               + '</div>'
               + '<button onclick="event.stopPropagation();deletePhoto(' + j.id + ',' + p.id + ')" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex items-center justify-center transition-opacity" style="opacity:0.8">&times;</button>'
               + '<p class="text-[8px] text-gray-400 mt-0.5 text-center truncate w-20 sm:w-24">' + (p.file_name ? escH(p.file_name).substring(0,12) : fmtDt(p.created_at).split(' ')[0]) + '</p></div>';
@@ -991,18 +993,18 @@ export function partnerMypagePage(): string {
     function resizeImageToBlob(file, maxWidth, maxHeight, quality) {
       maxWidth = maxWidth || 1920;
       maxHeight = maxHeight || 1920;
-      quality = quality || 0.85;
+      quality = quality || 0.80;
       return new Promise(function(resolve, reject) {
-        // 小さい画像（2MB以下）はリサイズ不要、そのまま返す
-        if (file.size <= 2 * 1024 * 1024) { resolve(file); return; }
+        // 小さい画像（1.5MB以下）はリサイズ不要
+        if (file.size <= 1.5 * 1024 * 1024) { resolve(file); return; }
         var blobUrl = null;
         function cleanup() { if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch(e){} } }
+        try { blobUrl = URL.createObjectURL(file); } catch(e) { resolve(file); return; }
         var img = new Image();
         img.onload = function() {
           try {
             var w = img.width, h = img.height;
-            // リサイズ不要の場合（既に小さい）
-            if (w <= maxWidth && h <= maxHeight && file.size <= 5 * 1024 * 1024) { cleanup(); resolve(file); return; }
+            if (w <= maxWidth && h <= maxHeight && file.size <= 3 * 1024 * 1024) { cleanup(); resolve(file); return; }
             if (w > maxWidth || h > maxHeight) {
               var ratio = Math.min(maxWidth / w, maxHeight / h);
               w = Math.round(w * ratio); h = Math.round(h * ratio);
@@ -1014,35 +1016,99 @@ export function partnerMypagePage(): string {
             ctx.drawImage(img, 0, 0, w, h);
             canvas.toBlob(function(blob) {
               canvas.width = 0; canvas.height = 0; cleanup();
-              if (blob && blob.size > 0) { resolve(new File([blob], file.name || 'photo.jpg', { type: blob.type })); }
+              if (blob && blob.size > 0) { resolve(new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' })); }
               else { resolve(file); }
             }, 'image/jpeg', quality);
           } catch(e) { cleanup(); resolve(file); }
         };
         img.onerror = function() { cleanup(); resolve(file); };
-        try { blobUrl = URL.createObjectURL(file); img.src = blobUrl; }
-        catch(e) { resolve(file); }
+        img.src = blobUrl;
       });
     }
 
+    // === リトライ付きfetch ===
+    async function fetchWithRetry(url, options, maxRetries) {
+      maxRetries = maxRetries || 3;
+      var lastError;
+      for (var attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            showToast('リトライ中... (' + (attempt + 1) + '/' + maxRetries + ')');
+            await new Promise(function(r) { setTimeout(r, 1000 * attempt); });
+          }
+          var res = await fetch(url, options);
+          return res;
+        } catch(e) {
+          lastError = e;
+          // AbortErrorの場合はリトライしない
+          if (e.name === 'AbortError') throw e;
+        }
+      }
+      throw lastError;
+    }
+
+    // === 写真アップロード（車両単位） ===
     async function uploadVehiclePhoto(jobId, vid, category, input) {
       if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
-      if (file.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
-      showToast('写真を処理中...');
+      // ファイル参照を保持してからクリア
+      var fileRef = file;
+      
+      if (fileRef.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
+      
+      // プログレスUI表示
+      var toastId = 'upload_' + Date.now();
+      showUploadProgress(toastId, '写真を処理中...', 0);
+      
       try {
-        var resized = await resizeImageToBlob(file, 1920, 1920, 0.85);
-        showToast('アップロード中...');
+        // Step 1: リサイズ
+        showUploadProgress(toastId, '画像を最適化中...', 10);
+        var resized = await resizeImageToBlob(fileRef, 1920, 1920, 0.80);
+        
+        // リサイズ後も大きすぎる場合、さらに圧縮
+        if (resized.size > 8 * 1024 * 1024) {
+          showUploadProgress(toastId, 'さらに圧縮中...', 20);
+          resized = await resizeImageToBlob(resized, 1280, 1280, 0.65);
+        }
+        
+        // Step 2: FormDataでバイナリ送信
+        showUploadProgress(toastId, 'アップロード中...', 30);
         var fd = new FormData();
         fd.append('photo', resized);
         fd.append('category', category);
-        var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
-          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
-        });
+
+        // タイムアウト付き（60秒）
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+        
+        var res = await fetchWithRetry('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd,
+          signal: controller.signal
+        }, 3);
+        
+        clearTimeout(timeoutId);
         input.value = '';
-        if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
-        else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }
-      } catch(e) { input.value = ''; showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true); }
+        
+        if (res.ok) {
+          showUploadProgress(toastId, 'アップロード完了!', 100);
+          setTimeout(function() { hideUploadProgress(toastId); }, 1500);
+          openJobDetail(jobId);
+        } else {
+          var d = await res.json().catch(function(){return {};});
+          hideUploadProgress(toastId);
+          showToast(d.error || 'アップロード失敗 (' + res.status + ')', true);
+        }
+      } catch(e) {
+        input.value = '';
+        hideUploadProgress(toastId);
+        if (e.name === 'AbortError') {
+          showToast('タイムアウト: 回線状況を確認してください', true);
+        } else {
+          showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true);
+        }
+      }
     }
     window.uploadVehiclePhoto = uploadVehiclePhoto;
 
@@ -1106,24 +1172,62 @@ export function partnerMypagePage(): string {
     }
     window.saveJobReport = saveJobReport;
 
+    // === 写真アップロード（案件単位） ===
     async function uploadJobPhoto(jobId, category, input) {
       if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
-      if (file.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
-      showToast('写真を処理中...');
+      var fileRef = file;
+      
+      if (fileRef.size > 25 * 1024 * 1024) { showToast('25MB以下の画像を選択してください', true); input.value = ''; return; }
+      
+      var toastId = 'upload_' + Date.now();
+      showUploadProgress(toastId, '写真を処理中...', 0);
+      
       try {
-        var resized = await resizeImageToBlob(file, 1920, 1920, 0.85);
-        showToast('アップロード中...');
+        showUploadProgress(toastId, '画像を最適化中...', 10);
+        var resized = await resizeImageToBlob(fileRef, 1920, 1920, 0.80);
+        
+        if (resized.size > 8 * 1024 * 1024) {
+          showUploadProgress(toastId, 'さらに圧縮中...', 20);
+          resized = await resizeImageToBlob(resized, 1280, 1280, 0.65);
+        }
+        
+        showUploadProgress(toastId, 'アップロード中...', 30);
         var fd = new FormData();
         fd.append('photo', resized);
         fd.append('category', category);
-        var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos', {
-          method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd
-        });
+        
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+        
+        var res = await fetchWithRetry('/api/partner/me/jobs/' + jobId + '/photos', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd,
+          signal: controller.signal
+        }, 3);
+        
+        clearTimeout(timeoutId);
         input.value = '';
-        if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
-        else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }
-      } catch(e) { input.value = ''; showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true); }
+        
+        if (res.ok) {
+          showUploadProgress(toastId, 'アップロード完了!', 100);
+          setTimeout(function() { hideUploadProgress(toastId); }, 1500);
+          openJobDetail(jobId);
+        } else {
+          var d = await res.json().catch(function(){return {};});
+          hideUploadProgress(toastId);
+          showToast(d.error || 'アップロード失敗 (' + res.status + ')', true);
+        }
+      } catch(e) {
+        input.value = '';
+        hideUploadProgress(toastId);
+        if (e.name === 'AbortError') {
+          showToast('タイムアウト: 回線状況を確認してください', true);
+        } else {
+          showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true);
+        }
+      }
     }
     window.uploadJobPhoto = uploadJobPhoto;
 
@@ -1131,7 +1235,11 @@ export function partnerMypagePage(): string {
       var modal = document.getElementById('photoPreviewModal');
       var img = document.getElementById('photoPreviewImg');
       var label = document.getElementById('photoPreviewLabel');
-      img.src = '/api/partner/me/jobs/' + jobId + '/photos/' + photoId + '/image';
+      // supabase_urlがある場合は直接URL使用
+      var photoList = window._currentPhotoList || [];
+      var photo = photoList.find(function(p){return p.id===photoId;});
+      var imgUrl = (photo && photo.supabase_url) ? photo.supabase_url : ('/api/partner/me/jobs/' + jobId + '/photos/' + photoId + '/image');
+      img.src = imgUrl;
       label.textContent = '写真プレビュー';
       // Find photo index for navigation
       window._photoViewJobId = jobId;
@@ -1154,7 +1262,8 @@ export function partnerMypagePage(): string {
       window._photoViewIdx = (window._photoViewIdx + dir + list.length) % list.length;
       var p = list[window._photoViewIdx];
       var img = document.getElementById('photoPreviewImg');
-      img.src = '/api/partner/me/jobs/' + window._photoViewJobId + '/photos/' + p.id + '/image';
+      var imgUrl = p.supabase_url || ('/api/partner/me/jobs/' + window._photoViewJobId + '/photos/' + p.id + '/image');
+      img.src = imgUrl;
       var catName = PHOTO_CATS[p.category] || p.category;
       document.getElementById('photoPreviewLabel').textContent = catName;
       updatePhotoCounter();
@@ -1310,6 +1419,31 @@ export function partnerMypagePage(): string {
     window.markRead = markRead;
 
     // --- Toast ---
+    // === アップロードプログレスUI ===
+    function showUploadProgress(id, msg, percent) {
+      var el = document.getElementById(id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = id;
+        el.className = 'fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-[100] bg-white rounded-xl shadow-2xl border border-gray-200 p-4';
+        el.innerHTML = '<div class="flex items-center gap-3 mb-2">'
+          + '<div class="w-8 h-8 rounded-full bg-sva-red/10 flex items-center justify-center shrink-0"><svg class="w-4 h-4 text-sva-red animate-spin" id="' + id + '_spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg></div>'
+          + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800" id="' + id + '_msg"></p>'
+          + '<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="bg-sva-red h-1.5 rounded-full transition-all duration-300" id="' + id + '_bar" style="width:0%"></div></div></div></div>';
+        document.body.appendChild(el);
+      }
+      var msgEl = document.getElementById(id + '_msg');
+      var barEl = document.getElementById(id + '_bar');
+      var spinEl = document.getElementById(id + '_spin');
+      if (msgEl) msgEl.textContent = msg;
+      if (barEl) barEl.style.width = percent + '%';
+      if (percent >= 100 && spinEl) spinEl.classList.remove('animate-spin');
+    }
+    function hideUploadProgress(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);}, 300); }
+    }
+
     function showToast(msg, isError) {
       var toast = document.getElementById('toast');
       var text = document.getElementById('toastText');

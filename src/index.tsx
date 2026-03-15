@@ -16,7 +16,7 @@ import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
 import { adminPartnerApi } from './api/admin-partner'
 
-type Bindings = { DB: D1Database; PHOTOS?: R2Bucket }
+type Bindings = { DB: D1Database; PHOTOS?: R2Bucket; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; SUPABASE_SERVICE_KEY?: string }
 
 const app = new Hono<{ Bindings: Bindings }>()
 
