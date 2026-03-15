@@ -492,6 +492,27 @@ adminPartnerApi.get('/jobs/:id/vehicles/:vid/photos', async (c) => {
   return c.json({ photos: photos.results })
 })
 
+// Admin upload vehicle photo
+adminPartnerApi.post('/jobs/:id/vehicles/:vid/photos', async (c) => {
+  const jobId = Number(c.req.param('id'))
+  const vid = Number(c.req.param('vid'))
+  const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(jobId).first()
+  if (!job) return c.json({ error: 'Not found' }, 404)
+  const v = await c.env.DB.prepare("SELECT id FROM job_vehicles WHERE id = ? AND job_id = ?").bind(vid, jobId).first()
+  if (!v) return c.json({ error: 'Vehicle not found' }, 404)
+
+  const body = await c.req.json<{ category: string; photo_data: string; mime_type?: string; file_name?: string; caption?: string }>()
+  const validCategories = ['caution_plate','pre_install','power_source','ground_point','completed','claim_caution_plate','claim_fault','claim_repair','other']
+  if (!body.category || !validCategories.includes(body.category)) return c.json({ error: 'Invalid category' }, 400)
+  if (!body.photo_data) return c.json({ error: 'photo_data required' }, 400)
+  if (body.photo_data.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
+
+  const r = await c.env.DB.prepare(
+    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by) VALUES (?,?,?,?,?,?,?,?)"
+  ).bind(jobId, vid, body.category, body.photo_data, body.mime_type||'image/jpeg', body.file_name||'', body.caption||'', 'admin').run()
+  return c.json({ id: r.meta.last_row_id }, 201)
+})
+
 // Update job tracking statuses (shared between admin & partner)
 adminPartnerApi.put('/jobs/:id/tracking', async (c) => {
   const id = Number(c.req.param('id'))

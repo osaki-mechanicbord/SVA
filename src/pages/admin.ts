@@ -1840,17 +1840,159 @@ export function adminPage(): string {
     // ===== Photos Tab =====
     function renderPhotosTab(ct) {
       var html = '';
+      // compressImage for admin
+      if (!window._adminCompressImage) {
+        window._adminCompressImage = function(file, maxW, maxH, q) {
+          maxW = maxW || 1920; maxH = maxH || 1920; q = q || 0.80;
+          return new Promise(function(resolve, reject) {
+            var blobUrl = null;
+            function cleanup() { if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch(e){} } }
+            var img = new Image();
+            img.onload = function() {
+              try {
+                var w = img.width, h = img.height;
+                if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
+                var c = document.createElement('canvas'); c.width = w; c.height = h;
+                var ctx = c.getContext('2d'); if (!ctx) { cleanup(); reject(new Error('Canvas error')); return; }
+                ctx.drawImage(img, 0, 0, w, h);
+                var ot = (file.type==='image/png') ? 'image/png' : 'image/jpeg';
+                var du = c.toDataURL(ot, (ot==='image/png')?undefined:q);
+                var b64 = du.split(',')[1];
+                if (!b64 || b64.length < 100) { cleanup(); reject(new Error('Compress fail')); return; }
+                resolve({ base64: b64, mime_type: ot }); c.width=0; c.height=0; cleanup();
+              } catch(e) { cleanup(); reject(e); }
+            };
+            img.onerror = function() {
+              cleanup();
+              var fr = new FileReader();
+              fr.onload = function(ev) {
+                var b = ev.target.result; if(typeof b!=='string'){reject(new Error('Read fail'));return;}
+                var b64 = b.split(',')[1]; if(!b64){reject(new Error('Parse fail'));return;}
+                resolve({ base64: b64, mime_type: file.type||'image/jpeg' });
+              };
+              fr.onerror = function(){reject(new Error('Read fail'));};
+              fr.readAsDataURL(file);
+            };
+            try { blobUrl = URL.createObjectURL(file); img.src = blobUrl; } catch(e) {
+              var fr2 = new FileReader(); fr2.onload = function(ev){img.src=ev.target.result;}; fr2.onerror=function(){reject(new Error('Read fail'));}; fr2.readAsDataURL(file);
+            }
+          });
+        };
+      }
+
+      // Admin upload function for vehicle photos
+      window.adminUploadVehiclePhoto = async function(jobId, vid, category, input) {
+        if (!input || !input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var fileName = file.name || 'photo.jpg';
+        if (file.size > 20*1024*1024) { showToast('20MB以下の画像を選択してください'); input.value=''; return; }
+        showToast('写真を処理中...');
+        try {
+          var comp = await window._adminCompressImage(file, 1920, 1920, 0.80);
+          if (comp.base64.length > 6500000) comp = await window._adminCompressImage(file, 1280, 1280, 0.65);
+          if (comp.base64.length > 6500000) { showToast('画像が大きすぎます'); input.value=''; return; }
+          showToast('アップロード中...');
+          var res = await fetch(API + '/admin/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},
+            body: JSON.stringify({category:category, photo_data:comp.base64, mime_type:comp.mime_type, file_name:fileName})
+          });
+          input.value = '';
+          if (res.ok) { showToast('写真をアップロードしました'); viewJob(jobId); }
+          else { var d = await res.json().catch(function(){return {};}); showToast(d.error||'アップロード失敗', true); }
+        } catch(e) { input.value=''; showToast('アップロード失敗: '+(e.message||''), true); }
+      };
+
+      // Admin upload for job-level photos
+      window.adminUploadJobPhoto = async function(jobId, category, input) {
+        if (!input || !input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var fileName = file.name || 'photo.jpg';
+        if (file.size > 20*1024*1024) { showToast('20MB以下の画像を選択してください'); input.value=''; return; }
+        showToast('写真を処理中...');
+        try {
+          var comp = await window._adminCompressImage(file, 1920, 1920, 0.80);
+          if (comp.base64.length > 6500000) comp = await window._adminCompressImage(file, 1280, 1280, 0.65);
+          if (comp.base64.length > 6500000) { showToast('画像が大きすぎます'); input.value=''; return; }
+          showToast('アップロード中...');
+          var res = await fetch(API + '/admin/jobs/' + currentJobId + '/photos', {
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},
+            body: JSON.stringify({category:category, photo_data:comp.base64, mime_type:comp.mime_type, file_name:fileName})
+          });
+          input.value = '';
+          if (res.ok) { showToast('写真をアップロードしました'); viewJob(currentJobId); }
+          else { var d = await res.json().catch(function(){return {};}); showToast(d.error||'アップロード失敗', true); }
+        } catch(e) { input.value=''; showToast('アップロード失敗: '+(e.message||''), true); }
+      };
+
+      // Admin delete photo
+      window.adminDeletePhoto = async function(jobId, photoId) {
+        if (!confirm('この写真を削除しますか？')) return;
+        try {
+          var res = await fetch(API + '/admin/jobs/' + jobId + '/photos/' + photoId, { method:'DELETE', headers:{'Authorization':'Bearer '+authToken} });
+          if (res.ok) { showToast('写真を削除しました'); viewJob(jobId); }
+          else showToast('削除失敗');
+        } catch(e) { showToast('エラー'); }
+      };
+
+      var jobId = currentJobId;
+
+      // Render vehicle photos with actual images
       currentJobVehicles.forEach(function(v) {
         var pc = v.photo_counts||{}; var total=0; Object.values(pc).forEach(function(n){total+=n;});
-        if (total === 0) return;
-        html += '<div class="mb-5"><h4 class="text-sm font-bold text-sva-dark mb-2 flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-sva-red text-white text-xs flex items-center justify-center font-bold">' + v.seq + '</span>' + esc(v.maker_name) + ' ' + esc(v.car_model) + '</h4><div class="flex gap-2 flex-wrap">';
+        html += '<div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">'
+          + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
+          + '<span class="w-6 h-6 rounded-full bg-sva-red text-white text-xs flex items-center justify-center font-bold">' + v.seq + '</span>'
+          + esc(v.maker_name||'') + ' ' + esc(v.car_model||'')
+          + '<span class="text-xs text-gray-400 ml-auto">' + total + '枚</span></h4>';
+
         PHOTO_CATS_ARR.forEach(function(c) {
-          var cnt = pc[c[0]]||0; if(cnt===0) return;
-          for(var i=0;i<cnt;i++) html += '<div class="w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red"><svg class="w-5 h-5 text-gray-300 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-[8px] text-gray-400 text-center leading-tight">' + c[1] + '</p></div>';
+          var cnt = pc[c[0]]||0;
+          html += '<div class="mb-3"><div class="flex items-center gap-2 mb-2">'
+            + '<span class="text-xs font-bold text-gray-700">' + c[1] + '</span>'
+            + '<span class="text-[10px] px-1.5 py-0.5 rounded-full font-medium ' + (cnt>0?'bg-green-100 text-green-700':'bg-gray-100 text-gray-400') + '">' + cnt + '枚</span></div>'
+            + '<div class="flex gap-2 flex-wrap">';
+          // Show existing photo thumbnails (loaded lazily from /image endpoint)
+          if (cnt > 0) {
+            for (var i=0; i<cnt; i++) {
+              // We only have counts, not IDs. Show placeholder that loads on gallery open
+              html += '<div class="w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center cursor-pointer hover:border-sva-red text-gray-300" onclick="switchTab(\\'photogallery\\');document.getElementById(\\'pgJobSelect\\').value=\\'' + jobId + '\\';loadPhotoGallery(' + jobId + ')">'
+                + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+            }
+          }
+          // Upload button
+          html += '<label class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red hover:bg-red-50/30 transition-all">'
+            + '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>'
+            + '<span class="text-[8px] text-gray-400 mt-0.5">追加</span>'
+            + '<input type="file" accept="image/*" class="hidden" onchange="adminUploadVehiclePhoto(' + jobId + ',' + v.id + ',\\'' + c[0] + '\\',this)"></label>';
+          html += '</div></div>';
         });
-        html += '</div></div>';
+        html += '</div>';
       });
-      if (!html) html = '<p class="text-sm text-gray-400 py-4">写真がアップロードされていません</p>';
+
+      // Also show job-level photos section
+      html += '<div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
+        + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>案件全体の写真</h4>';
+      var jobPhotoCats = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
+      jobPhotoCats.forEach(function(c) {
+        html += '<div class="mb-3"><div class="flex items-center gap-2 mb-2">'
+          + '<span class="text-xs font-bold text-gray-700">' + c[1] + '</span></div>'
+          + '<div class="flex gap-2 flex-wrap">'
+          + '<label class="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:border-sva-red hover:bg-red-50/30 transition-all">'
+          + '<svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>'
+          + '<span class="text-[8px] text-gray-400 mt-0.5">追加</span>'
+          + '<input type="file" accept="image/*" class="hidden" onchange="adminUploadJobPhoto(' + jobId + ',\\'' + c[0] + '\\',this)"></label>'
+          + '</div></div>';
+      });
+      html += '</div>';
+
+      // Link to full gallery
+      html += '<div class="text-center py-3">'
+        + '<button onclick="switchTab(\\'photogallery\\');document.getElementById(\\'pgJobSelect\\').value=\\'' + jobId + '\\';loadPhotoGallery(' + jobId + ')" class="px-6 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">'
+        + '<svg class="w-4 h-4 inline-block mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>'
+        + '写真ギャラリーで全て確認</button></div>';
+
+      if (!html || html.indexOf('rounded-xl') === -1) html = '<p class="text-sm text-gray-400 py-4">写真がアップロードされていません</p>';
       ct.innerHTML = html;
     }
 
@@ -1927,25 +2069,31 @@ export function adminPage(): string {
     }
 
     async function uploadJobAttachment(jobId, input) {
-      if (!input.files || !input.files[0]) return;
+      if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
+      var fileName = file.name || 'file';
+      var fileType = file.type || 'application/pdf';
       if (file.size > 10 * 1024 * 1024) { showToast('ファイルサイズが10MBを超えています'); input.value = ''; return; }
       var desc = prompt('ファイルの説明（任意）', '') || '';
       showToast('アップロード中...');
       var reader = new FileReader();
       reader.onload = async function(e) {
-        var base64 = e.target.result.split(',')[1];
         try {
+          var result = e.target.result;
+          if (typeof result !== 'string') { showToast('ファイル読込失敗'); input.value = ''; return; }
+          var base64 = result.split(',')[1];
+          if (!base64) { showToast('ファイル変換失敗'); input.value = ''; return; }
           var res = await fetch(API + '/admin/jobs/' + jobId + '/attachments', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
-            body: JSON.stringify({ file_name: file.name, file_data: base64, mime_type: file.type || 'application/pdf', description: desc })
+            body: JSON.stringify({ file_name: fileName, file_data: base64, mime_type: fileType, description: desc })
           });
+          input.value = '';
           if (res.ok) { showToast('添付ファイルをアップロードしました'); viewJob(jobId); }
-          else { var d = await res.json(); showToast(d.error || 'アップロード失敗'); }
-        } catch(e) { showToast('アップロードエラー'); }
+          else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗'); }
+        } catch(err) { input.value = ''; showToast('アップロードエラー: ' + (err.message||'')); }
       };
+      reader.onerror = function() { input.value = ''; showToast('ファイルの読み込みに失敗しました'); };
       reader.readAsDataURL(file);
-      input.value = '';
     }
 
     async function downloadAttachment(jobId, attId, fileName) {

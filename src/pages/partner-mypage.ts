@@ -896,7 +896,7 @@ export function partnerMypagePage(): string {
           var thumbs = existing.map(function(p) {
             return '<div class="relative group">'
               + '<div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl border-2 border-gray-100 overflow-hidden cursor-pointer bg-gray-50 shadow-sm hover:shadow-md transition-shadow" onclick="viewPhotoImage(' + j.id + ',' + p.id + ')">'
-              + '<img src="/api/partner/me/jobs/' + j.id + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.parentNode.innerHTML=\\'<div class=\\\\\\'w-full h-full flex items-center justify-center text-gray-300\\\\\\'><svg class=\\\\\\'w-6 h-6\\\\\\' fill=\\\\\\'none\\\\\\' stroke=\\\\\\'currentColor\\\\\\' viewBox=\\\\\\'0 0 24 24\\\\\\'><path stroke-linecap=\\\\\\'round\\\\\\' stroke-linejoin=\\\\\\'round\\\\\\' stroke-width=\\\\\\'1.5\\\\\\' d=\\\\\\'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z\\\\\\'/></svg></div>\\'">'
+              + '<img src="/api/partner/me/jobs/' + j.id + '/photos/' + p.id + '/image" class="w-full h-full object-cover" loading="lazy" onerror="this.style.display=\\'none\\';this.parentNode.style.cssText=\\'display:flex;align-items:center;justify-content:center;\\';this.parentNode.insertAdjacentHTML(\\'beforeend\\',\\'<span style=color:#ccc;font-size:24px>📷</span>\\')">'
               + '</div>'
               + '<button onclick="event.stopPropagation();deletePhoto(' + j.id + ',' + p.id + ')" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs shadow-lg opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex items-center justify-center transition-opacity" style="opacity:0.8">&times;</button>'
               + '<p class="text-[8px] text-gray-400 mt-0.5 text-center truncate w-20 sm:w-24">' + (p.file_name ? escH(p.file_name).substring(0,12) : fmtDt(p.created_at).split(' ')[0]) + '</p></div>';
@@ -987,25 +987,94 @@ export function partnerMypagePage(): string {
     }
     window.downloadPartnerAttachment = downloadPartnerAttachment;
 
-    async function uploadVehiclePhoto(jobId, vid, category, input) {
-      if (!input.files || !input.files[0]) return;
-      var file = input.files[0];
-      if (file.size > 5 * 1024 * 1024) { showToast('5MB以下の画像を選択してください', true); input.value = ''; return; }
-      showToast('写真をアップロード中...');
-      try {
-        var reader = new FileReader();
-        reader.onload = async function(e) {
-          var base64 = e.target.result.split(',')[1];
-          var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ category: category, photo_data: base64, mime_type: file.type, file_name: file.name })
-          });
-          if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
-          else { var d = await res.json(); showToast(d.error || 'アップロード失敗', true); }
+    // === 画像圧縮ユーティリティ（スマホ高解像度対応） ===
+    function compressImage(file, maxWidth, maxHeight, quality) {
+      maxWidth = maxWidth || 1920;
+      maxHeight = maxHeight || 1920;
+      quality = quality || 0.82;
+      return new Promise(function(resolve, reject) {
+        var blobUrl = null;
+        function cleanup() { if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch(e){} } }
+        var img = new Image();
+        img.onload = function() {
+          try {
+            var w = img.width, h = img.height;
+            if (w > maxWidth || h > maxHeight) {
+              var ratio = Math.min(maxWidth / w, maxHeight / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) { cleanup(); reject(new Error('Canvas非対応')); return; }
+            ctx.drawImage(img, 0, 0, w, h);
+            var outputType = (file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+            var q = (outputType === 'image/png') ? undefined : quality;
+            var dataUrl = canvas.toDataURL(outputType, q);
+            var base64 = dataUrl.split(',')[1];
+            if (!base64 || base64.length < 100) {
+              cleanup(); reject(new Error('画像変換に失敗しました')); return;
+            }
+            resolve({ base64: base64, mime_type: outputType, width: w, height: h });
+            canvas.width = 0; canvas.height = 0;
+            cleanup();
+          } catch(e) { cleanup(); reject(e); }
         };
-        reader.readAsDataURL(file);
-      } catch(e) { showToast('アップロード失敗', true); }
-      input.value = '';
+        img.onerror = function() {
+          cleanup();
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              var result = e.target.result;
+              if (typeof result !== 'string') { reject(new Error('ファイル読込失敗')); return; }
+              var base64 = result.split(',')[1];
+              if (!base64) { reject(new Error('Base64変換失敗')); return; }
+              resolve({ base64: base64, mime_type: file.type || 'image/jpeg', width: 0, height: 0 });
+            } catch(err) { reject(err); }
+          };
+          reader.onerror = function() { reject(new Error('ファイルの読み込みに失敗しました')); };
+          reader.readAsDataURL(file);
+        };
+        try {
+          blobUrl = URL.createObjectURL(file);
+          img.src = blobUrl;
+        } catch(e) {
+          // createObjectURL非対応の場合FileReaderにフォールバック
+          var fr = new FileReader();
+          fr.onload = function(ev) { img.src = ev.target.result; };
+          fr.onerror = function() { reject(new Error('ファイル読込失敗')); };
+          fr.readAsDataURL(file);
+        }
+      });
+    }
+
+    async function uploadVehiclePhoto(jobId, vid, category, input) {
+      if (!input || !input.files || !input.files[0]) return;
+      var file = input.files[0];
+      var fileName = file.name || 'photo.jpg';
+      var fileSize = file.size || 0;
+      // 重要: input.value のクリアは最後に行う（モバイルではFileReaderが中断される）
+      if (fileSize > 20 * 1024 * 1024) { showToast('20MB以下の画像を選択してください', true); input.value = ''; return; }
+      showToast('写真を処理中...');
+      try {
+        var compressed = await compressImage(file, 1920, 1920, 0.80);
+        if (compressed.base64.length > 6_500_000) {
+          // より強い圧縮を試みる
+          compressed = await compressImage(file, 1280, 1280, 0.65);
+        }
+        if (compressed.base64.length > 6_500_000) { showToast('画像が大きすぎます。低解像度で撮影してください', true); input.value = ''; return; }
+        showToast('アップロード中...');
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/vehicles/' + vid + '/photos', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ category: category, photo_data: compressed.base64, mime_type: compressed.mime_type, file_name: fileName })
+        });
+        // inputクリアは通信完了後
+        input.value = '';
+        if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
+        else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }
+      } catch(e) { input.value = ''; showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true); }
     }
     window.uploadVehiclePhoto = uploadVehiclePhoto;
 
@@ -1070,24 +1139,30 @@ export function partnerMypagePage(): string {
     window.saveJobReport = saveJobReport;
 
     async function uploadJobPhoto(jobId, category, input) {
-      if (!input.files || !input.files[0]) return;
+      if (!input || !input.files || !input.files[0]) return;
       var file = input.files[0];
-      if (file.size > 5 * 1024 * 1024) { showToast('5MB以下の画像を選択してください', true); input.value = ''; return; }
-      showToast('写真をアップロード中...');
+      var fileName = file.name || 'photo.jpg';
+      var fileSize = file.size || 0;
+      // 重要: input.value のクリアは通信完了後に行う（モバイルではFileReader中断防止）
+      if (fileSize > 20 * 1024 * 1024) { showToast('20MB以下の画像を選択してください', true); input.value = ''; return; }
+      showToast('写真を処理中...');
       try {
-        var reader = new FileReader();
-        reader.onload = async function(e) {
-          var base64 = e.target.result.split(',')[1]; // remove data:...;base64, prefix
-          var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ category: category, photo_data: base64, mime_type: file.type, file_name: file.name })
-          });
-          if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
-          else { var d = await res.json(); showToast(d.error || 'アップロード失敗', true); }
-        };
-        reader.readAsDataURL(file);
-      } catch(e) { showToast('アップロード失敗', true); }
-      input.value = '';
+        var compressed = await compressImage(file, 1920, 1920, 0.80);
+        if (compressed.base64.length > 6_500_000) {
+          // より強い圧縮を試みる
+          compressed = await compressImage(file, 1280, 1280, 0.65);
+        }
+        if (compressed.base64.length > 6_500_000) { showToast('画像が大きすぎます。低解像度で撮影してください', true); input.value = ''; return; }
+        showToast('アップロード中...');
+        var res = await fetch('/api/partner/me/jobs/' + jobId + '/photos', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ category: category, photo_data: compressed.base64, mime_type: compressed.mime_type, file_name: fileName })
+        });
+        // inputクリアは通信完了後
+        input.value = '';
+        if (res.ok) { showToast('写真をアップロードしました'); openJobDetail(jobId); }
+        else { var d = await res.json().catch(function(){return {};}); showToast(d.error || 'アップロード失敗 (' + res.status + ')', true); }
+      } catch(e) { input.value = ''; showToast('アップロード失敗: ' + (e.message || '不明なエラー'), true); }
     }
     window.uploadJobPhoto = uploadJobPhoto;
 
