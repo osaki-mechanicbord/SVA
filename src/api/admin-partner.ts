@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 
-type Bindings = { DB: D1Database; PHOTOS: R2Bucket }
+type Bindings = { DB: D1Database; PHOTOS?: R2Bucket }
 const adminPartnerApi = new Hono<{ Bindings: Bindings }>()
 
 // Auth middleware (reuse same Bearer token pattern as admin articles)
@@ -343,7 +343,7 @@ adminPartnerApi.get('/jobs/:id/photos/:photoId/image', async (c) => {
   if (!photo) return c.notFound()
 
   // R2から取得（新方式）
-  if (photo.r2_key) {
+  if (photo.r2_key && c.env.PHOTOS) {
     const obj = await c.env.PHOTOS.get(photo.r2_key)
     if (obj) {
       return new Response(obj.body, {
@@ -381,7 +381,7 @@ adminPartnerApi.get('/jobs/:id/photos/:photoId', async (c) => {
   return c.json({ photo })
 })
 
-// Admin photo upload (R2バイナリ保存)
+// Admin photo upload (R2優先、フォールバックBase64→D1)
 adminPartnerApi.post('/jobs/:id/photos', async (c) => {
   const id = Number(c.req.param('id'))
   const job = await c.env.DB.prepare("SELECT id FROM jobs WHERE id = ?").bind(id).first()
@@ -396,19 +396,30 @@ adminPartnerApi.post('/jobs/:id/photos', async (c) => {
   if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
   if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
 
-  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
-  const r2Key = `jobs/${id}/photos/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
   const mimeType = file.type || 'image/jpeg'
 
-  await c.env.PHOTOS.put(r2Key, file.stream(), {
-    httpMetadata: { contentType: mimeType },
-    customMetadata: { jobId: String(id), category, uploadedBy: 'admin' }
-  })
-
-  const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,'',?,?,?,?,?,?)"
-  ).bind(id, category, mimeType, file.name || '', '', 'admin', r2Key, file.size).run()
-  return c.json({ id: r.meta.last_row_id }, 201)
+  if (c.env.PHOTOS) {
+    const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+    const r2Key = `jobs/${id}/photos/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+    await c.env.PHOTOS.put(r2Key, file.stream(), {
+      httpMetadata: { contentType: mimeType },
+      customMetadata: { jobId: String(id), category, uploadedBy: 'admin' }
+    })
+    const r = await c.env.DB.prepare(
+      "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,'',?,?,?,?,?,?)"
+    ).bind(id, category, mimeType, file.name || '', '', 'admin', r2Key, file.size).run()
+    return c.json({ id: r.meta.last_row_id }, 201)
+  } else {
+    const buf = await file.arrayBuffer()
+    const bytes = new Uint8Array(buf)
+    let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const b64 = btoa(binary)
+    if (b64.length > 7_000_000) return c.json({ error: 'File too large' }, 400)
+    const r = await c.env.DB.prepare(
+      "INSERT INTO job_photos (job_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,?,?,?,?,'',?)"
+    ).bind(id, category, b64, mimeType, file.name || '', '', 'admin', file.size).run()
+    return c.json({ id: r.meta.last_row_id }, 201)
+  }
 })
 
 // Delete photo (admin) - R2オブジェクトも削除
@@ -419,7 +430,7 @@ adminPartnerApi.delete('/jobs/:id/photos/:photoId', async (c) => {
   const photo = await c.env.DB.prepare("SELECT r2_key FROM job_photos WHERE id = ? AND job_id = ?").bind(photoId, id).first<any>()
   if (!photo) return c.json({ error: 'Not found' }, 404)
 
-  if (photo.r2_key) {
+  if (photo.r2_key && c.env.PHOTOS) {
     await c.env.PHOTOS.delete(photo.r2_key).catch(() => {})
   }
 
@@ -526,7 +537,7 @@ adminPartnerApi.get('/jobs/:id/vehicles/:vid/photos', async (c) => {
   return c.json({ photos: photos.results })
 })
 
-// Admin upload vehicle photo (R2バイナリ保存)
+// Admin upload vehicle photo (R2優先、フォールバックBase64→D1)
 adminPartnerApi.post('/jobs/:id/vehicles/:vid/photos', async (c) => {
   const jobId = Number(c.req.param('id'))
   const vid = Number(c.req.param('vid'))
@@ -543,19 +554,30 @@ adminPartnerApi.post('/jobs/:id/vehicles/:vid/photos', async (c) => {
   if (!file || !(file instanceof File)) return c.json({ error: 'photo file required' }, 400)
   if (file.size > 25 * 1024 * 1024) return c.json({ error: 'ファイルサイズが大きすぎます（25MB以下）' }, 400)
 
-  const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
-  const r2Key = `jobs/${jobId}/vehicles/${vid}/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
   const mimeType = file.type || 'image/jpeg'
 
-  await c.env.PHOTOS.put(r2Key, file.stream(), {
-    httpMetadata: { contentType: mimeType },
-    customMetadata: { jobId: String(jobId), vehicleId: String(vid), category, uploadedBy: 'admin' }
-  })
-
-  const r = await c.env.DB.prepare(
-    "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,'',?,?,?,?,?,?)"
-  ).bind(jobId, vid, category, mimeType, file.name||'', '', 'admin', r2Key, file.size).run()
-  return c.json({ id: r.meta.last_row_id }, 201)
+  if (c.env.PHOTOS) {
+    const ext = file.name?.split('.').pop()?.toLowerCase() || 'jpg'
+    const r2Key = `jobs/${jobId}/vehicles/${vid}/${category}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`
+    await c.env.PHOTOS.put(r2Key, file.stream(), {
+      httpMetadata: { contentType: mimeType },
+      customMetadata: { jobId: String(jobId), vehicleId: String(vid), category, uploadedBy: 'admin' }
+    })
+    const r = await c.env.DB.prepare(
+      "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,'',?,?,?,?,?,?)"
+    ).bind(jobId, vid, category, mimeType, file.name||'', '', 'admin', r2Key, file.size).run()
+    return c.json({ id: r.meta.last_row_id }, 201)
+  } else {
+    const buf = await file.arrayBuffer()
+    const bytes = new Uint8Array(buf)
+    let binary = ''; for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const b64 = btoa(binary)
+    if (b64.length > 7_000_000) return c.json({ error: 'ファイルサイズが大きすぎます' }, 400)
+    const r = await c.env.DB.prepare(
+      "INSERT INTO job_photos (job_id, vehicle_id, category, photo_data, mime_type, file_name, caption, uploaded_by, r2_key, file_size) VALUES (?,?,?,?,?,?,?,?,'',?)"
+    ).bind(jobId, vid, category, b64, mimeType, file.name||'', '', 'admin', file.size).run()
+    return c.json({ id: r.meta.last_row_id }, 201)
+  }
 })
 
 // Update job tracking statuses (shared between admin & partner)
