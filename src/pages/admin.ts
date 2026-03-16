@@ -171,6 +171,7 @@ export function adminPage(): string {
           <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">案件</button>
           <button id="tabProducts" onclick="switchTab('products')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">製品</button>
           <button id="tabInquiries" onclick="switchTab('inquiries')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">問合せ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
+          <button id="tabRequests" onclick="switchTab('requests')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">取付依頼<span id="requestBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span></button>
           <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">写真</button>
           <button id="tabAccount" onclick="switchTab('account')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 md:ml-auto">設定</button>
         </div>
@@ -192,10 +193,10 @@ export function adminPage(): string {
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span>パートナー</span>
         </button>
-        <button class="nav-item" data-mob-tab="inquiries" onclick="switchTab('inquiries');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <span>問合せ</span>
-          <span id="mobileInquiryBadge" class="nav-badge" style="display:none">0</span>
+        <button class="nav-item" data-mob-tab="requests" onclick="switchTab('requests');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span>取付依頼</span>
+          <span id="mobileRequestBadge" class="nav-badge" style="display:none">0</span>
         </button>
         <button class="nav-item" id="mobileMoreBtn" onclick="toggleMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -209,6 +210,10 @@ export function adminPage(): string {
     <div class="mobile-more-menu" id="mobileMoreMenu">
       <div style="text-align:center;padding:10px 0 2px"><div style="width:36px;height:4px;background:#d1d5db;border-radius:2px;margin:0 auto"></div></div>
       <div class="more-grid">
+        <button class="more-item" data-mob-tab="inquiries" onclick="switchTab('inquiries');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span>問合せ</span>
+        </button>
         <button class="more-item" data-mob-tab="images" onclick="switchTab('images');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           <span>画像</span>
@@ -580,6 +585,44 @@ export function adminPage(): string {
     </div>
 
     <!-- ============================================ -->
+    <!-- REQUESTS TAB (取付依頼管理) -->
+    <!-- ============================================ -->
+    <div id="requestsTab" class="hidden">
+      <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div id="requestViewTitle" class="text-lg font-bold text-sva-dark flex items-center gap-2">取付依頼一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span></div>
+          <div class="flex items-center gap-2">
+            <input id="requestSearchInput" type="text" placeholder="会社名・担当者名で検索" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red w-52" onkeydown="if(event.key==='Enter')loadRequests(1)">
+            <select id="requestStatusFilter" onchange="loadRequests(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+              <option value="">全ステータス</option>
+              <option value="new">新着</option>
+              <option value="confirmed">確認済み</option>
+              <option value="assigned">パートナー割当済</option>
+              <option value="scheduled">施工日確定</option>
+              <option value="in_progress">施工中</option>
+              <option value="completed">完了</option>
+              <option value="cancelled">キャンセル</option>
+            </select>
+            <button id="backToRequestListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadRequests(1)">一覧に戻る</button>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div id="requestListView">
+          <div id="requestList" class="space-y-2">
+            <div class="text-center py-16 text-gray-400">
+              <svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              <p class="text-sm">取付依頼はまだありません</p>
+              <p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付依頼がここに表示されます</p>
+            </div>
+          </div>
+          <div id="requestPagination" class="mt-6 flex justify-center gap-2"></div>
+        </div>
+        <div id="requestDetailView" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- ============================================ -->
     <!-- ACCOUNT TAB -->
     <!-- ============================================ -->
     <div id="accountTab" class="hidden">
@@ -724,13 +767,13 @@ export function adminPage(): string {
         if (t) { el.classList.toggle('active', t === tab); }
       });
       // If the active tab is in the "more" group, highlight the "more" button
-      var moreTabs = ['images','products','photogallery','account'];
+      var moreTabs = ['inquiries','images','products','photogallery','account'];
       var moreBtn = document.getElementById('mobileMoreBtn');
       if (moreBtn) { moreBtn.classList.toggle('active', moreTabs.indexOf(tab) !== -1); }
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs','products','inquiries','photogallery','account'];
+    const TABS = ['articles','images','partners','jobs','products','inquiries','requests','photogallery','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
@@ -753,6 +796,7 @@ export function adminPage(): string {
       if (tab === 'products') loadProductMaster();
       if (tab === 'inquiries') loadInquiries(1);
       if (tab === 'photogallery') refreshPhotoJobList();
+      if (tab === 'requests') loadRequests(1);
     }
 
     // Tab scroll gradient hints (desktop)
@@ -2546,6 +2590,78 @@ export function adminPage(): string {
 
     // Refresh badge every 30s
     setInterval(function(){ if (authToken) loadInquiryBadge(); }, 30000);
+
+    // ===== Installation Requests (取付依頼) =====
+    async function loadRequests(page) {
+      var listView = document.getElementById('requestListView');
+      var detailView = document.getElementById('requestDetailView');
+      var backBtn = document.getElementById('backToRequestListBtn');
+      if (listView) listView.classList.remove('hidden');
+      if (detailView) detailView.classList.add('hidden');
+      if (backBtn) backBtn.classList.add('hidden');
+      document.getElementById('requestViewTitle').innerHTML = '取付依頼一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span>';
+
+      var status = (document.getElementById('requestStatusFilter')||{}).value||'';
+      var search = (document.getElementById('requestSearchInput')||{}).value||'';
+      var q = '?page=' + page;
+      if (status) q += '&status=' + encodeURIComponent(status);
+      if (search) q += '&search=' + encodeURIComponent(search);
+
+      try {
+        var res = await fetch(API + '/admin/requests' + q, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.status === 401) { authToken = ''; sessionStorage.removeItem('sva_token'); location.reload(); return; }
+        var data = await res.json();
+        renderRequestList(data.requests || [], data.pagination || { total: 0, page: 1, pages: 1 });
+      } catch(e) {
+        var list = document.getElementById('requestList');
+        if (list) list.innerHTML = '<div class="text-center py-16 text-gray-400"><p class="text-sm">取付依頼の読み込みに失敗しました</p></div>';
+      }
+    }
+
+    function renderRequestList(requests, pagination) {
+      var list = document.getElementById('requestList');
+      if (!requests || requests.length === 0) {
+        list.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><p class="text-sm">取付依頼はまだありません</p><p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付依頼がここに表示されます</p></div>';
+        return;
+      }
+      var statusLabels = { new: '新着', confirmed: '確認済み', assigned: '割当済', scheduled: '日程確定', in_progress: '施工中', completed: '完了', cancelled: 'キャンセル' };
+      var statusColors = { new: 'bg-orange-100 text-orange-700', confirmed: 'bg-blue-100 text-blue-700', assigned: 'bg-purple-100 text-purple-700', scheduled: 'bg-indigo-100 text-indigo-700', in_progress: 'bg-yellow-100 text-yellow-700', completed: 'bg-green-100 text-green-700', cancelled: 'bg-gray-100 text-gray-500' };
+      var html = '';
+      requests.forEach(function(r) {
+        var sLabel = statusLabels[r.status] || r.status;
+        var sColor = statusColors[r.status] || 'bg-gray-100 text-gray-600';
+        html += '<div class="bg-white rounded-xl border border-gray-100 p-4 hover:border-sva-red/20 transition-colors cursor-pointer" onclick="viewRequestDetail(' + r.id + ')">'
+          + '<div class="flex items-center justify-between">'
+          + '<div class="flex items-center gap-3">'
+          + '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full ' + sColor + '">' + sLabel + '</span>'
+          + '<span class="text-sm font-medium text-sva-dark">' + (r.company_name || '---') + '</span>'
+          + '<span class="text-xs text-gray-400">' + (r.contact_name || '') + '</span>'
+          + '</div>'
+          + '<span class="text-xs text-gray-400">' + (r.created_at ? r.created_at.slice(0,10) : '') + '</span>'
+          + '</div>'
+          + '<div class="mt-2 text-xs text-gray-500 truncate">' + (r.vehicle_type || '') + ' / ' + (r.device_type || '') + ' / ' + (r.quantity || '') + '台</div>'
+          + '</div>';
+      });
+      list.innerHTML = html;
+
+      // Pagination
+      var pg = document.getElementById('requestPagination');
+      if (pagination.pages <= 1) { pg.innerHTML = ''; return; }
+      var pgHtml = '';
+      for (var i = 1; i <= pagination.pages; i++) {
+        pgHtml += '<button onclick="loadRequests(' + i + ')" class="px-3 py-1.5 text-sm rounded-lg ' + (i === pagination.page ? 'bg-sva-red text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50') + '">' + i + '</button>';
+      }
+      pg.innerHTML = pgHtml;
+    }
+
+    function viewRequestDetail(id) {
+      // Placeholder - will be implemented when API is ready
+      document.getElementById('requestListView').classList.add('hidden');
+      document.getElementById('requestDetailView').classList.remove('hidden');
+      document.getElementById('backToRequestListBtn').classList.remove('hidden');
+      document.getElementById('requestViewTitle').textContent = '取付依頼詳細';
+      document.getElementById('requestDetailView').innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-8 text-center"><p class="text-gray-400 text-sm">取付依頼詳細の表示機能は準備中です (ID: ' + id + ')</p></div>';
+    }
 
     async function loadInquiries(page) {
       document.getElementById('inquiryListView').classList.remove('hidden');

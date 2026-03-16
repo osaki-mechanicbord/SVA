@@ -447,7 +447,7 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
               乗用車以外のすべての車両に、ドライブレコーダー・AIカメラ等の安全装置を出張取付する日本初のB2B専門プラットフォームです。
             </p>
             <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <a href="#contact" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
+              <a href="/request" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
                 取付を依頼する
               </a>
               <a href="#partner" class="inline-flex items-center justify-center px-8 py-3.5 border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-colors text-sm">

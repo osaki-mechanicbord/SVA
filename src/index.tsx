@@ -12,6 +12,7 @@ import { partnerMypagePage } from './pages/partner-mypage'
 import { partnerInvitePage } from './pages/partner-invite'
 import { privacyPage, termsPage, tokushohoPage, sitemapHtmlPage } from './pages/legal'
 import { servicePage, getServiceSlugs, getServiceList } from './pages/service'
+import { requestPage } from './pages/request'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
@@ -161,6 +162,13 @@ app.get('/service/:slug', (c) => {
     return c.html('<html><body><h1>404 - ページが見つかりません</h1><p><a href="/">トップに戻る</a></p></body></html>', 404)
   }
   return c.html(html)
+})
+
+// ==========================================
+// Installation Request Page (取付依頼)
+// ==========================================
+app.get('/request', (c) => {
+  return c.html(requestPage())
 })
 
 // ==========================================
