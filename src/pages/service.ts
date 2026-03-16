@@ -11,6 +11,7 @@ interface ServicePageData {
   heroSubtitle: string
   metaDescription: string
   metaKeywords: string
+  image: string  // hero image path e.g. /static/images/service-forklift.png
   challenges: { title: string; text: string }[]
   devices: { name: string; desc: string }[]
   features: { title: string; text: string }[]
@@ -29,6 +30,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Forklift AI Camera & Dashcam Installation',
     heroTitle: 'フォークリフト用<br>AIカメラ・ドラレコ取付',
     heroSubtitle: 'AI人検知カメラで倉庫・工場の安全を守る。全国出張取付対応。',
+    image: '/static/images/service-forklift.png',
     metaDescription: 'フォークリフト用人検知AIカメラ・ドライブレコーダーの出張取付サービス。AI画像認識による作業員検知で事故防止。全国47都道府県対応。1台から数百台まで。SVA公認パートナーが施工。',
     metaKeywords: 'フォークリフト,AIカメラ,人検知,ドライブレコーダー,取付,出張,安全対策,倉庫,工場,事故防止',
     challenges: [
@@ -64,6 +66,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Heavy Equipment AI Camera & Dashcam Installation',
     heroTitle: '重機用<br>人検知AIカメラ・ドラレコ取付',
     heroSubtitle: 'ショベルカー・クレーンなど重機の安全対策を全国出張で。',
+    image: '/static/images/service-heavy-equipment.png',
     metaDescription: '重機（ショベルカー・クレーン等）用人検知AIカメラ・ドライブレコーダーの出張取付サービス。360度AIカメラで作業員を自動検知。全国47都道府県対応。建設現場の安全管理に。',
     metaKeywords: '重機,ショベルカー,クレーン,AIカメラ,人検知,ドライブレコーダー,取付,出張,建設現場,安全対策',
     challenges: [
@@ -99,6 +102,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Construction Equipment Safety Device Installation',
     heroTitle: '建機用<br>安全装置・AIカメラ取付',
     heroSubtitle: '建設現場の安全管理を強化。AI検知による自動停止装置を全国出張取付。',
+    image: '/static/images/service-construction.png',
     metaDescription: '建機用安全装置・AIカメラの出張取付サービス。AI検知で建機を自動停止させる安全装置、人検知カメラ、ドライブレコーダーの取付。全国47都道府県対応。建設現場の労災防止に。',
     metaKeywords: '建機,建設機械,安全装置,AIカメラ,自動停止,人検知,取付,出張,建設現場,労災防止',
     challenges: [
@@ -133,6 +137,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Truck Dashcam, Digital Tachograph & ETC Installation',
     heroTitle: 'トラック用<br>ドラレコ・デジタコ・ETC取付',
     heroSubtitle: '大型・中型・小型トラックの安全装置・法定装置を全国出張取付。',
+    image: '/static/images/service-truck.png',
     metaDescription: 'トラック用ドライブレコーダー・デジタルタコグラフ・ETC車載器の出張取付サービス。大型・中型・小型トラック対応。法定義務装置からAIカメラまで。全国47都道府県出張対応。',
     metaKeywords: 'トラック,ドライブレコーダー,デジタルタコグラフ,ETC,取付,出張,大型トラック,運行管理,24V,物流',
     challenges: [
@@ -170,6 +175,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Bus Safety Device & Child Detection System Installation',
     heroTitle: 'バス用<br>置き去り防止装置・ドラレコ取付',
     heroSubtitle: '送迎バスの安全対策義務化に対応。国交省認定装置を全国出張取付。',
+    image: '/static/images/service-bus.png',
     metaDescription: '送迎バス用置き去り防止装置（SOS-0006等）・ドライブレコーダーの出張取付サービス。国土交通省ガイドライン適合装置対応。幼稚園・保育園・障害者施設の送迎バスに。全国47都道府県出張対応。',
     metaKeywords: 'バス,置き去り防止装置,SOS-0006,送迎バス,ドライブレコーダー,取付,出張,義務化,幼稚園,保育園,国土交通省',
     challenges: [
@@ -204,6 +210,7 @@ const SERVICE_PAGES: Record<string, ServicePageData> = {
     titleEn: 'Marine Vessel Dashcam Installation',
     heroTitle: '船舶用<br>ドライブレコーダー取付',
     heroSubtitle: '防水・耐振動・耐塩害仕様の船舶専用ドラレコを全国出張取付。',
+    image: '/static/images/service-ship.png',
     metaDescription: '船舶用ドライブレコーダーの出張取付サービス。防水・耐振動・耐塩害仕様の船舶専用ドラレコ対応。漁船・作業船・旅客船に。全国対応。SVA公認パートナーが施工。',
     metaKeywords: '船舶,ドライブレコーダー,防水,耐塩害,取付,出張,漁船,作業船,旅客船,海上安全',
     challenges: [
@@ -249,6 +256,46 @@ export function getServiceList(): { slug: string; title: string }[] {
   return SERVICE_LIST.map(s => ({ slug: s.slug, title: s.title }))
 }
 
+// Device icon SVGs by category
+function deviceIcon(name: string): string {
+  if (name.includes('AI') || name.includes('人検知') || name.includes('停止装置')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>'
+  }
+  if (name.includes('ドライブレコーダー') || name.includes('ドラレコ') || name.includes('ドラレコ')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25z"/></svg>'
+  }
+  if (name.includes('バックカメラ')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0z"/></svg>'
+  }
+  if (name.includes('ETC')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5z"/></svg>'
+  }
+  if (name.includes('デジタルタコグラフ') || name.includes('デジタコ')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5z"/></svg>'
+  }
+  if (name.includes('クラウド')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15z"/></svg>'
+  }
+  if (name.includes('SOS') || name.includes('置き去り')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>'
+  }
+  if (name.includes('LED') || name.includes('マーカー')) {
+    return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>'
+  }
+  // Default
+  return '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17l-5.384 3.08A2.065 2.065 0 013 16.367V7.633a2.065 2.065 0 013.036-1.884l5.384 3.08a2.065 2.065 0 010 3.768zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+}
+
+// Feature icon by index
+function featureIcon(idx: number): string {
+  const icons = [
+    '<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17l-5.384 3.08A2.065 2.065 0 013 16.367V7.633a2.065 2.065 0 013.036-1.884l5.384 3.08a2.065 2.065 0 010 3.768zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+    '<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>',
+    '<svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/></svg>',
+  ]
+  return icons[idx % icons.length]
+}
+
 function renderServicePage(data: ServicePageData): string {
   // Structured data
   const structuredData = JSON.stringify({
@@ -263,6 +310,7 @@ function renderServicePage(data: ServicePageData): string {
         "areaServed": { "@type": "Country", "name": "Japan" },
         "description": data.metaDescription,
         "url": `https://sva-assist.com/service/${data.slug}`,
+        "image": `https://sva-assist.com${data.image}`,
       },
       {
         "@type": "FAQPage",
@@ -294,7 +342,79 @@ function renderServicePage(data: ServicePageData): string {
     data.metaDescription,
     `/service/${data.slug}`,
     `<meta name="keywords" content="${data.metaKeywords}">
-    <script type="application/ld+json">${structuredData}</script>`
+    <meta property="og:image" content="https://sva-assist.com${data.image}">
+    <script type="application/ld+json">${structuredData}</script>
+    <style>
+      .hero-service { position: relative; overflow: hidden; }
+      .hero-service-img {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0.35;
+        filter: brightness(0.6);
+        transition: transform 0.5s ease;
+      }
+      .hero-service:hover .hero-service-img { transform: scale(1.03); }
+      .hero-service-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(135deg, rgba(26,26,46,0.92) 0%, rgba(26,26,46,0.7) 50%, rgba(15,52,96,0.85) 100%);
+      }
+      @media (min-width: 768px) {
+        .hero-service-img { opacity: 0.5; }
+        .hero-service-overlay {
+          background: linear-gradient(90deg, rgba(26,26,46,0.95) 0%, rgba(26,26,46,0.8) 45%, rgba(15,52,96,0.4) 100%);
+        }
+      }
+      .challenge-image {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+      .challenge-image img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0.7;
+        mix-blend-mode: luminosity;
+      }
+      .device-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .device-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(196,30,58,0.1);
+      }
+      .feature-card {
+        position: relative;
+        overflow: hidden;
+      }
+      .feature-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0;
+        width: 4px; height: 100%;
+        background: linear-gradient(180deg, #C41E3A 0%, #1A5276 100%);
+        border-radius: 4px 0 0 4px;
+      }
+      .related-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+      }
+      .related-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+      }
+      .related-card img {
+        transition: transform 0.3s ease;
+      }
+      .related-card:hover img {
+        transform: scale(1.05);
+      }
+      .stat-number {
+        background: linear-gradient(135deg, #C41E3A, #1A5276);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    </style>`
   ) + siteHeader() + `
   <main>
     <!-- Breadcrumb -->
@@ -310,39 +430,81 @@ function renderServicePage(data: ServicePageData): string {
       </div>
     </div>
 
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-sva-dark via-[#16213e] to-[#0f3460] py-16 sm:py-24">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <p class="text-sva-red font-medium text-sm tracking-widest mb-4">${data.titleEn.toUpperCase()}</p>
-        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">${data.heroTitle}</h1>
-        <p class="text-gray-300 text-base sm:text-lg leading-relaxed max-w-2xl mb-8">${escapeHtml(data.heroSubtitle)}</p>
-        <a href="#contact-service" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
-          ${escapeHtml(data.cta)}
-        </a>
+    <!-- Hero with Background Image -->
+    <section class="hero-service">
+      <img src="${data.image}" alt="${escapeHtml(data.title)}" class="hero-service-img" loading="eager" width="1365" height="768">
+      <div class="hero-service-overlay"></div>
+      <div class="relative z-10 py-20 sm:py-28 lg:py-32">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6">
+          <div class="max-w-2xl">
+            <p class="inline-block bg-sva-red/20 text-sva-red font-semibold text-xs tracking-widest px-4 py-1.5 rounded-full mb-6 border border-sva-red/30 backdrop-blur-sm">${data.titleEn.toUpperCase()}</p>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">${data.heroTitle}</h1>
+            <p class="text-gray-300 text-base sm:text-lg leading-relaxed mb-10">${escapeHtml(data.heroSubtitle)}</p>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <a href="#contact-service" class="inline-flex items-center justify-center px-8 py-4 bg-sva-red text-white font-medium rounded-xl hover:bg-red-800 transition-all text-sm shadow-lg shadow-red-900/30 hover:shadow-xl hover:shadow-red-900/40">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                ${escapeHtml(data.cta)}
+              </a>
+              <a href="tel:06-6152-7511" class="inline-flex items-center justify-center px-8 py-4 bg-white/10 text-white font-medium rounded-xl hover:bg-white/20 transition-all text-sm backdrop-blur-sm border border-white/20">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+                06-6152-7511
+              </a>
+            </div>
+          </div>
+          <!-- Stats bar -->
+          <div class="mt-12 pt-8 border-t border-white/10 grid grid-cols-3 gap-6 max-w-lg">
+            <div>
+              <p class="text-2xl sm:text-3xl font-bold text-white">47</p>
+              <p class="text-xs text-gray-400 mt-1">都道府県対応</p>
+            </div>
+            <div>
+              <p class="text-2xl sm:text-3xl font-bold text-white">24V</p>
+              <p class="text-xs text-gray-400 mt-1">電源対応</p>
+            </div>
+            <div>
+              <p class="text-2xl sm:text-3xl font-bold text-white">0<span class="text-lg">円</span></p>
+              <p class="text-xs text-gray-400 mt-1">見積もり無料</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Challenges -->
+    <!-- Challenges with Side Image -->
     <section class="py-16 sm:py-20 bg-sva-light">
       <div class="max-w-6xl mx-auto px-4 sm:px-6">
         <div class="text-center mb-12">
           <p class="text-sva-red text-sm font-medium tracking-widest mb-2">CHALLENGES</p>
           <h2 class="text-2xl sm:text-3xl font-bold text-sva-dark">こんな課題はありませんか？</h2>
         </div>
-        <div class="grid sm:grid-cols-2 gap-6">
-          ${data.challenges.map(c => `
-            <div class="bg-white rounded-xl p-6 border border-gray-100">
-              <div class="flex items-start gap-3">
-                <div class="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg class="w-4 h-4 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                </div>
-                <div>
-                  <h3 class="font-bold text-sva-dark text-sm mb-1">${escapeHtml(c.title)}</h3>
-                  <p class="text-sm text-gray-500 leading-relaxed">${escapeHtml(c.text)}</p>
-                </div>
+        <div class="grid lg:grid-cols-5 gap-8 items-start">
+          <!-- Image column (hidden on mobile, shown on lg) -->
+          <div class="hidden lg:block lg:col-span-2">
+            <div class="challenge-image aspect-[4/5] sticky top-24 rounded-2xl shadow-2xl">
+              <img src="${data.image}" alt="${escapeHtml(data.title)}" loading="lazy" class="rounded-2xl" width="1365" height="768">
+              <div class="absolute inset-0 bg-gradient-to-t from-sva-dark/80 via-transparent to-transparent rounded-2xl"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-6">
+                <p class="text-white text-sm font-medium opacity-80">SVAが解決します</p>
+                <p class="text-white text-lg font-bold mt-1">${escapeHtml(data.title)}</p>
               </div>
             </div>
-          `).join('')}
+          </div>
+          <!-- Cards column -->
+          <div class="lg:col-span-3 grid sm:grid-cols-2 gap-5">
+            ${data.challenges.map((c, i) => `
+              <div class="bg-white rounded-xl p-6 border border-gray-100 hover:border-sva-red/20 transition-colors">
+                <div class="flex items-start gap-4">
+                  <div class="w-10 h-10 bg-gradient-to-br from-red-50 to-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-sva-red font-bold text-sm">${String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sva-dark text-sm mb-2">${escapeHtml(c.title)}</h3>
+                    <p class="text-sm text-gray-500 leading-relaxed">${escapeHtml(c.text)}</p>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
         </div>
       </div>
     </section>
@@ -353,10 +515,14 @@ function renderServicePage(data: ServicePageData): string {
         <div class="text-center mb-12">
           <p class="text-sva-red text-sm font-medium tracking-widest mb-2">DEVICES</p>
           <h2 class="text-2xl sm:text-3xl font-bold text-sva-dark">対応装置</h2>
+          <p class="text-sm text-gray-500 mt-3 max-w-lg mx-auto">専門技術者が最適な装置を選定し、確実に取付施工します。</p>
         </div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           ${data.devices.map(d => `
-            <div class="bg-sva-light rounded-xl p-6 border border-gray-100">
+            <div class="device-card bg-gradient-to-br from-sva-light to-white rounded-xl p-6 border border-gray-100">
+              <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-4 text-sva-red shadow-sm border border-gray-50">
+                ${deviceIcon(d.name)}
+              </div>
               <h3 class="font-bold text-sva-dark text-sm mb-2">${escapeHtml(d.name)}</h3>
               <p class="text-xs text-gray-500 leading-relaxed">${escapeHtml(d.desc)}</p>
             </div>
@@ -373,8 +539,11 @@ function renderServicePage(data: ServicePageData): string {
           <h2 class="text-2xl sm:text-3xl font-bold text-sva-dark">SVAが選ばれる理由</h2>
         </div>
         <div class="grid md:grid-cols-3 gap-6">
-          ${data.features.map(f => `
-            <div class="bg-white rounded-xl p-8 border border-gray-100">
+          ${data.features.map((f, i) => `
+            <div class="feature-card bg-white rounded-xl p-8 border border-gray-100">
+              <div class="w-14 h-14 bg-gradient-to-br from-sva-red/10 to-sva-accent/10 rounded-2xl flex items-center justify-center mb-5 text-sva-red">
+                ${featureIcon(i)}
+              </div>
               <h3 class="text-lg font-bold text-sva-dark mb-3">${escapeHtml(f.title)}</h3>
               <p class="text-sm text-gray-500 leading-relaxed">${escapeHtml(f.text)}</p>
             </div>
@@ -393,9 +562,9 @@ function renderServicePage(data: ServicePageData): string {
         <div class="space-y-3">
           ${data.faq.map(f => `
             <div class="bg-sva-light rounded-xl border border-gray-100 overflow-hidden">
-              <button data-faq-toggle class="w-full flex items-center justify-between px-6 py-4 text-left">
+              <button data-faq-toggle class="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50/50 transition-colors">
                 <span class="text-sm font-medium text-sva-dark pr-4">${escapeHtml(f.q)}</span>
-                <span data-faq-icon class="text-sva-red text-lg font-light shrink-0 w-6 text-center">+</span>
+                <span data-faq-icon class="text-sva-red text-lg font-light shrink-0 w-6 text-center transition-transform duration-200">+</span>
               </button>
               <div data-faq-content class="hidden px-6 pb-5">
                 <p class="text-sm text-gray-500 leading-relaxed">${escapeHtml(f.a)}</p>
@@ -406,16 +575,28 @@ function renderServicePage(data: ServicePageData): string {
       </div>
     </section>
 
-    <!-- Related Services -->
+    <!-- Related Services with Images -->
     ${relatedServices.length > 0 ? `
-    <section class="py-12 bg-sva-light border-t border-gray-100">
+    <section class="py-16 sm:py-20 bg-sva-light">
       <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <h2 class="text-lg font-bold text-sva-dark mb-6">関連サービス</h2>
-        <div class="grid sm:grid-cols-3 gap-4">
+        <div class="text-center mb-10">
+          <p class="text-sva-red text-sm font-medium tracking-widest mb-2">RELATED</p>
+          <h2 class="text-xl sm:text-2xl font-bold text-sva-dark">関連サービス</h2>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-6">
           ${relatedServices.map(s => `
-            <a href="/service/${s.slug}" class="bg-white rounded-xl p-5 border border-gray-100 hover:border-sva-red/30 transition-colors block">
-              <p class="font-bold text-sva-dark text-sm mb-1">${escapeHtml(s.title)}</p>
-              <p class="text-xs text-gray-500 line-clamp-2">${escapeHtml(s.heroSubtitle)}</p>
+            <a href="/service/${s.slug}" class="related-card bg-white rounded-2xl border border-gray-100 hover:border-sva-red/20 block group">
+              <div class="aspect-[16/9] overflow-hidden rounded-t-2xl bg-sva-dark">
+                <img src="${s.image}" alt="${escapeHtml(s.title)}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" loading="lazy" width="1365" height="768">
+              </div>
+              <div class="p-5">
+                <p class="font-bold text-sva-dark text-sm mb-1.5 group-hover:text-sva-red transition-colors">${escapeHtml(s.title)}</p>
+                <p class="text-xs text-gray-500 line-clamp-2">${escapeHtml(s.heroSubtitle)}</p>
+                <span class="inline-flex items-center gap-1 text-xs text-sva-red font-medium mt-3">
+                  詳しく見る
+                  <svg class="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                </span>
+              </div>
             </a>
           `).join('')}
         </div>
@@ -424,19 +605,27 @@ function renderServicePage(data: ServicePageData): string {
     ` : ''}
 
     <!-- Contact CTA -->
-    <section id="contact-service" class="py-16 sm:py-20 bg-white">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-        <h2 class="text-2xl sm:text-3xl font-bold text-sva-dark mb-4">${escapeHtml(data.cta)}</h2>
-        <p class="text-sm text-gray-500 mb-8">お見積もりは無料です。まずはお気軽にお問い合わせください。</p>
+    <section id="contact-service" class="py-16 sm:py-20 bg-gradient-to-br from-sva-dark via-[#16213e] to-[#0f3460] relative overflow-hidden">
+      <div class="absolute inset-0 opacity-5">
+        <img src="${data.image}" alt="" class="w-full h-full object-cover" loading="lazy">
+      </div>
+      <div class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        <div class="w-16 h-16 bg-sva-red/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-sva-red/30">
+          <svg class="w-8 h-8 text-sva-red" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">${escapeHtml(data.cta)}</h2>
+        <p class="text-sm text-gray-300 mb-10">お見積もりは無料です。まずはお気軽にお問い合わせください。</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/#contact" class="inline-flex items-center justify-center px-8 py-3.5 bg-sva-red text-white font-medium rounded-lg hover:bg-red-800 transition-colors text-sm">
+          <a href="/#contact" class="inline-flex items-center justify-center px-8 py-4 bg-sva-red text-white font-medium rounded-xl hover:bg-red-800 transition-all text-sm shadow-lg shadow-red-900/30">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
             お問い合わせフォーム
           </a>
-          <a href="tel:06-6152-7511" class="inline-flex items-center justify-center px-8 py-3.5 border border-gray-200 text-sva-dark font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
-            電話: 06-6152-7511
+          <a href="tel:06-6152-7511" class="inline-flex items-center justify-center px-8 py-4 bg-white/10 text-white font-medium rounded-xl hover:bg-white/20 transition-all text-sm backdrop-blur-sm border border-white/20">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>
+            06-6152-7511
           </a>
         </div>
-        <p class="text-xs text-gray-400 mt-4">受付時間 9:00〜18:00（土日祝を除く）</p>
+        <p class="text-xs text-gray-400 mt-6">受付時間 9:00〜18:00（土日祝を除く）</p>
       </div>
     </section>
   </main>
@@ -447,8 +636,8 @@ function renderServicePage(data: ServicePageData): string {
         var icon = this.querySelector('[data-faq-icon]');
         var isOpen = !content.classList.contains('hidden');
         document.querySelectorAll('[data-faq-content]').forEach(function(c) { c.classList.add('hidden'); });
-        document.querySelectorAll('[data-faq-icon]').forEach(function(i) { i.textContent = '+'; });
-        if (!isOpen) { content.classList.remove('hidden'); icon.textContent = '-'; }
+        document.querySelectorAll('[data-faq-icon]').forEach(function(i) { i.textContent = '+'; i.style.transform = ''; });
+        if (!isOpen) { content.classList.remove('hidden'); icon.textContent = '-'; icon.style.transform = 'rotate(180deg)'; }
       });
     });
   </script>
