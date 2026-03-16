@@ -151,6 +151,10 @@ export function adminPage(): string {
           <h1 class="text-sm font-bold">SVA CMS</h1>
         </div>
         <div class="flex items-center gap-4">
+          <button id="headerRequestAlert" onclick="switchTab('requests')" class="hidden relative text-xs text-gray-400 hover:text-white transition-colors" title="新規取付受注">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            <span id="headerRequestCount" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+          </button>
           <button id="headerInquiryAlert" onclick="switchTab('inquiries')" class="hidden relative text-xs text-gray-400 hover:text-white transition-colors" title="未読のお問い合わせ">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
             <span id="headerInquiryCount" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
@@ -193,6 +197,7 @@ export function adminPage(): string {
         <button class="nav-item" data-mob-tab="inquiries" onclick="switchTab('inquiries');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           <span>問合せ</span>
+          <span id="mobileInquiryBadge" class="nav-badge" style="display:none">0</span>
         </button>
         <button class="nav-item" data-mob-tab="products" onclick="switchTab('products');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -713,7 +718,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); setTimeout(function(){ loadJobs(1); }, 0); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobs(1); }, 0); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -728,7 +733,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadInquiryBadge(); setTimeout(function(){ loadJobs(1); }, 0);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobs(1); }, 0);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -2714,11 +2719,103 @@ export function adminPage(): string {
         if (headerAlert) { if (cnt > 0) { headerAlert.classList.remove('hidden'); } else { headerAlert.classList.add('hidden'); } }
         if (headerCount) { headerCount.textContent = cnt > 99 ? '99+' : String(cnt); }
         if (mobileBadge) { if (cnt > 0) { mobileBadge.textContent = cnt > 99 ? '99+' : String(cnt); mobileBadge.style.display = 'flex'; } else { mobileBadge.style.display = 'none'; } }
+        // Alert notification on new inquiry
+        if (_prevInqCount !== -1 && cnt > _prevInqCount) {
+          var diff = cnt - _prevInqCount;
+          showAlertNotification('inquiry', diff + '件の新しいお問い合わせが届きました', cnt);
+        }
+        _prevInqCount = cnt;
       } catch(e) {}
     }
 
-    // Refresh badge every 30s
-    setInterval(function(){ if (authToken) loadInquiryBadge(); }, 30000);
+    async function loadRequestBadge() {
+      try {
+        var res = await fetch(API + '/admin/requests-count', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var cnt = data.count || 0;
+        var badge = document.getElementById('requestBadge');
+        var headerAlert = document.getElementById('headerRequestAlert');
+        var headerCount = document.getElementById('headerRequestCount');
+        var mobileBadge = document.getElementById('mobileRequestBadge');
+        var headerBadge = document.getElementById('requestNewHeader');
+        if (badge) { if (cnt > 0) { badge.textContent = cnt > 99 ? '99+' : String(cnt); badge.classList.remove('hidden'); } else { badge.classList.add('hidden'); } }
+        if (headerAlert) { if (cnt > 0) { headerAlert.classList.remove('hidden'); } else { headerAlert.classList.add('hidden'); } }
+        if (headerCount) { headerCount.textContent = cnt > 99 ? '99+' : String(cnt); }
+        if (mobileBadge) { if (cnt > 0) { mobileBadge.textContent = cnt > 99 ? '99+' : String(cnt); mobileBadge.style.display = 'flex'; } else { mobileBadge.style.display = 'none'; } }
+        if (headerBadge) { if (cnt > 0) { headerBadge.textContent = cnt + '件 新規'; headerBadge.classList.remove('hidden'); } else { headerBadge.classList.add('hidden'); } }
+        // Alert notification on new request
+        if (_prevReqCount !== -1 && cnt > _prevReqCount) {
+          var diff = cnt - _prevReqCount;
+          showAlertNotification('request', diff + '件の新しい取付受注が届きました', cnt);
+        }
+        _prevReqCount = cnt;
+      } catch(e) {}
+    }
+
+    // ===== Alert Notification System =====
+    var _prevInqCount = -1;
+    var _prevReqCount = -1;
+
+    function showAlertNotification(type, message, count) {
+      // Remove existing alert if any
+      var existing = document.getElementById('svaAlertNotif');
+      if (existing) existing.remove();
+
+      var isInquiry = type === 'inquiry';
+      var bgColor = isInquiry ? 'bg-red-600' : 'bg-orange-500';
+      var iconSvg = isInquiry
+        ? '<svg class="w-6 h-6 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>'
+        : '<svg class="w-6 h-6 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>';
+      var tabTarget = isInquiry ? 'inquiries' : 'requests';
+      var label = isInquiry ? 'お問い合わせを確認' : '受注を確認';
+
+      var el = document.createElement('div');
+      el.id = 'svaAlertNotif';
+      el.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-[300] w-[calc(100%-2rem)] max-w-md animate-bounce';
+      el.innerHTML = '<div class="' + bgColor + ' rounded-xl shadow-2xl border-2 border-white/30 p-4 cursor-pointer" onclick="switchTab(\\'' + tabTarget + '\\');this.parentElement.remove()">'
+        + '<div class="flex items-start gap-3">'
+        + '<div class="mt-0.5">' + iconSvg + '</div>'
+        + '<div class="flex-1 min-w-0">'
+        + '<p class="text-white font-bold text-sm">' + (isInquiry ? '\u{1F514} \u65b0\u7740\u304a\u554f\u3044\u5408\u308f\u305b' : '\u{1F4CB} \u65b0\u7740\u53d6\u4ed8\u53d7\u6ce8') + '</p>'
+        + '<p class="text-white/90 text-xs mt-0.5">' + esc(message) + '</p>'
+        + '<p class="text-white/70 text-[10px] mt-1.5 underline">\u30bf\u30c3\u30d7\u3057\u3066' + label + ' \u2192</p>'
+        + '</div>'
+        + '<button onclick="event.stopPropagation();this.closest(\\'#svaAlertNotif\\').remove()" class="text-white/60 hover:text-white shrink-0 mt-0.5">'
+        + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>'
+        + '</button></div></div>';
+      document.body.appendChild(el);
+
+      // Play notification sound (Web Audio API)
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine'; osc.frequency.value = isInquiry ? 880 : 660;
+        gain.gain.value = 0.15;
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+        // Second beep
+        var osc2 = ctx.createOscillator();
+        var gain2 = ctx.createGain();
+        osc2.connect(gain2); gain2.connect(ctx.destination);
+        osc2.type = 'sine'; osc2.frequency.value = isInquiry ? 1100 : 880;
+        gain2.gain.value = 0.15;
+        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+        osc2.start(ctx.currentTime + 0.15);
+        osc2.stop(ctx.currentTime + 0.65);
+      } catch(e) {}
+
+      // Stop bounce after 2s, auto-remove after 8s
+      setTimeout(function() { el.classList.remove('animate-bounce'); }, 2000);
+      setTimeout(function() {
+        if (el.parentElement) { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(function() { if (el.parentElement) el.remove(); }, 500); }
+      }, 8000);
+    }
+
+    // Refresh badges every 30s
+    setInterval(function(){ if (authToken) { loadInquiryBadge(); loadRequestBadge(); } }, 30000);
 
     // ===== Installation Requests (取付依頼) =====
     async function loadRequests(page) {
