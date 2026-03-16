@@ -927,6 +927,60 @@ adminPartnerApi.post('/products', async (c) => {
   return c.json({ id: r.meta.last_row_id }, 201)
 })
 
+// Bulk create products (CSV import)
+adminPartnerApi.post('/products/bulk', async (c) => {
+  const body = await c.req.json<{
+    products: Array<{ product_name: string; model_number?: string; category?: string }>
+  }>()
+  if (!body.products || !Array.isArray(body.products) || body.products.length === 0) {
+    return c.json({ error: 'products array is required' }, 400)
+  }
+  if (body.products.length > 500) {
+    return c.json({ error: '一度に登録できるのは500件までです' }, 400)
+  }
+
+  const validCategories = ['camera', 'sensor', 'light', 'control', 'recorder', 'monitor', 'other']
+
+  // Get existing product names for dedup
+  const existing = await c.env.DB.prepare("SELECT product_name FROM product_master").all<{ product_name: string }>()
+  const existingNames = new Set((existing.results || []).map(p => p.product_name.toLowerCase()))
+
+  let inserted = 0
+  let skipped = 0
+  const stmts: D1PreparedStatement[] = []
+
+  for (const p of body.products) {
+    const name = (p.product_name || '').trim()
+    if (!name) { skipped++; continue }
+
+    // Skip duplicates
+    if (existingNames.has(name.toLowerCase())) {
+      skipped++
+      continue
+    }
+
+    const cat = (p.category && validCategories.includes(p.category)) ? p.category : 'other'
+    stmts.push(
+      c.env.DB.prepare(
+        "INSERT INTO product_master (product_name, model_number, category, description, sort_order, is_active) VALUES (?,?,?,?,?,?)"
+      ).bind(name, (p.model_number || '').trim(), cat, '', 0, 1)
+    )
+    existingNames.add(name.toLowerCase()) // prevent in-batch duplicates
+    inserted++
+  }
+
+  // Execute in batches (D1 batch limit)
+  if (stmts.length > 0) {
+    const batchSize = 50
+    for (let i = 0; i < stmts.length; i += batchSize) {
+      const batch = stmts.slice(i, i + batchSize)
+      await c.env.DB.batch(batch)
+    }
+  }
+
+  return c.json({ inserted, skipped, total: body.products.length })
+})
+
 // Update product
 adminPartnerApi.put('/products/:id', async (c) => {
   const id = Number(c.req.param('id'))

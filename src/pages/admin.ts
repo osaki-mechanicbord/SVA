@@ -523,6 +523,8 @@ export function adminPage(): string {
               <option value="0">無効のみ</option>
             </select>
             <button id="backToProductListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadProductMaster()">一覧に戻る</button>
+            <button onclick="downloadCsvTemplate()" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>CSVテンプレート</button>
+            <button onclick="showCsvUploadForm()" class="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>CSV一括登録</button>
             <button onclick="showNewProductForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規製品追加</button>
           </div>
         </div>
@@ -3236,6 +3238,277 @@ export function adminPage(): string {
       } catch(e) { showToast('通信エラー', true); }
     }
 
+    // ===== CSV テンプレートダウンロード =====
+    function downloadCsvTemplate() {
+      var bom = '\\uFEFF';
+      var header = '製品名,型番';
+      var samples = [
+        '人検知AIカメラ FLC-1,FLC-1',
+        'リアビューセンサー RS-200,RS-200',
+        '安全灯 SL-500,SL-500'
+      ];
+      var csv = bom + header + '\\n' + samples.join('\\n') + '\\n';
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'SVA_製品登録テンプレート.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('CSVテンプレートをダウンロードしました');
+    }
+
+    // ===== CSV 一括登録 UI =====
+    var csvParsedRows = [];
+
+    function showCsvUploadForm() {
+      csvParsedRows = [];
+      document.getElementById('productListView').classList.add('hidden');
+      document.getElementById('productDetailView').classList.remove('hidden');
+      document.getElementById('backToProductListBtn').classList.remove('hidden');
+      document.getElementById('productViewTitle').textContent = 'CSV一括登録';
+
+      document.getElementById('productDetailView').innerHTML = '<div class="max-w-3xl">'
+        + '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">'
+        + '<div class="px-6 py-5 border-b border-gray-100 bg-gray-50">'
+        + '<h3 class="text-base font-bold text-sva-dark">CSVファイルから一括登録</h3>'
+        + '<p class="text-xs text-gray-500 mt-1">製品名と型番をCSVで一括登録できます。カテゴリと説明は登録後に個別編集してください。</p>'
+        + '</div>'
+        + '<div class="px-6 py-5">'
+
+        // フォーマット説明
+        + '<div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-5">'
+        + '<p class="text-xs font-bold text-blue-700 mb-2">CSVフォーマット</p>'
+        + '<div class="bg-white rounded-lg p-3 font-mono text-xs text-gray-700 border border-blue-100">'
+        + '<p class="text-blue-500 mb-1">製品名,型番</p>'
+        + '<p>人検知AIカメラ FLC-1,FLC-1</p>'
+        + '<p>リアビューセンサー RS-200,RS-200</p>'
+        + '</div>'
+        + '<div class="flex items-center gap-3 mt-3">'
+        + '<button onclick="downloadCsvTemplate()" class="px-3 py-1.5 text-xs text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 flex items-center gap-1">'
+        + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+        + 'テンプレートをダウンロード</button>'
+        + '<span class="text-[10px] text-blue-500">※UTF-8(BOM付き)推奨</span>'
+        + '</div></div>'
+
+        // カテゴリ一括設定
+        + '<div class="mb-5">'
+        + '<label class="block text-xs font-medium text-gray-600 mb-1">登録時のカテゴリ（一括設定）</label>'
+        + '<select id="csvBulkCategory" class="w-full sm:w-64 px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red">'
+        + '<option value="camera">カメラ</option><option value="sensor">センサー</option><option value="light">安全灯</option>'
+        + '<option value="control">制御</option><option value="recorder">レコーダー</option><option value="monitor">モニター</option><option value="other">その他</option>'
+        + '</select></div>'
+
+        // ファイルアップロード
+        + '<div class="mb-5">'
+        + '<label class="block text-xs font-medium text-gray-600 mb-2">CSVファイルを選択</label>'
+        + '<div id="csvDropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-sva-red hover:bg-red-50/30 transition-colors cursor-pointer" onclick="document.getElementById(\\'csvFileInput\\').click()">'
+        + '<svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+        + '<p class="text-sm text-gray-500 mb-1">クリックしてCSVファイルを選択</p>'
+        + '<p class="text-[10px] text-gray-400">またはファイルをドラッグ&ドロップ</p>'
+        + '</div>'
+        + '<input type="file" id="csvFileInput" accept=".csv,text/csv" class="hidden" onchange="handleCsvFile(this)">'
+        + '</div>'
+
+        // プレビュー領域
+        + '<div id="csvPreviewArea" class="hidden">'
+        + '<div class="flex items-center justify-between mb-3">'
+        + '<p class="text-sm font-bold text-sva-dark">プレビュー <span id="csvRowCount" class="text-xs font-normal text-gray-400"></span></p>'
+        + '<div class="flex items-center gap-2">'
+        + '<button onclick="clearCsvPreview()" class="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">クリア</button>'
+        + '<button onclick="executeCsvBulkRegister()" id="csvRegisterBtn" class="px-5 py-1.5 text-xs text-white bg-sva-red rounded-lg hover:bg-red-800 font-bold flex items-center gap-1">'
+        + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+        + '一括登録する</button>'
+        + '</div></div>'
+        + '<div id="csvPreviewTable" class="overflow-x-auto"></div>'
+        + '<div id="csvResultMsg" class="mt-3"></div>'
+        + '</div>'
+
+        + '</div></div></div>';
+
+      // ドラッグ&ドロップ
+      var dz = document.getElementById('csvDropZone');
+      if (dz) {
+        dz.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.add('border-sva-red','bg-red-50/30'); });
+        dz.addEventListener('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); dz.classList.remove('border-sva-red','bg-red-50/30'); });
+        dz.addEventListener('drop', function(e) {
+          e.preventDefault(); e.stopPropagation();
+          dz.classList.remove('border-sva-red','bg-red-50/30');
+          var files = e.dataTransfer.files;
+          if (files.length > 0) { parseCsvFile(files[0]); }
+        });
+      }
+    }
+
+    function handleCsvFile(input) {
+      if (input.files && input.files[0]) { parseCsvFile(input.files[0]); }
+    }
+
+    function parseCsvFile(file) {
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        showToast('CSVファイルを選択してください', true);
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var text = e.target.result;
+        // BOM除去
+        if (text.charCodeAt(0) === 0xFEFF) text = text.substring(1);
+        var lines = text.split(/\\r?\\n/).filter(function(l) { return l.trim() !== ''; });
+        if (lines.length < 2) {
+          showToast('CSVにデータ行がありません（ヘッダー行 + 1行以上必要）', true);
+          return;
+        }
+
+        // ヘッダー行をスキップ（1行目がヘッダーの場合）
+        var startIdx = 0;
+        var firstLine = lines[0].toLowerCase();
+        if (firstLine.indexOf('製品名') !== -1 || firstLine.indexOf('product') !== -1 || firstLine.indexOf('名') !== -1) {
+          startIdx = 1;
+        }
+
+        csvParsedRows = [];
+        for (var i = startIdx; i < lines.length; i++) {
+          var cols = parseCsvLine(lines[i]);
+          var name = (cols[0] || '').trim();
+          var model = (cols[1] || '').trim();
+          if (name) {
+            csvParsedRows.push({ product_name: name, model_number: model, row: i + 1 });
+          }
+        }
+
+        if (csvParsedRows.length === 0) {
+          showToast('有効な製品データが見つかりません', true);
+          return;
+        }
+
+        // ドロップゾーンを更新
+        var dz = document.getElementById('csvDropZone');
+        if (dz) {
+          dz.innerHTML = '<div class="flex items-center gap-3 justify-center">'
+            + '<svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+            + '<div class="text-left"><p class="text-sm font-medium text-gray-700">' + esc(file.name) + '</p>'
+            + '<p class="text-[10px] text-gray-400">' + csvParsedRows.length + '件の製品データを検出</p></div></div>';
+        }
+
+        renderCsvPreview();
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseCsvLine(line) {
+      var result = [];
+      var current = '';
+      var inQuotes = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (i + 1 < line.length && line[i + 1] === '"') { current += '"'; i++; }
+            else { inQuotes = false; }
+          } else { current += ch; }
+        } else {
+          if (ch === '"') { inQuotes = true; }
+          else if (ch === ',') { result.push(current); current = ''; }
+          else { current += ch; }
+        }
+      }
+      result.push(current);
+      return result;
+    }
+
+    function renderCsvPreview() {
+      var area = document.getElementById('csvPreviewArea');
+      var table = document.getElementById('csvPreviewTable');
+      var count = document.getElementById('csvRowCount');
+      if (!area || !table) return;
+
+      area.classList.remove('hidden');
+      count.textContent = '（' + csvParsedRows.length + '件）';
+
+      // 重複チェック
+      var existingNames = allProductsData.map(function(p) { return p.product_name.toLowerCase(); });
+      var existingModels = allProductsData.filter(function(p) { return p.model_number; }).map(function(p) { return p.model_number.toLowerCase(); });
+
+      table.innerHTML = '<table class="w-full text-xs border-collapse">'
+        + '<thead><tr class="bg-gray-50"><th class="px-3 py-2 text-left font-medium text-gray-500 border-b border-gray-200">行</th><th class="px-3 py-2 text-left font-medium text-gray-500 border-b border-gray-200">製品名</th><th class="px-3 py-2 text-left font-medium text-gray-500 border-b border-gray-200">型番</th><th class="px-3 py-2 text-left font-medium text-gray-500 border-b border-gray-200">状態</th><th class="px-3 py-2 text-center font-medium text-gray-500 border-b border-gray-200"></th></tr></thead>'
+        + '<tbody>' + csvParsedRows.map(function(r, idx) {
+          var isDupName = existingNames.indexOf(r.product_name.toLowerCase()) !== -1;
+          var isDupModel = r.model_number && existingModels.indexOf(r.model_number.toLowerCase()) !== -1;
+          var isDup = isDupName || isDupModel;
+          var statusHtml = isDup
+            ? '<span class="px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] rounded font-medium">重複</span>'
+            : '<span class="px-1.5 py-0.5 bg-green-50 text-green-700 text-[10px] rounded font-medium">新規</span>';
+          var rowClass = isDup ? 'bg-amber-50/40' : '';
+          return '<tr class="' + rowClass + ' border-b border-gray-100 hover:bg-gray-50">'
+            + '<td class="px-3 py-2 text-gray-400">' + r.row + '</td>'
+            + '<td class="px-3 py-2 font-medium text-gray-800">' + esc(r.product_name) + '</td>'
+            + '<td class="px-3 py-2 text-gray-500 font-mono">' + esc(r.model_number || '-') + '</td>'
+            + '<td class="px-3 py-2">' + statusHtml + '</td>'
+            + '<td class="px-3 py-2 text-center"><button onclick="removeCsvRow(' + idx + ')" class="text-red-400 hover:text-red-600 text-xs" title="除外">✕</button></td>'
+            + '</tr>';
+        }).join('') + '</tbody></table>';
+    }
+
+    function removeCsvRow(idx) {
+      csvParsedRows.splice(idx, 1);
+      if (csvParsedRows.length === 0) { clearCsvPreview(); return; }
+      renderCsvPreview();
+    }
+
+    function clearCsvPreview() {
+      csvParsedRows = [];
+      var area = document.getElementById('csvPreviewArea');
+      if (area) area.classList.add('hidden');
+      var fi = document.getElementById('csvFileInput');
+      if (fi) fi.value = '';
+      var dz = document.getElementById('csvDropZone');
+      if (dz) {
+        dz.innerHTML = '<svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '<p class="text-sm text-gray-500 mb-1">クリックしてCSVファイルを選択</p>'
+          + '<p class="text-[10px] text-gray-400">またはファイルをドラッグ&ドロップ</p>';
+      }
+    }
+
+    async function executeCsvBulkRegister() {
+      if (csvParsedRows.length === 0) { showToast('登録するデータがありません', true); return; }
+      var category = document.getElementById('csvBulkCategory').value;
+      var btn = document.getElementById('csvRegisterBtn');
+      var msgEl = document.getElementById('csvResultMsg');
+      if (btn) { btn.disabled = true; btn.textContent = '登録中...'; btn.classList.add('opacity-50'); }
+
+      try {
+        var payload = csvParsedRows.map(function(r) {
+          return { product_name: r.product_name, model_number: r.model_number, category: category };
+        });
+        var res = await fetch(API + '/admin/products/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ products: payload })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          var msg = data.inserted + '件を登録しました';
+          if (data.skipped > 0) msg += '（' + data.skipped + '件は重複のためスキップ）';
+          if (msgEl) msgEl.innerHTML = '<div class="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 flex items-center gap-2">'
+            + '<svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+            + '<span>' + msg + '</span></div>';
+          showToast(msg);
+          csvParsedRows = [];
+          await loadProductMasterData();
+          setTimeout(function() { loadProductMaster(); }, 2000);
+        } else {
+          if (msgEl) msgEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">' + esc(data.error || '登録に失敗しました') + '</div>';
+        }
+      } catch(e) {
+        if (msgEl) msgEl.innerHTML = '<div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">通信エラーが発生しました</div>';
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '一括登録する'; btn.classList.remove('opacity-50'); }
+      }
+    }
+
     // Make product functions global
     window.loadProductMaster = loadProductMaster;
     window.filterProductList = filterProductList;
@@ -3243,6 +3516,12 @@ export function adminPage(): string {
     window.editProduct = editProduct;
     window.saveProduct = saveProduct;
     window.deleteProduct = deleteProduct;
+    window.downloadCsvTemplate = downloadCsvTemplate;
+    window.showCsvUploadForm = showCsvUploadForm;
+    window.handleCsvFile = handleCsvFile;
+    window.removeCsvRow = removeCsvRow;
+    window.clearCsvPreview = clearCsvPreview;
+    window.executeCsvBulkRegister = executeCsvBulkRegister;
 
   </script>
 </body>
