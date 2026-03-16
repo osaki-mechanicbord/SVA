@@ -2630,16 +2630,31 @@ export function adminPage(): string {
       requests.forEach(function(r) {
         var sLabel = statusLabels[r.status] || r.status;
         var sColor = statusColors[r.status] || 'bg-gray-100 text-gray-600';
-        html += '<div class="bg-white rounded-xl border border-gray-100 p-4 hover:border-sva-red/20 transition-colors cursor-pointer" onclick="viewRequestDetail(' + r.id + ')">'
+        var discBadge = r.disclosure === 'closed' ? '<span class="px-1.5 py-0.5 text-[10px] font-medium bg-red-50 text-red-600 rounded">非開示</span>' : '';
+        var products = [];
+        try { products = JSON.parse(r.products_json || '[]'); } catch(e) {}
+        var vehicles = [];
+        try { vehicles = JSON.parse(r.vehicles_json || '[]'); } catch(e) {}
+        var productSummary = products.length > 0 ? products.map(function(p){ return p.name || p.category || ''; }).filter(Boolean).join(', ') : '-';
+        var vehicleSummary = vehicles.length > 0 ? vehicles.map(function(v){ return v.type || v.maker || ''; }).filter(Boolean).join(', ') : '-';
+        var isNew = r.status === 'new';
+        var borderClass = isNew ? 'border-orange-200 bg-orange-50/30' : 'border-gray-100';
+        var newDot = isNew ? '<span class="w-2 h-2 bg-orange-500 rounded-full shrink-0 animate-pulse"></span>' : '';
+        html += '<div class="bg-white rounded-xl border ' + borderClass + ' p-4 hover:border-sva-red/20 transition-colors cursor-pointer" onclick="viewRequestDetail(' + r.id + ')">'
           + '<div class="flex items-center justify-between">'
-          + '<div class="flex items-center gap-3">'
+          + '<div class="flex items-center gap-2">'
+          + newDot
           + '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full ' + sColor + '">' + sLabel + '</span>'
-          + '<span class="text-sm font-medium text-sva-dark">' + (r.company_name || '---') + '</span>'
-          + '<span class="text-xs text-gray-400">' + (r.contact_name || '') + '</span>'
+          + discBadge
+          + '<span class="text-sm font-medium text-sva-dark">' + esc(r.company_name || '---') + '</span>'
+          + '<span class="text-xs text-gray-400">' + esc(r.contact_person || '') + '</span>'
           + '</div>'
           + '<span class="text-xs text-gray-400">' + (r.created_at ? r.created_at.slice(0,10) : '') + '</span>'
           + '</div>'
-          + '<div class="mt-2 text-xs text-gray-500 truncate">' + (r.vehicle_type || '') + ' / ' + (r.device_type || '') + ' / ' + (r.quantity || '') + '台</div>'
+          + '<div class="mt-2 flex items-center gap-4 text-xs text-gray-500">'
+          + '<span>商品: ' + esc(productSummary.substring(0,40)) + '</span>'
+          + '<span>車両: ' + esc(vehicleSummary.substring(0,40)) + '</span>'
+          + '</div>'
           + '</div>';
       });
       list.innerHTML = html;
@@ -2654,14 +2669,129 @@ export function adminPage(): string {
       pg.innerHTML = pgHtml;
     }
 
-    function viewRequestDetail(id) {
-      // Placeholder - will be implemented when API is ready
-      document.getElementById('requestListView').classList.add('hidden');
-      document.getElementById('requestDetailView').classList.remove('hidden');
-      document.getElementById('backToRequestListBtn').classList.remove('hidden');
+    async function viewRequestDetail(id) {
+      var listView = document.getElementById('requestListView');
+      var detailView = document.getElementById('requestDetailView');
+      var backBtn = document.getElementById('backToRequestListBtn');
+      listView.classList.add('hidden');
+      detailView.classList.remove('hidden');
+      backBtn.classList.remove('hidden');
       document.getElementById('requestViewTitle').textContent = '取付依頼詳細';
-      document.getElementById('requestDetailView').innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-8 text-center"><p class="text-gray-400 text-sm">取付依頼詳細の表示機能は準備中です (ID: ' + id + ')</p></div>';
+      detailView.innerHTML = '<div class="text-center py-8"><div class="animate-spin w-8 h-8 border-2 border-sva-red border-t-transparent rounded-full mx-auto"></div></div>';
+
+      try {
+        var res = await fetch(API + '/admin/requests/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
+        if (res.status === 401) { authToken = ''; sessionStorage.removeItem('sva_token'); location.reload(); return; }
+        var r = await res.json();
+        if (r.error) { detailView.innerHTML = '<p class="text-red-500 text-sm text-center py-8">' + esc(r.error) + '</p>'; return; }
+
+        var statusLabels = { new: '新着', confirmed: '確認済み', assigned: '割当済', scheduled: '日程確定', in_progress: '施工中', completed: '完了', cancelled: 'キャンセル' };
+        var products = []; try { products = JSON.parse(r.products_json || '[]'); } catch(e) {}
+        var vehicles = []; try { vehicles = JSON.parse(r.vehicles_json || '[]'); } catch(e) {}
+        var sites = []; try { sites = JSON.parse(r.sites_json || '[]'); } catch(e) {}
+
+        var html = '<div class="space-y-6">';
+
+        // Status & Actions
+        html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+        html += '<div class="flex items-center justify-between mb-4"><h4 class="font-bold text-sva-dark">ステータス管理</h4></div>';
+        html += '<div class="flex items-center gap-3">';
+        html += '<select id="reqStatusSelect" class="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">';
+        ['new','confirmed','assigned','scheduled','in_progress','completed','cancelled'].forEach(function(s) {
+          html += '<option value="' + s + '"' + (r.status === s ? ' selected' : '') + '>' + (statusLabels[s] || s) + '</option>';
+        });
+        html += '</select>';
+        html += '<button onclick="updateRequestStatus(' + id + ')" class="px-4 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">更新</button>';
+        html += '</div></div>';
+
+        // Company info
+        html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+        html += '<h4 class="font-bold text-sva-dark mb-3">依頼元情報</h4>';
+        html += '<dl class="grid sm:grid-cols-2 gap-3 text-sm">';
+        html += '<div><dt class="text-xs text-gray-400">会社名</dt><dd class="font-medium">' + esc(r.company_name) + '</dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">部署</dt><dd>' + esc(r.department || '-') + '</dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">担当者</dt><dd class="font-medium">' + esc(r.contact_person) + '</dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">住所</dt><dd>' + esc(r.company_address) + '</dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">電話</dt><dd><a href="tel:' + esc(r.phone) + '" class="text-sva-red">' + esc(r.phone) + '</a></dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">メール</dt><dd><a href="mailto:' + esc(r.email) + '" class="text-sva-red">' + esc(r.email) + '</a></dd></div>';
+        html += '<div><dt class="text-xs text-gray-400">開示</dt><dd>' + (r.disclosure === 'closed' ? '<span class="text-red-600 font-medium">非開示希望</span>' : '開示可能') + '</dd></div>';
+        if (r.meeting_date) html += '<div><dt class="text-xs text-gray-400">打合せ希望日</dt><dd>' + esc(r.meeting_date) + '</dd></div>';
+        html += '</dl></div>';
+
+        // Products
+        if (products.length > 0) {
+          html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+          html += '<h4 class="font-bold text-sva-dark mb-3">商品情報 (' + products.length + '件)</h4>';
+          html += '<div class="space-y-2">';
+          products.forEach(function(p, i) {
+            html += '<div class="bg-gray-50 rounded-lg p-3 text-sm"><span class="text-xs text-sva-red font-bold mr-2">#' + (i+1) + '</span>' + esc(p.name || '-') + ' / ' + esc(p.category || '-') + ' / ' + esc(p.qty || '-') + '個</div>';
+          });
+          html += '</div></div>';
+        }
+
+        // Vehicles
+        if (vehicles.length > 0) {
+          html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+          html += '<h4 class="font-bold text-sva-dark mb-3">車両情報 (' + vehicles.length + '件)</h4>';
+          html += '<div class="space-y-2">';
+          vehicles.forEach(function(v, i) {
+            html += '<div class="bg-gray-50 rounded-lg p-3 text-sm"><span class="text-xs text-blue-600 font-bold mr-2">#' + (i+1) + '</span>' + esc(v.maker || '-') + ' / ' + esc(v.model || '-') + ' / ' + esc(v.type || '-') + ' / ' + esc(v.year || '-') + '</div>';
+          });
+          html += '</div></div>';
+        }
+
+        // Sites
+        if (sites.length > 0) {
+          html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+          html += '<h4 class="font-bold text-sva-dark mb-3">施工先情報 (' + sites.length + '件)</h4>';
+          html += '<div class="space-y-2">';
+          sites.forEach(function(s, i) {
+            html += '<div class="bg-gray-50 rounded-lg p-3 text-sm"><span class="text-xs text-emerald-600 font-bold mr-2">#' + (i+1) + '</span>' + esc(s.address || '-') + ' / ' + esc(s.contact || '-') + ' / ' + esc(s.phone || '-') + '</div>';
+          });
+          html += '</div></div>';
+        }
+
+        // Budget & Notes
+        if (r.budget_estimate || r.notes) {
+          html += '<div class="bg-white rounded-xl border border-gray-200 p-5">';
+          html += '<h4 class="font-bold text-sva-dark mb-3">その他</h4>';
+          if (r.budget_estimate) html += '<div class="text-sm mb-2"><span class="text-xs text-gray-400">希望工賃: </span>' + esc(r.budget_estimate) + '</div>';
+          if (r.notes) html += '<div class="text-sm"><span class="text-xs text-gray-400">備考: </span>' + esc(r.notes) + '</div>';
+          html += '</div>';
+        }
+
+        // Metadata
+        html += '<div class="bg-gray-50 rounded-xl p-4 text-xs text-gray-400">';
+        html += '<span>ID: ' + r.id + '</span> | <span>登録: ' + (r.created_at || '-') + '</span> | <span>更新: ' + (r.updated_at || '-') + '</span>';
+        if (r.ip_address) html += ' | <span>IP: ' + esc(r.ip_address) + '</span>';
+        html += '</div>';
+
+        html += '</div>';
+        detailView.innerHTML = html;
+      } catch(e) {
+        detailView.innerHTML = '<div class="text-center py-8 text-red-500"><p class="text-sm">読み込みに失敗しました</p></div>';
+      }
     }
+
+    window.updateRequestStatus = async function(id) {
+      var sel = document.getElementById('reqStatusSelect');
+      if (!sel) return;
+      try {
+        var res = await fetch(API + '/admin/requests/' + id, {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: sel.value })
+        });
+        var data = await res.json();
+        if (data.success) {
+          viewRequestDetail(id);
+        } else {
+          alert(data.error || '更新に失敗しました');
+        }
+      } catch(e) {
+        alert('通信エラーが発生しました');
+      }
+    };
 
     async function loadInquiries(page) {
       document.getElementById('inquiryListView').classList.remove('hidden');

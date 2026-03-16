@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS installation_requests (
   budget_estimate TEXT DEFAULT '',
   notes TEXT DEFAULT '',
   -- Status tracking
-  status TEXT DEFAULT 'new' CHECK(status IN ('new', 'reviewed', 'partner_assigned', 'date_set', 'in_progress', 'completed', 'cancelled')),
+  status TEXT DEFAULT 'new' CHECK(status IN ('new', 'confirmed', 'assigned', 'scheduled', 'in_progress', 'completed', 'cancelled')),
   assigned_partner_id INTEGER DEFAULT NULL,
   -- Metadata
   ip_address TEXT DEFAULT '',

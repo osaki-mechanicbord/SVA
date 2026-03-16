@@ -963,4 +963,88 @@ adminPartnerApi.delete('/products/:id', async (c) => {
   return c.json({ success: true })
 })
 
+// ==========================================
+// Installation Requests (取付依頼) Admin API
+// ==========================================
+
+// List requests with pagination, status filter, search
+adminPartnerApi.get('/requests', async (c) => {
+  const page = Math.max(1, Number(c.req.query('page') || '1'))
+  const limit = 20
+  const offset = (page - 1) * limit
+  const status = c.req.query('status') || ''
+  const search = c.req.query('search') || ''
+
+  const conditions: string[] = ['1=1']
+  const params: any[] = []
+
+  if (status) {
+    conditions.push('status = ?')
+    params.push(status)
+  }
+  if (search) {
+    conditions.push('(company_name LIKE ? OR contact_person LIKE ? OR email LIKE ?)')
+    const s = `%${search}%`
+    params.push(s, s, s)
+  }
+
+  const where = conditions.join(' AND ')
+  const countQ = `SELECT COUNT(*) as total FROM installation_requests WHERE ${where}`
+  const dataQ = `SELECT id, company_name, department, contact_person, company_address, phone, email, disclosure, meeting_date, products_json, vehicles_json, sites_json, budget_estimate, notes, status, assigned_partner_id, created_at, updated_at FROM installation_requests WHERE ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+
+  const cnt = await c.env.DB.prepare(countQ).bind(...params).first<{ total: number }>()
+  const data = await c.env.DB.prepare(dataQ).bind(...params, limit, offset).all()
+
+  return c.json({
+    requests: data.results,
+    pagination: {
+      page,
+      limit,
+      total: cnt?.total || 0,
+      pages: Math.ceil((cnt?.total || 0) / limit)
+    }
+  })
+})
+
+// Get single request detail
+adminPartnerApi.get('/requests/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const req = await c.env.DB.prepare("SELECT * FROM installation_requests WHERE id = ?").bind(id).first()
+  if (!req) return c.json({ error: 'Not found' }, 404)
+  return c.json(req)
+})
+
+// Update request status / assign partner
+adminPartnerApi.put('/requests/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const body = await c.req.json<{ status?: string; assigned_partner_id?: number }>()
+
+  const req = await c.env.DB.prepare("SELECT * FROM installation_requests WHERE id = ?").bind(id).first<any>()
+  if (!req) return c.json({ error: 'Not found' }, 404)
+
+  const validStatuses = ['new', 'confirmed', 'assigned', 'scheduled', 'in_progress', 'completed', 'cancelled']
+  const newStatus = (body.status && validStatuses.includes(body.status)) ? body.status : req.status
+  const partnerId = body.assigned_partner_id !== undefined ? body.assigned_partner_id : req.assigned_partner_id
+
+  await c.env.DB.prepare(
+    "UPDATE installation_requests SET status = ?, assigned_partner_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+  ).bind(newStatus, partnerId, id).run()
+
+  return c.json({ success: true })
+})
+
+// Delete request
+adminPartnerApi.delete('/requests/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const r = await c.env.DB.prepare("DELETE FROM installation_requests WHERE id = ?").bind(id).run()
+  if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// Count new requests (for badge)
+adminPartnerApi.get('/requests-count', async (c) => {
+  const cnt = await c.env.DB.prepare("SELECT COUNT(*) as c FROM installation_requests WHERE status = 'new'").first<{ c: number }>()
+  return c.json({ count: cnt?.c || 0 })
+})
+
 export { adminPartnerApi }

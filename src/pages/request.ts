@@ -528,7 +528,7 @@ export function requestPage(): string {
           </div>
 
           <!-- ========== SECTION 5: Installation Sites (multiple) ========== -->
-          <div class="bg-gray-50 rounded-2xl p-6 sm:p-8">
+          <div id="siteSection" class="bg-gray-50 rounded-2xl p-6 sm:p-8">
             <div class="flex items-center justify-between mb-6">
               <h3 class="form-section-header text-base sm:text-lg font-bold text-sva-dark">出張施工先情報</h3>
               <button type="button" onclick="addSite()" class="inline-flex items-center gap-1.5 text-xs font-medium text-sva-red hover:text-red-800 transition-colors bg-red-50 px-3 py-1.5 rounded-lg">
@@ -568,7 +568,7 @@ export function requestPage(): string {
           </div>
 
           <!-- ========== SECTION 6: Budget & Notes ========== -->
-          <div class="bg-gray-50 rounded-2xl p-6 sm:p-8">
+          <div id="budgetSection" class="bg-gray-50 rounded-2xl p-6 sm:p-8">
             <h3 class="form-section-header text-base sm:text-lg font-bold text-sva-dark mb-6">その他</h3>
             <div class="space-y-5">
               <div>
@@ -587,7 +587,7 @@ export function requestPage(): string {
           </div>
 
           <!-- ========== NOTE ========== -->
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <div id="noteSection" class="bg-amber-50 border border-amber-200 rounded-xl p-5">
             <div class="flex items-start gap-3">
               <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               <div>
@@ -641,19 +641,31 @@ export function requestPage(): string {
     // === Disclosure toggle ===
     var discRadios = document.querySelectorAll('input[name="disclosure"]');
     var meetingWrap = document.getElementById('meetingDateWrap');
-    var openSection = document.getElementById('openSection');
-    var vehicleSection = document.getElementById('vehicleSection');
+    var detailSections = ['openSection', 'vehicleSection', 'siteSection', 'budgetSection', 'noteSection'];
+    function toggleDetailSections(closed) {
+      detailSections.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        if (closed) {
+          el.style.opacity = '0.35';
+          el.style.pointerEvents = 'none';
+          el.querySelectorAll('input, select, textarea').forEach(function(inp) { inp.setAttribute('tabindex', '-1'); });
+        } else {
+          el.style.opacity = '1';
+          el.style.pointerEvents = 'auto';
+          el.querySelectorAll('input, select, textarea').forEach(function(inp) { inp.removeAttribute('tabindex'); });
+        }
+      });
+    }
     discRadios.forEach(function(r) {
       r.addEventListener('change', function() {
-        if (this.value === 'closed') {
+        var isClosed = this.value === 'closed';
+        if (isClosed) {
           meetingWrap.classList.remove('hidden');
-          openSection.style.opacity = '0.5';
-          openSection.style.pointerEvents = 'none';
         } else {
           meetingWrap.classList.add('hidden');
-          openSection.style.opacity = '1';
-          openSection.style.pointerEvents = 'auto';
         }
+        toggleDetailSections(isClosed);
       });
     });
 
@@ -756,6 +768,7 @@ export function requestPage(): string {
 
       // Collect data
       var fd = new FormData(form);
+      var isClosed = fd.get('disclosure') === 'closed';
       var data = {
         company_name: fd.get('company_name') || '',
         department: fd.get('department') || '',
@@ -765,11 +778,11 @@ export function requestPage(): string {
         email: fd.get('email') || '',
         disclosure: fd.get('disclosure') || 'open',
         meeting_date: fd.get('meeting_date') || '',
-        products: collectEntries('product', ['name', 'category', 'qty']),
-        vehicles: collectEntries('vehicle', ['maker', 'model', 'type', 'year']),
-        sites: collectEntries('site', ['address', 'contact', 'phone', 'email', 'department']),
-        budget_estimate: fd.get('budget_estimate') || '',
-        notes: fd.get('notes') || ''
+        products: isClosed ? [] : collectEntries('product', ['name', 'category', 'qty']),
+        vehicles: isClosed ? [] : collectEntries('vehicle', ['maker', 'model', 'type', 'year']),
+        sites: isClosed ? [] : collectEntries('site', ['address', 'contact', 'phone', 'email', 'department']),
+        budget_estimate: isClosed ? '' : (fd.get('budget_estimate') || ''),
+        notes: isClosed ? '' : (fd.get('notes') || '')
       };
 
       // Basic validation
