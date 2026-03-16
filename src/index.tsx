@@ -308,4 +308,70 @@ app.post('/api/contact', async (c) => {
   }
 })
 
+// ==========================================
+// Installation Request (取付依頼) - Public API
+// ==========================================
+app.post('/api/request', async (c) => {
+  try {
+    const body = await c.req.json<{
+      company_name: string; department?: string; contact_person: string;
+      company_address: string; phone: string; email: string;
+      disclosure?: string; meeting_date?: string;
+      products?: any[]; vehicles?: any[]; sites?: any[];
+      budget_estimate?: string; notes?: string;
+    }>()
+
+    // Required field validation
+    if (!body.company_name?.trim()) return c.json({ error: '会社名は必須です' }, 400)
+    if (!body.contact_person?.trim()) return c.json({ error: 'ご担当者名は必須です' }, 400)
+    if (!body.company_address?.trim()) return c.json({ error: '会社住所は必須です' }, 400)
+    if (!body.phone?.trim()) return c.json({ error: '電話番号は必須です' }, 400)
+    if (!body.email?.trim()) return c.json({ error: 'メールアドレスは必須です' }, 400)
+
+    // Email format check
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+      return c.json({ error: '有効なメールアドレスを入力してください' }, 400)
+    }
+
+    // Rate limiting: same email within 10 minutes
+    const recent = await c.env.DB.prepare(
+      "SELECT COUNT(*) as cnt FROM installation_requests WHERE email = ? AND created_at > datetime('now', '-10 minutes')"
+    ).bind(body.email.trim()).first<{ cnt: number }>()
+    if (recent && recent.cnt >= 2) {
+      return c.json({ error: '短時間に複数回送信されています。しばらくお待ちください。' }, 429)
+    }
+
+    const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || ''
+    const ua = c.req.header('User-Agent') || ''
+
+    const r = await c.env.DB.prepare(
+      `INSERT INTO installation_requests 
+       (company_name, department, contact_person, company_address, phone, email,
+        disclosure, meeting_date, products_json, vehicles_json, sites_json,
+        budget_estimate, notes, ip_address, user_agent)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(
+      body.company_name.trim(),
+      (body.department || '').trim(),
+      body.contact_person.trim(),
+      body.company_address.trim(),
+      body.phone.trim(),
+      body.email.trim(),
+      body.disclosure || 'open',
+      (body.meeting_date || '').trim(),
+      JSON.stringify(body.products || []),
+      JSON.stringify(body.vehicles || []),
+      JSON.stringify(body.sites || []),
+      (body.budget_estimate || '').trim(),
+      (body.notes || '').trim(),
+      ip,
+      ua.substring(0, 500)
+    ).run()
+
+    return c.json({ success: true, id: r.meta.last_row_id })
+  } catch (e) {
+    return c.json({ error: '送信に失敗しました。時間をおいて再度お試しください。' }, 500)
+  }
+})
+
 export default app
