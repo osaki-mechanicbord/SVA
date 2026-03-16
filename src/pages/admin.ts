@@ -709,7 +709,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadJobs(1); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); setTimeout(function(){ loadJobs(1); }, 0); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -724,7 +724,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadJobs(1);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); setTimeout(function(){ loadJobs(1); }, 0);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -795,6 +795,7 @@ export function adminPage(): string {
       if (tab === 'images') loadImages(1);
       if (tab === 'partners') loadPartners(1);
       if (tab === 'jobs') loadJobs(1);
+      if (tab === 'articles') loadArticles(1);
       if (tab === 'products') loadProductMaster();
       if (tab === 'inquiries') loadInquiries(1);
       if (tab === 'photogallery') refreshPhotoJobList();
