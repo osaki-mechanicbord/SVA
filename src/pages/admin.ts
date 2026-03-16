@@ -165,14 +165,14 @@ export function adminPage(): string {
     <div class="bg-white border-b border-gray-200 tab-scroll-wrap desktop-tab-bar" id="tabScrollWrap">
       <div class="max-w-7xl mx-auto px-2 sm:px-6">
         <div class="flex items-center gap-0 tab-scroll" id="tabScroll">
-          <button id="tabArticles" onclick="switchTab('articles')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red whitespace-nowrap flex-shrink-0">記事管理</button>
+          <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red whitespace-nowrap flex-shrink-0">取付依頼</button>
+          <button id="tabRequests" onclick="switchTab('requests')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">取付受注<span id="requestBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span></button>
+          <button id="tabInquiries" onclick="switchTab('inquiries')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">問合せ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
+          <button id="tabProducts" onclick="switchTab('products')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">製品</button>
+          <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">写真</button>
+          <button id="tabArticles" onclick="switchTab('articles')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">記事管理</button>
           <button id="tabImages" onclick="switchTab('images')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">記事画像</button>
           <button id="tabPartners" onclick="switchTab('partners')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">パートナー</button>
-          <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">取付依頼</button>
-          <button id="tabProducts" onclick="switchTab('products')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">製品</button>
-          <button id="tabInquiries" onclick="switchTab('inquiries')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">問合せ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
-          <button id="tabRequests" onclick="switchTab('requests')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">取付受注<span id="requestBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span></button>
-          <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">写真</button>
           <button id="tabAccount" onclick="switchTab('account')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 md:ml-auto">設定</button>
         </div>
       </div>
@@ -181,22 +181,22 @@ export function adminPage(): string {
     <!-- Mobile Bottom Navigation (visible only on mobile) -->
     <div class="mobile-bottom-nav" id="mobileBottomNav">
       <div class="nav-grid">
-        <button class="nav-item active" data-mob-tab="articles" onclick="switchTab('articles');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span>記事</span>
-        </button>
-        <button class="nav-item" data-mob-tab="jobs" onclick="switchTab('jobs');closeMobileMore()">
+        <button class="nav-item active" data-mob-tab="jobs" onclick="switchTab('jobs');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
           <span>取付依頼</span>
-        </button>
-        <button class="nav-item" data-mob-tab="partners" onclick="switchTab('partners');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          <span>パートナー</span>
         </button>
         <button class="nav-item" data-mob-tab="requests" onclick="switchTab('requests');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
           <span>取付受注</span>
           <span id="mobileRequestBadge" class="nav-badge" style="display:none">0</span>
+        </button>
+        <button class="nav-item" data-mob-tab="inquiries" onclick="switchTab('inquiries');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span>問合せ</span>
+        </button>
+        <button class="nav-item" data-mob-tab="products" onclick="switchTab('products');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span>製品</span>
         </button>
         <button class="nav-item" id="mobileMoreBtn" onclick="toggleMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -210,21 +210,21 @@ export function adminPage(): string {
     <div class="mobile-more-menu" id="mobileMoreMenu">
       <div style="text-align:center;padding:10px 0 2px"><div style="width:36px;height:4px;background:#d1d5db;border-radius:2px;margin:0 auto"></div></div>
       <div class="more-grid">
-        <button class="more-item" data-mob-tab="inquiries" onclick="switchTab('inquiries');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <span>問合せ</span>
+        <button class="more-item" data-mob-tab="photogallery" onclick="switchTab('photogallery');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+          <span>写真</span>
+        </button>
+        <button class="more-item" data-mob-tab="articles" onclick="switchTab('articles');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>記事管理</span>
         </button>
         <button class="more-item" data-mob-tab="images" onclick="switchTab('images');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           <span>記事画像</span>
         </button>
-        <button class="more-item" data-mob-tab="products" onclick="switchTab('products');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-          <span>製品</span>
-        </button>
-        <button class="more-item" data-mob-tab="photogallery" onclick="switchTab('photogallery');closeMobileMore()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
-          <span>写真</span>
+        <button class="more-item" data-mob-tab="partners" onclick="switchTab('partners');closeMobileMore()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>パートナー</span>
         </button>
         <button class="more-item" data-mob-tab="account" onclick="switchTab('account');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -236,7 +236,7 @@ export function adminPage(): string {
     <!-- ============================================ -->
     <!-- ARTICLES TAB -->
     <!-- ============================================ -->
-    <div id="articlesTab">
+    <div id="articlesTab" class="hidden">
       <!-- Toolbar -->
       <div class="bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -428,7 +428,7 @@ export function adminPage(): string {
     <!-- ============================================ -->
     <!-- JOBS TAB -->
     <!-- ============================================ -->
-    <div id="jobsTab" class="hidden">
+    <div id="jobsTab">
       <div class="bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">取付依頼一覧</div>
@@ -709,7 +709,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadArticles(1); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadJobs(1); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -724,7 +724,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadArticles(1);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadJobs(1);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -775,7 +775,7 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['articles','images','partners','jobs','products','inquiries','requests','photogallery','account'];
+    const TABS = ['jobs','requests','inquiries','products','photogallery','articles','images','partners','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
