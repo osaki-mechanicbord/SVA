@@ -781,75 +781,77 @@ export function partnerMypagePage(): string {
 
         clientTab = '<div id="jt_panel_client" class="hidden">'
           + '<div class="rounded-xl border-2 border-orange-300 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden mb-4">'
-          + '<div class="bg-orange-500 text-white px-5 py-3 flex items-center gap-2">'
-          + '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
+          + '<div class="bg-orange-500 text-white px-3 sm:px-5 py-3 flex items-center gap-2">'
+          + '<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
           + '<span class="font-bold text-sm">お客様詳細情報</span>'
-          + '<span class="text-[10px] bg-orange-600 px-2 py-0.5 rounded-full ml-auto">機密情報</span></div>'
+          + '<span class="text-[10px] bg-orange-600 px-2 py-0.5 rounded-full ml-auto shrink-0">機密情報</span></div>'
 
           + (j.urgent_contact_note
-            ? '<div class="mx-4 mt-4 p-3 rounded-lg bg-red-50 border border-red-200"><div class="flex items-center gap-2 mb-1"><svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span class="text-xs font-bold text-red-700">受諾後 即連絡</span></div><p class="text-sm text-red-800 font-medium">' + escH(j.urgent_contact_note) + '</p></div>'
+            ? '<div class="mx-3 sm:mx-4 mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg bg-red-50 border-2 border-red-300"><div class="flex items-center gap-2 mb-1.5"><svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><span class="text-sm font-bold text-red-700">受諾後 即連絡</span></div><p class="text-base sm:text-sm text-red-800 font-medium leading-relaxed">' + escH(j.urgent_contact_note) + '</p></div>'
             : '')
 
-          + '<div class="p-4 space-y-4">'
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">お客様連絡先</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">会社名</p><p class="font-bold text-gray-800">' + escH(j.client_company||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">支店名</p><p class="font-bold text-gray-800">' + escH(j.client_branch||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">担当者名</p><p class="font-bold text-gray-800">' + escH(j.client_contact_name||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">打合せ連絡先</p><p class="font-bold text-blue-700">' + (j.client_contact_phone ? '<a href="tel:' + escH(j.client_contact_phone) + '">' + escH(j.client_contact_phone) + '</a>' : '-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メール</p><p class="font-medium text-blue-700 text-xs break-all">' + (j.client_contact_email ? '<a href="mailto:' + escH(j.client_contact_email) + '">' + escH(j.client_contact_email) + '</a>' : '-') + '</p></div>'
+          + '<div class="p-3 sm:p-4 space-y-4">'
+          + '<div><p class="text-xs sm:text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">お客様連絡先</p>'
+          + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 flex items-center gap-3 sm:block"><p class="text-[11px] sm:text-[10px] text-gray-400 sm:mb-0.5 shrink-0 w-16 sm:w-auto">会社名</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + escH(j.client_company||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 flex items-center gap-3 sm:block"><p class="text-[11px] sm:text-[10px] text-gray-400 sm:mb-0.5 shrink-0 w-16 sm:w-auto">支店名</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + escH(j.client_branch||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 flex items-center gap-3 sm:block"><p class="text-[11px] sm:text-[10px] text-gray-400 sm:mb-0.5 shrink-0 w-16 sm:w-auto">担当者名</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + escH(j.client_contact_name||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border-2 border-blue-200 sm:border sm:border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">打合せ連絡先</p>' + (j.client_contact_phone ? '<a href="tel:' + escH(j.client_contact_phone) + '" class="flex items-center gap-2 py-1.5 sm:py-0"><svg class="w-5 h-5 sm:hidden text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg><span class="font-bold text-blue-700 text-lg sm:text-sm">' + escH(j.client_contact_phone) + '</span></a>' : '<p class="font-bold text-gray-800">-</p>') + '</div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 sm:col-span-1"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">メール</p>' + (j.client_contact_email ? '<a href="mailto:' + escH(j.client_contact_email) + '" class="flex items-center gap-2 py-1 sm:py-0"><svg class="w-5 h-5 sm:hidden text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg><span class="font-medium text-blue-700 text-sm break-all">' + escH(j.client_contact_email) + '</span></a>' : '<p class="font-medium text-gray-800">-</p>') + '</div>'
           + '</div></div>'
 
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">作業情報</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="sm:col-span-2 bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業場所（詳細住所）</p><p class="font-bold text-gray-800">' + escH(j.work_location_detail||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">作業希望日時</p><p class="font-bold text-gray-800">' + escH(j.work_datetime||'-') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">車両台数</p><p class="font-bold text-gray-800">' + (j.vehicle_count||0) + '台</p></div>'
+          + '<div><p class="text-xs sm:text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">作業情報</p>'
+          + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">'
+          + '<div class="col-span-1 sm:col-span-2 bg-white rounded-lg p-3 border border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-0.5">作業場所（詳細住所）</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + escH(j.work_location_detail||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 flex items-center gap-3 sm:block"><p class="text-[11px] sm:text-[10px] text-gray-400 sm:mb-0.5 shrink-0 w-20 sm:w-auto">作業希望日時</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + escH(j.work_datetime||'-') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100 flex items-center gap-3 sm:block"><p class="text-[11px] sm:text-[10px] text-gray-400 sm:mb-0.5 shrink-0 w-20 sm:w-auto">車両台数</p><p class="font-bold text-gray-800 text-base sm:text-sm">' + (j.vehicle_count||0) + '台</p></div>'
           + '</div></div>'
 
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">取付製品（準備区分）</p>'
-          + '<div class="grid grid-cols-2 gap-3 text-sm">'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">メーカー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_maker||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">お客様準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_customer||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">公認パートナー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_partner||'なし') + '</p></div>'
-          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[10px] text-gray-400 mb-0.5">現地調達</p><p class="font-medium text-gray-800 whitespace-pre-line text-xs">' + escH(j.products_local||'なし') + '</p></div>'
+          + '<div><p class="text-xs sm:text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">取付製品（準備区分）</p>'
+          + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">メーカー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-sm sm:text-xs">' + escH(j.products_maker||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">お客様準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-sm sm:text-xs">' + escH(j.products_customer||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">パートナー準備</p><p class="font-medium text-gray-800 whitespace-pre-line text-sm sm:text-xs">' + escH(j.products_partner||'なし') + '</p></div>'
+          + '<div class="bg-white rounded-lg p-3 border border-orange-100"><p class="text-[11px] sm:text-[10px] text-gray-400 mb-1 sm:mb-0.5">現地調達</p><p class="font-medium text-gray-800 whitespace-pre-line text-sm sm:text-xs">' + escH(j.products_local||'なし') + '</p></div>'
           + '</div></div>'
 
-          + '<div><p class="text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">費用情報 <span class="text-orange-400 font-normal">（税込10%）</span></p>'
+          + '<div><p class="text-xs sm:text-[10px] font-bold text-orange-700 uppercase tracking-wide mb-2">費用情報 <span class="text-orange-400 font-normal">（税込10%）</span></p>'
           + '<div class="bg-white rounded-xl border border-orange-200 overflow-hidden">'
           + '<table class="w-full text-sm"><tbody>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">推定希望工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costLabor) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costLabor)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">出張費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costTravel) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costTravel)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">その他費用</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costOther) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costOther)) + '</td></tr>'
-          + '<tr class="border-b border-gray-100"><td class="px-4 py-2.5 text-gray-600">事前打合せ工賃</td><td class="px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costPrelim) + '</td><td class="px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costPrelim)) + '</td></tr>'
-          + '<tr class="bg-orange-50 border-t-2 border-orange-200"><td class="px-4 py-3 font-bold text-gray-800">合計（税込10%）</td><td class="px-4 py-3 text-right font-mono text-xs text-gray-500">税抜 ' + fmtYen(costSubtotal) + '</td><td class="px-4 py-3 text-right font-mono font-bold text-lg text-orange-700">' + fmtYen(costTotal) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-2 sm:px-4 py-2.5 text-gray-600 text-xs sm:text-sm">推定工賃</td><td class="hidden sm:table-cell px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costLabor) + '</td><td class="px-2 sm:px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costLabor)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-2 sm:px-4 py-2.5 text-gray-600 text-xs sm:text-sm">出張費用</td><td class="hidden sm:table-cell px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costTravel) + '</td><td class="px-2 sm:px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costTravel)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-2 sm:px-4 py-2.5 text-gray-600 text-xs sm:text-sm">その他費用</td><td class="hidden sm:table-cell px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costOther) + '</td><td class="px-2 sm:px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costOther)) + '</td></tr>'
+          + '<tr class="border-b border-gray-100"><td class="px-2 sm:px-4 py-2.5 text-gray-600 text-xs sm:text-sm">事前打合せ</td><td class="hidden sm:table-cell px-4 py-2.5 text-right font-mono text-gray-400 text-xs">' + fmtYen(costPrelim) + '</td><td class="px-2 sm:px-4 py-2.5 text-right font-mono font-bold text-gray-800">' + fmtYen(taxIncl(costPrelim)) + '</td></tr>'
+          + '<tr class="bg-orange-50 border-t-2 border-orange-200"><td class="px-2 sm:px-4 py-3 font-bold text-gray-800 text-xs sm:text-sm">合計（税込）</td><td class="hidden sm:table-cell px-4 py-3 text-right font-mono text-xs text-gray-500">税抜 ' + fmtYen(costSubtotal) + '</td><td class="px-2 sm:px-4 py-3 text-right font-mono font-bold text-xl sm:text-lg text-orange-700">' + fmtYen(costTotal) + '</td></tr>'
+          + '<tr class="sm:hidden bg-orange-50/50"><td class="px-2 py-1 text-[10px] text-gray-400" colspan="2">税抜 ' + fmtYen(costSubtotal) + '</td></tr>'
           + '</tbody></table></div>'
-          + (j.cost_memo ? '<p class="text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg p-2">備考: ' + escH(j.cost_memo) + '</p>' : '')
+          + (j.cost_memo ? '<p class="text-sm sm:text-xs text-gray-500 mt-2 bg-gray-50 rounded-lg p-2">備考: ' + escH(j.cost_memo) + '</p>' : '')
           + '</div>'
           + '</div></div>'
 
           // 添付ファイル（取付マニュアル等）
           + (currentJobAttachments.length > 0
-            ? '<div class="rounded-xl border border-blue-100 bg-blue-50/50 p-4"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg><span class="text-sm font-bold text-sva-dark">添付ファイル（取付マニュアル等）</span></div>'
+            ? '<div class="rounded-xl border border-blue-100 bg-blue-50/50 p-3 sm:p-4"><div class="flex items-center gap-2 mb-2"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg><span class="text-sm font-bold text-sva-dark">添付ファイル</span></div>'
               + '<div class="space-y-2">' + currentJobAttachments.map(function(a) {
                 var size = a.file_size > 1048576 ? (a.file_size/1048576).toFixed(1) + 'MB' : (a.file_size/1024).toFixed(0) + 'KB';
                 var isPdf = (a.mime_type||'').includes('pdf');
-                return '<div class="flex items-center gap-3 px-3 py-2.5 bg-white rounded-lg border border-gray-100">'
+                return '<div class="px-3 py-2.5 bg-white rounded-lg border border-gray-100">'
+                  + '<div class="flex items-center gap-3">'
                   + '<div class="w-8 h-8 rounded flex items-center justify-center shrink-0 ' + (isPdf ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500') + '">'
                   + (isPdf ? '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM6 20V4h5v7h7v9H6z"/></svg>' : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>')
                   + '</div>'
                   + '<div class="min-w-0 flex-1"><p class="text-sm font-medium text-gray-800 truncate">' + escH(a.file_name) + '</p>'
-                  + '<p class="text-[10px] text-gray-400">' + size + (a.description ? ' ・ ' + escH(a.description) : '') + '</p></div>'
-                  + '<button onclick="downloadPartnerAttachment(' + j.id + ',' + a.id + ',\\'' + escH(a.file_name).replace(/'/g,"\\\\'") + '\\')" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shrink-0"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>ダウンロード</button></div>';
+                  + '<p class="text-[11px] text-gray-400">' + size + (a.description ? ' ・ ' + escH(a.description) : '') + '</p></div></div>'
+                  + '<button onclick="downloadPartnerAttachment(' + j.id + ',' + a.id + ',\\'' + escH(a.file_name).replace(/'/g,"\\\\'") + '\\')" class="w-full sm:w-auto mt-2 sm:mt-0 px-3 py-2 sm:py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shrink-0 text-center block"><svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>ダウンロード</button></div>';
               }).join('') + '</div></div>'
             : '')
           + '</div>';
       } else {
         clientTab = '<div id="jt_panel_client" class="hidden">'
-          + '<div class="rounded-xl border border-gray-200 bg-gray-50 p-8 text-center">'
+          + '<div class="rounded-xl border border-gray-200 bg-gray-50 p-6 sm:p-8 text-center">'
           + '<svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>'
-          + '<p class="text-sm font-medium text-gray-500">お客様の詳細情報は案件を受諾後に表示されます</p>'
-          + '<p class="text-xs text-gray-400 mt-1">受諾 → 対応開始でお客様連絡先・費用情報・添付ファイルが開示されます</p></div></div>';
+          + '<p class="text-base sm:text-sm font-medium text-gray-500">お客様の詳細情報は案件を受諾後に表示されます</p>'
+          + '<p class="text-sm sm:text-xs text-gray-400 mt-1">受諾 → 対応開始でお客様連絡先・費用情報・添付ファイルが開示されます</p></div></div>';
       }
 
       // ===== TAB: トラッキング =====
