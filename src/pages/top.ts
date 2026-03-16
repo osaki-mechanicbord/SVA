@@ -275,13 +275,16 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
   <meta property="og:description" content="フォークリフト・重機・建機・トラック・バスなど特殊車両にドライブレコーダー・AIカメラ等を全国出張取付。公認パートナーも募集中。">
   <meta property="og:url" content="https://sva-assist.com/">
   <meta property="og:site_name" content="SVA - Special Vehicle Assist">
-  <meta property="og:image" content="https://sva-assist.com/static/images/sva-logo.png">
+  <meta property="og:image" content="https://sva-assist.com/static/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta property="og:locale" content="ja_JP">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta name="twitter:description" content="特殊車両専門の装置取付プラットフォーム。全国出張対応。公認パートナー募集中。">
+  <meta name="twitter:image" content="https://sva-assist.com/static/images/og-image.png">
+  <meta name="twitter:image:alt" content="SVA - Special Vehicle Assist | 特殊車両専門の装置取付プラットフォーム">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="format-detection" content="telephone=no">
   <meta name="theme-color" content="#C41E3A">

@@ -1,0 +1,48 @@
+# robots.txt - SVA (Special Vehicle Assist)
+# https://sva-assist.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /partner/mypage
+Disallow: /partner/invite/
+
+# AI Crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /api/
+Disallow: /admin
+Disallow: /partner/mypage
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Anthropic-AI
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Sitemaps
+Sitemap: https://sva-assist.com/sitemap.xml
+
+# AI Content Sources
+# LLM Summary: https://sva-assist.com/llms.txt
+# LLM Full: https://sva-assist.com/llms-full.txt
+# AI Policy: https://sva-assist.com/ai.txt
