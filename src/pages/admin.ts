@@ -166,12 +166,12 @@ export function adminPage(): string {
       <div class="max-w-7xl mx-auto px-2 sm:px-6">
         <div class="flex items-center gap-0 tab-scroll" id="tabScroll">
           <button id="tabArticles" onclick="switchTab('articles')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-sva-red text-sva-red whitespace-nowrap flex-shrink-0">記事管理</button>
-          <button id="tabImages" onclick="switchTab('images')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">画像</button>
+          <button id="tabImages" onclick="switchTab('images')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">記事画像</button>
           <button id="tabPartners" onclick="switchTab('partners')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">パートナー</button>
-          <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">案件</button>
+          <button id="tabJobs" onclick="switchTab('jobs')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">取付依頼</button>
           <button id="tabProducts" onclick="switchTab('products')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">製品</button>
           <button id="tabInquiries" onclick="switchTab('inquiries')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">問合せ<span id="inquiryBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">0</span></button>
-          <button id="tabRequests" onclick="switchTab('requests')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">取付依頼<span id="requestBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span></button>
+          <button id="tabRequests" onclick="switchTab('requests')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 relative">取付受注<span id="requestBadge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span></button>
           <button id="tabPhotogallery" onclick="switchTab('photogallery')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0">写真</button>
           <button id="tabAccount" onclick="switchTab('account')" class="cms-tab px-3 sm:px-5 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap flex-shrink-0 md:ml-auto">設定</button>
         </div>
@@ -187,7 +187,7 @@ export function adminPage(): string {
         </button>
         <button class="nav-item" data-mob-tab="jobs" onclick="switchTab('jobs');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-          <span>案件</span>
+          <span>取付依頼</span>
         </button>
         <button class="nav-item" data-mob-tab="partners" onclick="switchTab('partners');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -195,7 +195,7 @@ export function adminPage(): string {
         </button>
         <button class="nav-item" data-mob-tab="requests" onclick="switchTab('requests');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-          <span>取付依頼</span>
+          <span>取付受注</span>
           <span id="mobileRequestBadge" class="nav-badge" style="display:none">0</span>
         </button>
         <button class="nav-item" id="mobileMoreBtn" onclick="toggleMobileMore()">
@@ -216,7 +216,7 @@ export function adminPage(): string {
         </button>
         <button class="more-item" data-mob-tab="images" onclick="switchTab('images');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          <span>画像</span>
+          <span>記事画像</span>
         </button>
         <button class="more-item" data-mob-tab="products" onclick="switchTab('products');closeMobileMore()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -431,9 +431,9 @@ export function adminPage(): string {
     <div id="jobsTab" class="hidden">
       <div class="bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">案件一覧</div>
+          <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">取付依頼一覧</div>
           <div class="flex items-center gap-2">
-            <div class="relative"><input id="jobSearchInput" type="text" placeholder="案件No・案件名・会社名で検索" class="w-56 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+            <div class="relative"><input id="jobSearchInput" type="text" placeholder="取付依頼No・取付依頼名・会社名で検索" class="w-56 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
             <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
               <option value="">全ステータス</option>
               <option value="pending">未対応</option>
@@ -444,7 +444,7 @@ export function adminPage(): string {
               <option value="cancelled">キャンセル</option>
             </select>
             <button id="backToJobListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadJobs(1)">一覧に戻る</button>
-            <button onclick="showNewJobForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規案件作成</button>
+            <button onclick="showNewJobForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規取付依頼作成</button>
           </div>
         </div>
       </div>
@@ -541,16 +541,16 @@ export function adminPage(): string {
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-lg font-bold text-sva-dark flex items-center gap-2">
             <svg class="w-5 h-5 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3"/></svg>
-            案件写真管理
+            取付依頼写真管理
           </h2>
-          <div class="text-xs text-gray-400">案件を選択して写真を管理</div>
+          <div class="text-xs text-gray-400">取付依頼を選択して写真を管理</div>
         </div>
         <!-- Job selector for photos -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
           <div class="flex items-center gap-3 flex-wrap">
-            <label class="text-sm font-medium text-gray-700">案件選択:</label>
+            <label class="text-sm font-medium text-gray-700">取付依頼選択:</label>
             <select id="pgJobSelect" onchange="loadPhotoGallery(this.value)" class="flex-1 min-w-[200px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red">
-              <option value="">-- 案件を選択してください --</option>
+              <option value="">-- 取付依頼を選択してください --</option>
             </select>
             <button onclick="refreshPhotoJobList()" class="px-3 py-2 text-xs bg-gray-100 rounded-lg hover:bg-gray-200">更新</button>
           </div>
@@ -559,7 +559,7 @@ export function adminPage(): string {
         <div id="pgContent">
           <div class="text-center py-16 text-gray-400">
             <svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
-            <p class="text-sm">上部の案件選択プルダウンから案件を選択してください</p>
+            <p class="text-sm">上部の取付依頼選択プルダウンから取付依頼を選択してください</p>
             <p class="text-xs text-gray-300 mt-1">パートナーがアップロードした写真を確認・管理できます</p>
           </div>
         </div>
@@ -590,7 +590,7 @@ export function adminPage(): string {
     <div id="requestsTab" class="hidden">
       <div class="bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div id="requestViewTitle" class="text-lg font-bold text-sva-dark flex items-center gap-2">取付依頼一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span></div>
+          <div id="requestViewTitle" class="text-lg font-bold text-sva-dark flex items-center gap-2">取付受注一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span></div>
           <div class="flex items-center gap-2">
             <input id="requestSearchInput" type="text" placeholder="会社名・担当者名で検索" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red w-52" onkeydown="if(event.key==='Enter')loadRequests(1)">
             <select id="requestStatusFilter" onchange="loadRequests(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
@@ -612,8 +612,8 @@ export function adminPage(): string {
           <div id="requestList" class="space-y-2">
             <div class="text-center py-16 text-gray-400">
               <svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              <p class="text-sm">取付依頼はまだありません</p>
-              <p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付依頼がここに表示されます</p>
+              <p class="text-sm">取付受注はまだありません</p>
+              <p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付受注がここに表示されます</p>
             </div>
           </div>
           <div id="requestPagination" class="mt-6 flex justify-center gap-2"></div>
@@ -1203,7 +1203,7 @@ export function adminPage(): string {
         + '<div class="mt-4"><label class="block text-xs font-medium text-gray-600 mb-1">管理メモ</label><textarea id="ep_notes" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red resize-none">' + esc(p.notes) + '</textarea></div>'
         + '<div class="flex items-center gap-3 mt-4">'
         + '<button onclick="savePartner(' + p.id + ')" class="px-6 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">保存</button>'
-        + '<button onclick="if(confirm(\\'このパートナーを削除しますか？\\n関連する案件・メッセージもすべて削除されます。\\'))deletePartner(' + p.id + ')" class="px-4 py-2 border border-red-200 text-red-600 text-sm rounded-lg hover:bg-red-50">アカウント削除</button>'
+        + '<button onclick="if(confirm(\\'このパートナーを削除しますか？\\n関連する取付依頼・メッセージもすべて削除されます。\\'))deletePartner(' + p.id + ')" class="px-4 py-2 border border-red-200 text-red-600 text-sm rounded-lg hover:bg-red-50">アカウント削除</button>'
         + '<span id="epMsg" class="text-sm"></span>'
         + '</div></div>'
         // Messages
@@ -1217,12 +1217,12 @@ export function adminPage(): string {
         // Sidebar stats
         + '<div class="space-y-4">'
         + '<div class="bg-white rounded-xl border border-gray-200 p-5"><h4 class="text-sm font-bold text-sva-dark mb-3">統計</h4>'
-        + '<div class="space-y-2 text-sm"><div class="flex justify-between"><span class="text-gray-500">案件数</span><span class="font-bold">' + stats.jobs + '件</span></div>'
+        + '<div class="space-y-2 text-sm"><div class="flex justify-between"><span class="text-gray-500">取付依頼数</span><span class="font-bold">' + stats.jobs + '件</span></div>'
         + '<div class="flex justify-between"><span class="text-gray-500">メッセージ数</span><span class="font-bold">' + stats.messages + '件</span></div>'
         + '<div class="flex justify-between"><span class="text-gray-500">最終ログイン</span><span class="text-xs text-gray-600">' + (p.last_login_at ? new Date(p.last_login_at).toLocaleString('ja-JP') : '未ログイン') + '</span></div>'
         + '<div class="flex justify-between"><span class="text-gray-500">登録日</span><span class="text-xs text-gray-600">' + (p.created_at ? new Date(p.created_at).toLocaleDateString('ja-JP') : '-') + '</span></div></div></div>'
         + '<div class="bg-white rounded-xl border border-gray-200 p-5"><h4 class="text-sm font-bold text-sva-dark mb-3">クイック操作</h4>'
-        + '<button onclick="switchTab(\\'jobs\\');setTimeout(function(){document.getElementById(\\'jobStatusFilter\\').value=\\'\\';loadJobs(1)},100)" class="w-full text-left px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 mb-1">このパートナーに案件を送信 →</button></div>'
+        + '<button onclick="switchTab(\\'jobs\\');setTimeout(function(){document.getElementById(\\'jobStatusFilter\\').value=\\'\\';loadJobs(1)},100)" class="w-full text-left px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-50 mb-1">このパートナーに取付依頼を送信 →</button></div>'
         + '</div></div>';
     }
 
@@ -1407,7 +1407,7 @@ export function adminPage(): string {
       document.getElementById('jobListView').classList.remove('hidden');
       document.getElementById('jobDetailView').classList.add('hidden');
       document.getElementById('backToJobListBtn').classList.add('hidden');
-      document.getElementById('jobViewTitle').textContent = '案件一覧';
+      document.getElementById('jobViewTitle').textContent = '取付依頼一覧';
       var status = document.getElementById('jobStatusFilter').value;
       var search = document.getElementById('jobSearchInput').value.trim();
       var url = API + '/admin/jobs?page=' + page;
@@ -1422,7 +1422,7 @@ export function adminPage(): string {
 
     function renderJobList(jobs, pag) {
       var el = document.getElementById('jobList');
-      if (!jobs || !jobs.length) { el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">案件がまだありません</div>'; return; }
+      if (!jobs || !jobs.length) { el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">取付依頼がまだありません</div>'; return; }
       el.innerHTML = jobs.map(function(j) {
         var s = JOB_STATUS[j.status] || ['不明','bg-gray-100 text-gray-500 border-gray-200'];
         var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
@@ -1459,8 +1459,89 @@ export function adminPage(): string {
         var res = await fetch(API + '/admin/products?active=1', { headers: { 'Authorization': 'Bearer ' + authToken } });
         var data = await res.json();
         PRODUCT_MASTER_FULL = data.products || [];
-        PRODUCT_MASTER = PRODUCT_MASTER_FULL.map(function(p){ return p.product_name; });
+        PRODUCT_MASTER = PRODUCT_MASTER_FULL.map(function(p){ return p.product_name + (p.model_number ? ' (' + p.model_number + ')' : ''); });
       } catch(e) { PRODUCT_MASTER = []; PRODUCT_MASTER_FULL = []; }
+    }
+
+    // 選択済み製品リスト（準備区分セクション）
+    var njSelectedProducts = [];
+    var njSelectedProductSeq = 0;
+
+    // 製品マスタ: カテゴリで絞り込み → nj_prod_select を更新
+    function filterProductMaster() {
+      var catFilter = (document.getElementById('nj_prod_cat_filter')||{}).value || '';
+      var sel = document.getElementById('nj_prod_select');
+      if (!sel) return;
+      var filtered = PRODUCT_MASTER_FULL.filter(function(p) {
+        if (catFilter && p.category !== catFilter) return false;
+        return true;
+      });
+      sel.innerHTML = '<option value="">-- 製品を選択してください (' + filtered.length + '件) --</option>'
+        + filtered.map(function(p) {
+          var catLabel = {camera:'カメラ',sensor:'センサー',light:'安全灯',control:'制御',recorder:'レコーダー',monitor:'モニター',other:'その他'}[p.category] || p.category;
+          return '<option value="' + p.id + '">[' + catLabel + '] ' + esc(p.product_name) + (p.model_number ? ' (' + esc(p.model_number) + ')' : '') + '</option>';
+        }).join('');
+    }
+
+    // 製品マスタから選択 → 追加ボタン
+    function addSelectedProduct() {
+      var sel = document.getElementById('nj_prod_select');
+      var qtyEl = document.getElementById('nj_prod_qty');
+      if (!sel || !sel.value) { showToast('製品を選択してください', true); return; }
+      var prodId = Number(sel.value);
+      var prod = PRODUCT_MASTER_FULL.find(function(p) { return p.id === prodId; });
+      if (!prod) return;
+      var qty = Number(qtyEl.value) || 1;
+
+      // 既に追加済みなら数量を加算
+      var existing = njSelectedProducts.find(function(sp) { return sp.product_id === prodId; });
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        njSelectedProductSeq++;
+        njSelectedProducts.push({
+          _seq: njSelectedProductSeq,
+          product_id: prodId,
+          product_name: prod.product_name,
+          model_number: prod.model_number || '',
+          category: prod.category || '',
+          quantity: qty
+        });
+      }
+      qtyEl.value = '1';
+      sel.value = '';
+      renderSelectedProducts();
+    }
+
+    function removeSelectedProduct(seq) {
+      njSelectedProducts = njSelectedProducts.filter(function(sp) { return sp._seq !== seq; });
+      renderSelectedProducts();
+    }
+
+    function updateSelectedProductQty(seq, val) {
+      var sp = njSelectedProducts.find(function(x) { return x._seq === seq; });
+      if (sp) sp.quantity = Math.max(1, Number(val) || 1);
+    }
+
+    function renderSelectedProducts() {
+      var el = document.getElementById('nj_prod_selected');
+      if (!el) return;
+      if (njSelectedProducts.length === 0) {
+        el.innerHTML = '<p class="text-[10px] text-gray-400 text-center py-2">製品が未選択です。上のプルダウンから追加してください。</p>';
+        return;
+      }
+      var catLabel = {camera:'カメラ',sensor:'センサー',light:'安全灯',control:'制御',recorder:'レコーダー',monitor:'モニター',other:'その他'};
+      el.innerHTML = njSelectedProducts.map(function(sp, idx) {
+        var cl = catLabel[sp.category] || sp.category;
+        return '<div class="flex items-center gap-2 bg-white rounded-lg border border-blue-200 px-3 py-2">'
+          + '<span class="w-5 h-5 rounded bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">' + (idx+1) + '</span>'
+          + '<span class="px-1.5 py-0.5 text-[9px] rounded bg-gray-100 text-gray-500 font-medium flex-shrink-0">' + esc(cl) + '</span>'
+          + '<span class="text-xs text-sva-dark font-medium flex-1 truncate">' + esc(sp.product_name) + (sp.model_number ? ' <span class="text-gray-400 font-normal">(' + esc(sp.model_number) + ')</span>' : '') + '</span>'
+          + '<span class="text-[10px] text-gray-400 flex-shrink-0">×</span>'
+          + '<input type="number" min="1" value="' + sp.quantity + '" onchange="updateSelectedProductQty(' + sp._seq + ', this.value)" class="w-14 px-1.5 py-1 border border-blue-200 rounded text-xs text-center flex-shrink-0">'
+          + '<button onclick="removeSelectedProduct(' + sp._seq + ')" class="text-red-400 hover:text-red-600 text-xs px-1 flex-shrink-0" title="削除">✕</button>'
+          + '</div>';
+      }).join('');
     }
 
     // 車両データ配列
@@ -1473,15 +1554,17 @@ export function adminPage(): string {
       document.getElementById('jobListView').classList.add('hidden');
       document.getElementById('jobDetailView').classList.remove('hidden');
       document.getElementById('backToJobListBtn').classList.remove('hidden');
-      document.getElementById('jobViewTitle').textContent = '新規案件作成';
+      document.getElementById('jobViewTitle').textContent = '新規取付依頼作成';
 
       // パートナー一覧と製品マスタを事前ロード
+      njSelectedProducts = [];
+      njSelectedProductSeq = 0;
       loadAllPartners();
-      if (PRODUCT_MASTER.length === 0) loadProductMasterData();
+      loadProductMasterData().then(function() { filterProductMaster(); });
 
       document.getElementById('jobDetailView').innerHTML = '<div class="max-w-3xl">'
         + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
-        + '<h3 class="font-bold text-sva-dark text-base mb-4">案件依頼を作成</h3>'
+        + '<h3 class="font-bold text-sva-dark text-base mb-4">取付依頼依頼を作成</h3>'
         // パートナー選択セクション
         + '<div class="mb-5"><label class="block text-xs font-medium text-gray-600 mb-1">送信先パートナー <span class="text-red-500">*</span></label>'
         + '<div class="grid sm:grid-cols-2 gap-2 mb-2">'
@@ -1495,8 +1578,8 @@ export function adminPage(): string {
         // 基本情報
         + '<div class="space-y-4">'
         + '<div class="grid sm:grid-cols-2 gap-4">'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件名 <span class="text-red-500">*</span></label><input id="nj_title" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="例: フォークリフトAIカメラ取付 10台"></div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">案件No</label><input id="nj_job_number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-sva-red" placeholder="例: SVA-2026-0003"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">取付依頼名 <span class="text-red-500">*</span></label><input id="nj_title" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-sva-red" placeholder="例: フォークリフトAIカメラ取付 10台"></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">取付依頼No</label><input id="nj_job_number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-sva-red" placeholder="例: SVA-2026-0003"></div>'
         + '</div>'
         + '<div class="grid sm:grid-cols-2 gap-4">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">車両タイプ</label><input id="nj_vehicle" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="フォークリフト"></div>'
@@ -1505,7 +1588,7 @@ export function adminPage(): string {
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">希望日程</label><input id="nj_date" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="2026年4月中旬希望"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">予算</label><input id="nj_budget" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="¥500,000"></div>'
         + '</div>'
-        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="案件の詳細..."></textarea></div>'
+        + '<div><label class="block text-xs font-medium text-gray-600 mb-1">詳細説明</label><textarea id="nj_desc" rows="3" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="取付依頼の詳細..."></textarea></div>'
         + '</div></div>'
 
         // 車両セクション
@@ -1537,6 +1620,31 @@ export function adminPage(): string {
         // 取付製品（準備区分）
         + '<div class="bg-white rounded-xl border border-gray-200 p-6 mb-4">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付製品（準備区分）</h4>'
+
+        // 製品マスタからの選択UI
+        + '<div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-4">'
+        + '<p class="text-xs font-medium text-blue-700 mb-2">製品マスタから選択</p>'
+        + '<div class="flex flex-col sm:flex-row gap-2 mb-3">'
+        + '<select id="nj_prod_cat_filter" onchange="filterProductMaster()" class="px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white flex-shrink-0">'
+        + '<option value="">全カテゴリ</option>'
+        + '<option value="camera">カメラ</option>'
+        + '<option value="sensor">センサー</option>'
+        + '<option value="light">安全灯</option>'
+        + '<option value="control">制御</option>'
+        + '<option value="recorder">レコーダー</option>'
+        + '<option value="monitor">モニター</option>'
+        + '<option value="other">その他</option>'
+        + '</select>'
+        + '<select id="nj_prod_select" class="px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white flex-1">'
+        + '<option value="">-- 製品を選択してください --</option>'
+        + '</select>'
+        + '<input id="nj_prod_qty" type="number" min="1" value="1" class="w-20 px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white text-center" placeholder="数量">'
+        + '<button type="button" onclick="addSelectedProduct()" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 whitespace-nowrap">追加</button>'
+        + '</div>'
+        + '<div id="nj_prod_selected" class="space-y-1.5"></div>'
+        + '</div>'
+
+        // 準備区分テキスト
         + '<div class="grid sm:grid-cols-2 gap-3">'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">メーカー準備</label><textarea id="nj_prod_maker" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="AIカメラ FLC-1 x5台"></textarea></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">お客様準備</label><textarea id="nj_prod_customer" rows="2" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" placeholder="取付ステー"></textarea></div>'
@@ -1558,7 +1666,7 @@ export function adminPage(): string {
 
         // 送信ボタン
         + '<div class="bg-white rounded-xl border border-gray-200 p-6">'
-        + '<div class="flex items-center gap-3"><button onclick="createJob()" class="px-8 py-2.5 bg-sva-red text-white text-sm font-bold rounded-lg hover:bg-red-800">案件を送信</button><span id="njMsg" class="text-sm"></span></div>'
+        + '<div class="flex items-center gap-3"><button onclick="createJob()" class="px-8 py-2.5 bg-sva-red text-white text-sm font-bold rounded-lg hover:bg-red-800">取付依頼を送信</button><span id="njMsg" class="text-sm"></span></div>'
         + '</div></div>';
       renderNjVehicles();
     }
@@ -1662,11 +1770,19 @@ export function adminPage(): string {
       if (badge) badge.textContent = njVehicles.length + '台';
       if (njVehicles.length === 0) { el.innerHTML = ''; if(noEl)noEl.classList.remove('hidden'); return; }
       if(noEl)noEl.classList.add('hidden');
+      var catLbl = {camera:'カメラ',sensor:'センサー',light:'安全灯',control:'制御',recorder:'レコーダー',monitor:'モニター',other:'その他'};
       el.innerHTML = njVehicles.map(function(v, idx) {
-        var prodOpts = '<option value="">-- 製品を選択 --</option>' + PRODUCT_MASTER.map(function(p){return '<option value="'+esc(p)+'">'+esc(p)+'</option>';}).join('');
+        var prodOpts = '<option value="">-- 製品を選択 --</option>' + PRODUCT_MASTER_FULL.map(function(p){
+          var cl = catLbl[p.category] || p.category;
+          return '<option value="'+esc(p.product_name + (p.model_number ? ' (' + p.model_number + ')' : ''))+'">['+cl+'] '+esc(p.product_name)+(p.model_number?' ('+esc(p.model_number)+')':'')+'</option>';
+        }).join('');
         var prodHtml = v.products.map(function(p, pidx) {
           return '<div class="flex items-center gap-2 mb-1.5">'
-            + '<select id="nvp_name_'+v._id+'_'+pidx+'" class="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-400">' + PRODUCT_MASTER.map(function(pm){return '<option value="'+esc(pm)+'"'+(pm===p.product_name?' selected':'')+'>'+esc(pm)+'</option>';}).join('') + '<option value="">-- その他（手入力） --</option></select>'
+            + '<select id="nvp_name_'+v._id+'_'+pidx+'" class="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-400">' + PRODUCT_MASTER_FULL.map(function(pm){
+              var cl2 = catLbl[pm.category] || pm.category;
+              var val = pm.product_name + (pm.model_number ? ' (' + pm.model_number + ')' : '');
+              return '<option value="'+esc(val)+'"'+(val===p.product_name || pm.product_name===p.product_name?' selected':'')+'>['+ cl2 +'] '+esc(pm.product_name)+(pm.model_number?' ('+esc(pm.model_number)+')':'')+'</option>';
+            }).join('') + '<option value="">-- その他（手入力） --</option></select>'
             + '<input type="number" id="nvp_qty_'+v._id+'_'+pidx+'" value="'+p.quantity+'" min="1" class="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-xs text-center" placeholder="数量">'
             + '<button onclick="syncNjVehicleData();removeNjProduct('+v._id+','+pidx+')" class="text-red-400 hover:text-red-600 text-xs px-1">✕</button></div>';
         }).join('');
@@ -1695,7 +1811,12 @@ export function adminPage(): string {
       syncNjVehicleData();
       var pid = document.getElementById('nj_partner_id').value;
       var title = document.getElementById('nj_title').value;
-      if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと案件名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
+      if (!pid || !title) { document.getElementById('njMsg').textContent = 'パートナーと取付依頼名は必須です'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
+
+      // Build selected products payload (準備区分セクション)
+      var selectedProductsPayload = njSelectedProducts.map(function(sp) {
+        return { product_id: sp.product_id, product_name: sp.product_name, model_number: sp.model_number, category: sp.category, quantity: sp.quantity };
+      });
 
       // Build vehicles payload
       var vehiclesPayload = njVehicles.map(function(v) {
@@ -1718,6 +1839,7 @@ export function adminPage(): string {
             work_datetime: document.getElementById('nj_work_datetime').value, urgent_contact_note: document.getElementById('nj_urgent_note').value,
             products_maker: document.getElementById('nj_prod_maker').value, products_customer: document.getElementById('nj_prod_customer').value,
             products_partner: document.getElementById('nj_prod_partner').value, products_local: document.getElementById('nj_prod_local').value,
+            selected_products: selectedProductsPayload,
             cost_labor: Number(document.getElementById('nj_cost_labor').value)||0, cost_travel: Number(document.getElementById('nj_cost_travel').value)||0,
             cost_other: Number(document.getElementById('nj_cost_other').value)||0, cost_preliminary: Number(document.getElementById('nj_cost_prelim').value)||0,
             cost_memo: document.getElementById('nj_cost_memo').value,
@@ -1726,7 +1848,7 @@ export function adminPage(): string {
         });
         var data = await res.json();
         if (!res.ok) { document.getElementById('njMsg').textContent = data.error || '作成失敗'; document.getElementById('njMsg').className = 'text-sm text-red-600'; return; }
-        showToast('案件を送信しました（パートナーに通知済み）' + (vehiclesPayload.length > 0 ? ' 車両' + vehiclesPayload.length + '台登録' : ''));
+        showToast('取付依頼を送信しました（パートナーに通知済み）' + (vehiclesPayload.length > 0 ? ' 車両' + vehiclesPayload.length + '台登録' : ''));
         loadJobs(1);
       } catch(e) { document.getElementById('njMsg').textContent = 'エラー'; document.getElementById('njMsg').className = 'text-sm text-red-600'; }
     }
@@ -1740,13 +1862,13 @@ export function adminPage(): string {
       document.getElementById('jobListView').classList.add('hidden');
       document.getElementById('jobDetailView').classList.remove('hidden');
       document.getElementById('backToJobListBtn').classList.remove('hidden');
-      document.getElementById('jobViewTitle').textContent = '案件詳細';
+      document.getElementById('jobViewTitle').textContent = '取付依頼詳細';
       var dv = document.getElementById('jobDetailView');
       dv.innerHTML = '<div class="flex items-center justify-center py-12"><div class="w-6 h-6 border-2 border-sva-red border-t-transparent rounded-full animate-spin"></div></div>';
       try {
         var res = await fetch(API + '/admin/jobs/' + id, { headers: { 'Authorization': 'Bearer ' + authToken } });
         var data = await res.json();
-        if (!data.job) { dv.innerHTML = '<p class="text-sm text-red-500">案件が見つかりません</p>'; return; }
+        if (!data.job) { dv.innerHTML = '<p class="text-sm text-red-500">取付依頼が見つかりません</p>'; return; }
         currentJobData = data.job;
         currentJobVehicles = data.vehicles || [];
         currentJobAttachments = data.attachments || [];
@@ -1777,7 +1899,7 @@ export function adminPage(): string {
         // Header
         + '<div class="bg-white rounded-xl border border-gray-200 p-5 mb-0">'
         + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
-        + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '<span class="px-2 py-0.5 text-[10px] rounded bg-gray-50 text-gray-400 border border-gray-200">案件No未設定</span>')
+        + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '<span class="px-2 py-0.5 text-[10px] rounded bg-gray-50 text-gray-400 border border-gray-200">取付依頼No未設定</span>')
         + '<span class="text-xs text-gray-400">ID: ' + j.id + '</span></div>'
         + '<h3 class="text-lg font-bold text-sva-dark">' + esc(j.title) + '</h3>'
         + '<p class="text-sm text-gray-500 mt-1">' + esc(j.company_name||'-') + ' / ' + esc(j.representative_name||'-') + '</p>'
@@ -1786,10 +1908,10 @@ export function adminPage(): string {
         + (totalProducts > 0 ? '<span class="px-2 py-1 text-xs rounded-lg font-medium bg-purple-50 text-purple-700">商品 ' + totalProducts + '点</span>' : '')
         + (totalPhotos > 0 ? '<span class="px-2 py-1 text-xs rounded-lg font-medium bg-emerald-50 text-emerald-700">写真 ' + totalPhotos + '枚</span>' : '')
         + '</div></div>'
-        // Tabs - 5タブ構成（案件概要・お客様情報・車両明細・トラッキング・写真）
+        // Tabs - 5タブ構成（取付依頼概要・お客様情報・車両明細・トラッキング・写真）
         + '<div class="bg-white border border-gray-200 border-t-0">'
         + '<div class="subtab-scroll"><div class="flex items-center gap-0 px-2">'
-        + '<button onclick="switchJobTab(\\'overview\\')" id="jtab_overview" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='overview'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">案件概要</button>'
+        + '<button onclick="switchJobTab(\\'overview\\')" id="jtab_overview" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='overview'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">取付依頼概要</button>'
         + '<button onclick="switchJobTab(\\'client\\')" id="jtab_client" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='client'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">お客様</button>'
         + '<button onclick="switchJobTab(\\'vehicles\\')" id="jtab_vehicles" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='vehicles'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">車両 <span class="ml-1 px-1.5 py-0.5 bg-sva-red text-white text-[10px] rounded-full font-bold">' + vCount + '</span></button>'
         + '<button onclick="switchJobTab(\\'tracking\\')" id="jtab_tracking" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='tracking'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">追跡</button>'
@@ -1817,18 +1939,18 @@ export function adminPage(): string {
       else if (tab==='photos') renderPhotosTab(ct);
     }
 
-    // ===== Overview Tab（案件概要 - 基本情報のみ、重複排除）=====
+    // ===== Overview Tab（取付依頼概要 - 基本情報のみ、重複排除）=====
     function renderOverviewTab(ct) {
       var j = currentJobData;
       var vCount = currentJobVehicles.length;
       var vDone = currentJobVehicles.filter(function(v){return v.status==='completed'}).length;
 
       ct.innerHTML = ''
-        // 案件基本情報（編集フィールド）
+        // 取付依頼基本情報（編集フィールド）
         + '<div class="mb-5">'
-        + '<h4 class="text-sm font-bold text-sva-dark mb-3">案件基本情報</h4>'
+        + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付依頼基本情報</h4>'
         + '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">'
-        + '<div class="sm:col-span-2"><label class="block text-xs text-gray-400 mb-1">案件No <span class="text-indigo-500 font-bold">*請求管理用</span></label><input id="aj_job_number" type="text" value="' + esc(j.job_number||'') + '" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-sva-red bg-indigo-50/50" placeholder="例: SVA-2026-0001"></div>'
+        + '<div class="sm:col-span-2"><label class="block text-xs text-gray-400 mb-1">取付依頼No <span class="text-indigo-500 font-bold">*請求管理用</span></label><input id="aj_job_number" type="text" value="' + esc(j.job_number||'') + '" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-sva-red bg-indigo-50/50" placeholder="例: SVA-2026-0001"></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">車両タイプ</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.vehicle_type||'-') + '</p></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">取付装置</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.device_type||'-') + '</p></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">作業場所</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.location||'-') + '</p></div>'
@@ -1846,8 +1968,8 @@ export function adminPage(): string {
         // メモ（読み取り専用）
         + '<div class="mb-5"><label class="block text-xs text-gray-400 mb-1">メモ</label><div class="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 whitespace-pre-line min-h-[30px]">' + esc(j.general_memo||'未記入') + '</div></div>'
 
-        // 案件No保存ボタン
-        + '<div class="flex items-center gap-3 mb-5"><button onclick="saveJobOverview(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">案件Noを保存</button><span id="ajoMsg" class="text-sm"></span></div>'
+        // 取付依頼No保存ボタン
+        + '<div class="flex items-center gap-3 mb-5"><button onclick="saveJobOverview(' + j.id + ')" class="px-5 py-2 bg-sva-dark text-white text-sm font-medium rounded-lg hover:bg-gray-800">取付依頼Noを保存</button><span id="ajoMsg" class="text-sm"></span></div>'
 
         // 車両進捗サマリー
         + (vCount > 0
@@ -2172,7 +2294,7 @@ export function adminPage(): string {
       // Job-level photos
       html += '<div class="mb-6 bg-white rounded-xl border border-gray-200 p-5">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
-        + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>案件全体の写真</h4>';
+        + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>取付依頼全体の写真</h4>';
       var jobPhotoCats = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
       jobPhotoCats.forEach(function(c) {
         html += '<div class="mb-3"><div class="flex items-center gap-2 mb-2">'
@@ -2233,7 +2355,7 @@ export function adminPage(): string {
           method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
           body: JSON.stringify({ job_number: document.getElementById('aj_job_number').value })
         });
-        if (res.ok) { msgEl.textContent = '保存しました'; msgEl.className = 'text-sm text-green-600'; showToast('案件Noを保存しました'); }
+        if (res.ok) { msgEl.textContent = '保存しました'; msgEl.className = 'text-sm text-green-600'; showToast('取付依頼Noを保存しました'); }
         else { msgEl.textContent = '保存失敗'; msgEl.className = 'text-sm text-red-600'; }
       } catch(e) { msgEl.textContent = 'エラー'; msgEl.className = 'text-sm text-red-600'; }
     }
@@ -2365,7 +2487,7 @@ export function adminPage(): string {
         var data = await res.json();
         var jobs = data.jobs || [];
         var currentVal = sel.value;
-        sel.innerHTML = '<option value="">-- 案件を選択してください (' + jobs.length + '件) --</option>'
+        sel.innerHTML = '<option value="">-- 取付依頼を選択してください (' + jobs.length + '件) --</option>'
           + jobs.map(function(j) {
             var label = (j.job_number||'') + ' ' + esc(j.title) + ' [' + (j.photo_count||0) + '枚]';
             return '<option value="' + j.id + '"' + (String(j.id) === currentVal ? ' selected' : '') + '>' + label + '</option>';
@@ -2376,7 +2498,7 @@ export function adminPage(): string {
     async function loadPhotoGallery(jobId) {
       var content = document.getElementById('pgContent');
       if (!jobId) {
-        content.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm">案件を選択してください</p></div>';
+        content.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm">取付依頼を選択してください</p></div>';
         return;
       }
       _adminPhotoJobId = Number(jobId);
@@ -2390,7 +2512,7 @@ export function adminPage(): string {
         _adminPhotoList = photos;
 
         if (photos.length === 0) {
-          content.innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-12 text-center"><svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm text-gray-500">この案件にはまだ写真がアップロードされていません</p><p class="text-xs text-gray-400 mt-1">パートナーが作業写真をアップロードするとここに表示されます</p></div>';
+          content.innerHTML = '<div class="bg-white rounded-xl border border-gray-200 p-12 text-center"><svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg><p class="text-sm text-gray-500">この取付依頼にはまだ写真がアップロードされていません</p><p class="text-xs text-gray-400 mt-1">パートナーが作業写真をアップロードするとここに表示されます</p></div>';
           return;
         }
 
@@ -2420,7 +2542,7 @@ export function adminPage(): string {
         // Render each vehicle group
         Object.keys(byVehicle).forEach(function(key) {
           var group = byVehicle[key];
-          var vLabel = group.vehicle ? '#' + group.vehicle.seq + ' ' + esc(group.vehicle.maker||'') + ' ' + esc(group.vehicle.model||'') : '案件全体';
+          var vLabel = group.vehicle ? '#' + group.vehicle.seq + ' ' + esc(group.vehicle.maker||'') + ' ' + esc(group.vehicle.model||'') : '取付依頼全体';
           html += '<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-4">'
             + '<h4 class="text-sm font-bold text-sva-dark mb-3 flex items-center gap-2">'
             + '<div class="w-1.5 h-5 bg-blue-500 rounded-full"></div>' + vLabel
@@ -2599,7 +2721,7 @@ export function adminPage(): string {
       if (listView) listView.classList.remove('hidden');
       if (detailView) detailView.classList.add('hidden');
       if (backBtn) backBtn.classList.add('hidden');
-      document.getElementById('requestViewTitle').innerHTML = '取付依頼一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span>';
+      document.getElementById('requestViewTitle').innerHTML = '取付受注一覧 <span id="requestNewHeader" class="hidden px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded-full"></span>';
 
       var status = (document.getElementById('requestStatusFilter')||{}).value||'';
       var search = (document.getElementById('requestSearchInput')||{}).value||'';
@@ -2614,14 +2736,14 @@ export function adminPage(): string {
         renderRequestList(data.requests || [], data.pagination || { total: 0, page: 1, pages: 1 });
       } catch(e) {
         var list = document.getElementById('requestList');
-        if (list) list.innerHTML = '<div class="text-center py-16 text-gray-400"><p class="text-sm">取付依頼の読み込みに失敗しました</p></div>';
+        if (list) list.innerHTML = '<div class="text-center py-16 text-gray-400"><p class="text-sm">取付受注の読み込みに失敗しました</p></div>';
       }
     }
 
     function renderRequestList(requests, pagination) {
       var list = document.getElementById('requestList');
       if (!requests || requests.length === 0) {
-        list.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><p class="text-sm">取付依頼はまだありません</p><p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付依頼がここに表示されます</p></div>';
+        list.innerHTML = '<div class="text-center py-16 text-gray-400"><svg class="w-16 h-16 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg><p class="text-sm">取付受注はまだありません</p><p class="text-xs text-gray-300 mt-1">メーカー・商社様からの取付受注がここに表示されます</p></div>';
         return;
       }
       var statusLabels = { new: '新着', confirmed: '確認済み', assigned: '割当済', scheduled: '日程確定', in_progress: '施工中', completed: '完了', cancelled: 'キャンセル' };
@@ -2676,7 +2798,7 @@ export function adminPage(): string {
       listView.classList.add('hidden');
       detailView.classList.remove('hidden');
       backBtn.classList.remove('hidden');
-      document.getElementById('requestViewTitle').textContent = '取付依頼詳細';
+      document.getElementById('requestViewTitle').textContent = '取付受注詳細';
       detailView.innerHTML = '<div class="text-center py-8"><div class="animate-spin w-8 h-8 border-2 border-sva-red border-t-transparent rounded-full mx-auto"></div></div>';
 
       try {
@@ -3052,7 +3174,7 @@ export function adminPage(): string {
         + '<input id="pm_sort" type="number" value="' + p.sort_order + '" min="0" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="0"></div>'
         + '<div><label class="block text-xs font-medium text-gray-600 mb-1">ステータス</label>'
         + '<select id="pm_active" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red">'
-        + '<option value="1"' + (p.is_active ? ' selected' : '') + '>有効（案件フォームに表示）</option>'
+        + '<option value="1"' + (p.is_active ? ' selected' : '') + '>有効（取付依頼フォームに表示）</option>'
         + '<option value="0"' + (!p.is_active ? ' selected' : '') + '>無効（フォーム非表示）</option></select></div>'
         + '</div>'
         + '</div>'
@@ -3098,7 +3220,7 @@ export function adminPage(): string {
     }
 
     async function deleteProduct(id) {
-      if (!confirm('この製品を削除しますか？\\n\\n※既存の案件で使用中の製品名には影響しません（案件側は製品名テキストで保持されています）')) return;
+      if (!confirm('この製品を削除しますか？\\n\\n※既存の取付依頼で使用中の製品名には影響しません（取付依頼側は製品名テキストで保持されています）')) return;
       try {
         var res = await fetch(API + '/admin/products/' + id, {
           method: 'DELETE',
