@@ -573,9 +573,32 @@ partnerApi.put('/me/jobs/:id', async (c) => {
   const job = await c.env.DB.prepare("SELECT * FROM jobs WHERE id = ? AND partner_id = ?").bind(id, pid).first()
   if (!job) return c.json({ error: 'Not found' }, 404)
 
-  const body = await c.req.json<{ status?: string; partner_memo?: string }>()
+  const body = await c.req.json<{ status?: string; partner_memo?: string; force_complete?: boolean }>()
   const allowedStatuses = ['accepted', 'declined', 'in_progress', 'completed']
   if (body.status && !allowedStatuses.includes(body.status)) return c.json({ error: 'Invalid status' }, 400)
+
+  // 完了ステータスへの変更時、車両ステータスをチェック
+  if (body.status === 'completed') {
+    const vehicles = await c.env.DB.prepare(
+      "SELECT id, seq, maker_name, car_model, status FROM job_vehicles WHERE job_id = ? ORDER BY seq"
+    ).bind(id).all()
+    const vList = vehicles.results as any[]
+    if (vList.length > 0) {
+      const pendingVehicles = vList.filter((v: any) => v.status === 'pending')
+      const incompleteVehicles = vList.filter((v: any) => v.status !== 'completed')
+      // 全車両が未着手の場合はブロック
+      if (pendingVehicles.length === vList.length) {
+        return c.json({ error: '全車両が未着手です。作業を開始してからステータスを完了にしてください。', code: 'ALL_PENDING' }, 400)
+      }
+      // 一部未完了の場合は警告（force_completeフラグで強制許可）
+      if (incompleteVehicles.length > 0 && !body.force_complete) {
+        const details = incompleteVehicles.map((v: any) => ({
+          seq: v.seq, maker: v.maker_name, model: v.car_model, status: v.status
+        }))
+        return c.json({ error: '未完了の車両があります', code: 'INCOMPLETE_VEHICLES', vehicles: details }, 400)
+      }
+    }
+  }
 
   await c.env.DB.prepare(
     "UPDATE jobs SET status = ?, partner_memo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"

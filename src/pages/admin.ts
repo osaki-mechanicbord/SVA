@@ -1886,10 +1886,10 @@ export function adminPage(): string {
 
     var PHOTO_CATS = {
       'caution_plate': 'コーションプレート', 'pre_install': '取付前製品', 'power_source': '電源取得箇所',
-      'ground_point': 'アース取得箇所', 'completed': '取付完了写真',
+      'ground_point': 'アース取得箇所', 'completed': '取付完了写真', 'calibration': 'キャリブレーション',
       'claim_caution_plate': 'コーションプレート(クレーム)', 'claim_fault': '故障原因箇所(不良個所)', 'claim_repair': '修理内容', 'other': 'その他'
     };
-    var PHOTO_CATS_ARR = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
+    var PHOTO_CATS_ARR = [['caution_plate','コーションプレート'],['pre_install','取付前製品'],['power_source','電源取得箇所'],['ground_point','アース取得箇所'],['completed','取付完了写真'],['calibration','キャリブレーション'],['claim_caution_plate','コーションプレート(クレーム)'],['claim_fault','故障原因箇所'],['claim_repair','修理内容'],['other','その他']];
     var VEH_STATUS = { 'pending': ['未着手','bg-gray-100 text-gray-500 border-gray-200'], 'in_progress': ['作業中','bg-blue-50 text-blue-700 border-blue-200'], 'completed': ['完了','bg-green-50 text-green-700 border-green-200'], 'issue': ['問題あり','bg-red-50 text-red-600 border-red-200'] };
 
     var activeJobTab = 'overview';
