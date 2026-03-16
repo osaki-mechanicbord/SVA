@@ -430,11 +430,17 @@ export function adminPage(): string {
     <!-- ============================================ -->
     <div id="jobsTab">
       <div class="bg-white border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div id="jobViewTitle" class="text-lg font-bold text-sva-dark">取付依頼一覧</div>
-          <div class="flex items-center gap-2">
-            <div class="relative"><input id="jobSearchInput" type="text" placeholder="取付依頼No・取付依頼名・会社名で検索" class="w-56 pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
-            <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div class="flex items-center justify-between mb-2 sm:mb-0">
+            <div id="jobViewTitle" class="text-base sm:text-lg font-bold text-sva-dark">取付依頼一覧</div>
+            <div class="flex items-center gap-2">
+              <button id="backToJobListBtn" class="hidden px-3 py-1.5 text-xs sm:text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadJobs(1)">一覧に戻る</button>
+              <button onclick="showNewJobForm()" class="px-3 sm:px-4 py-1.5 bg-sva-red text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-800 whitespace-nowrap">新規作成</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="relative flex-1 min-w-[140px]"><input id="jobSearchInput" type="text" placeholder="No・依頼名・会社名で検索" class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+            <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-2 sm:px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
               <option value="">全ステータス</option>
               <option value="pending">未対応</option>
               <option value="accepted">受諾</option>
@@ -443,8 +449,6 @@ export function adminPage(): string {
               <option value="declined">辞退</option>
               <option value="cancelled">キャンセル</option>
             </select>
-            <button id="backToJobListBtn" class="hidden px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadJobs(1)">一覧に戻る</button>
-            <button onclick="showNewJobForm()" class="px-4 py-1.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800">新規取付依頼作成</button>
           </div>
         </div>
       </div>
@@ -1900,11 +1904,11 @@ export function adminPage(): string {
       var dv = document.getElementById('jobDetailView');
       dv.innerHTML = ''
         // Header
-        + '<div class="bg-white rounded-xl border border-gray-200 p-5 mb-0">'
+        + '<div class="bg-white rounded-xl border border-gray-200 p-3 sm:p-5 mb-0">'
         + '<div class="flex items-center gap-2 mb-2"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
         + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '<span class="px-2 py-0.5 text-[10px] rounded bg-gray-50 text-gray-400 border border-gray-200">取付依頼No未設定</span>')
         + '<span class="text-xs text-gray-400">ID: ' + j.id + '</span></div>'
-        + '<h3 class="text-lg font-bold text-sva-dark">' + esc(j.title) + '</h3>'
+        + '<h3 class="text-base sm:text-lg font-bold text-sva-dark">' + esc(j.title) + '</h3>'
         + '<p class="text-sm text-gray-500 mt-1">' + esc(j.company_name||'-') + ' / ' + esc(j.representative_name||'-') + '</p>'
         + '<div class="flex items-center gap-2 mt-3 flex-wrap">'
         + (vCount > 0 ? '<span class="px-2 py-1 text-xs rounded-lg font-medium bg-blue-50 text-blue-700">車両 ' + vDone + '/' + vCount + '台完了</span>' : '')
@@ -1920,7 +1924,7 @@ export function adminPage(): string {
         + '<button onclick="switchJobTab(\\'tracking\\')" id="jtab_tracking" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='tracking'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">追跡</button>'
         + '<button onclick="switchJobTab(\\'photos\\')" id="jtab_photos" class="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap flex-shrink-0 ' + (activeJobTab==='photos'?'border-sva-red text-sva-red':'border-transparent text-gray-500') + '">写真 <span class="ml-1 px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] rounded-full font-bold">' + totalPhotos + '</span></button>'
         + '</div></div></div>'
-        + '<div class="bg-white border border-gray-200 border-t-0 rounded-b-xl p-6" id="jobTabContent"></div>';
+        + '<div class="bg-white border border-gray-200 border-t-0 rounded-b-xl p-3 sm:p-6" id="jobTabContent"></div>';
       switchJobTab(activeJobTab);
     }
 
@@ -1952,8 +1956,8 @@ export function adminPage(): string {
         // 取付依頼基本情報（編集フィールド）
         + '<div class="mb-5">'
         + '<h4 class="text-sm font-bold text-sva-dark mb-3">取付依頼基本情報</h4>'
-        + '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">'
-        + '<div class="sm:col-span-2"><label class="block text-xs text-gray-400 mb-1">取付依頼No <span class="text-indigo-500 font-bold">*請求管理用</span></label><input id="aj_job_number" type="text" value="' + esc(j.job_number||'') + '" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-sva-red bg-indigo-50/50" placeholder="例: SVA-2026-0001"></div>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">'
+        + '<div class="sm:col-span-2 lg:col-span-2"><label class="block text-xs text-gray-400 mb-1">取付依頼No <span class="text-indigo-500 font-bold">*請求管理用</span></label><input id="aj_job_number" type="text" value="' + esc(j.job_number||'') + '" class="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm font-mono font-bold focus:outline-none focus:border-sva-red bg-indigo-50/50" placeholder="例: SVA-2026-0001"></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">車両タイプ</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.vehicle_type||'-') + '</p></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">取付装置</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.device_type||'-') + '</p></div>'
         + '<div><label class="block text-xs text-gray-400 mb-1">作業場所</label><p class="font-medium px-2.5 py-1.5 bg-gray-50 rounded-lg">' + esc(j.location||'-') + '</p></div>'
@@ -2046,18 +2050,18 @@ export function adminPage(): string {
       var vDone = vehicles.filter(function(v){return v.status==='completed'}).length;
       var progress = vehicles.length > 0 ? Math.round(vDone/vehicles.length*100) : 0;
 
-      ct.innerHTML = '<div class="flex items-center gap-4 mb-5">'
-        + '<div class="flex-1"><div class="flex items-center justify-between mb-1"><span class="text-sm font-bold text-sva-dark">車両明細</span><span class="text-xs text-gray-500">' + vDone + '/' + vehicles.length + '台完了 (' + progress + '%)</span></div>'
+      ct.innerHTML = '<div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-5">'
+        + '<div class="flex-1 w-full"><div class="flex items-center justify-between mb-1"><span class="text-sm font-bold text-sva-dark">車両明細</span><span class="text-xs text-gray-500">' + vDone + '/' + vehicles.length + '台完了 (' + progress + '%)</span></div>'
         + '<div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:' + progress + '%"></div></div></div>'
-        + '<button onclick="addVehiclePrompt()" class="px-4 py-2 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 shrink-0">+ 車両追加</button>'
+        + '<button onclick="addVehiclePrompt()" class="px-4 py-2 bg-sva-red text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-800 shrink-0 w-full sm:w-auto">+ 車両追加</button>'
         + '</div>'
         + '<div class="space-y-3">' + vehicles.map(function(v) {
           var vs = VEH_STATUS[v.status]||VEH_STATUS.pending;
           var pc = v.photo_counts||{}; var photoCount=0; Object.values(pc).forEach(function(n){photoCount+=n;});
-          return '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:border-gray-300 transition-colors" onclick="openVehicleDetail(' + v.id + ')">'
-            + '<div class="flex items-stretch">'
-            + '<div class="w-14 flex items-center justify-center text-lg font-bold shrink-0 ' + (v.status==='completed'?'bg-green-50 text-green-600':v.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400') + '">#' + v.seq + '</div>'
-            + '<div class="flex-1 p-4">'
+          return '<div class="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:border-gray-300 active:bg-gray-50 transition-colors" onclick="openVehicleDetail(' + v.id + ')">' 
+            + '<div class="flex items-stretch flex-wrap sm:flex-nowrap">' 
+            + '<div class="w-10 sm:w-14 flex items-center justify-center text-base sm:text-lg font-bold shrink-0 ' + (v.status==='completed'?'bg-green-50 text-green-600':v.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400') + '">#' + v.seq + '</div>'
+            + '<div class="flex-1 p-3 sm:p-4 min-w-0">' 
             + '<div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 text-[10px] rounded font-medium border ' + vs[1] + '">' + vs[0] + '</span><span class="text-xs text-gray-400">' + esc(v.car_model_code) + '</span></div>'
             + '<p class="text-sm font-bold text-gray-800">' + esc(v.maker_name) + ' ' + esc(v.car_model) + '</p>'
             + '<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">'
@@ -2066,10 +2070,10 @@ export function adminPage(): string {
             + '</div>'
             + (v.vehicle_memo ? '<p class="text-[11px] text-amber-700 bg-amber-50 rounded px-2 py-1 mt-2">⚠ ' + esc(v.vehicle_memo) + '</p>' : '')
             + '</div>'
-            + '<div class="w-44 bg-gray-50 p-3 border-l border-gray-100 hidden sm:block"><p class="text-[10px] font-bold text-gray-400 mb-1">取付商品</p>'
+            + '<div class="w-full sm:w-44 bg-gray-50 p-2 sm:p-3 border-t sm:border-t-0 sm:border-l border-gray-100"><p class="text-[10px] font-bold text-gray-400 mb-1">取付商品</p>' 
             + (v.products||[]).map(function(p){return '<p class="text-[11px] text-gray-600 truncate">' + esc(p.product_name) + '</p>';}).join('')
             + '</div>'
-            + '<div class="flex items-center px-3 shrink-0"><svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>'
+            + '<div class="hidden sm:flex items-center px-3 shrink-0"><svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>'
             + '</div></div>';
         }).join('') + '</div>';
     }
@@ -2090,7 +2094,7 @@ export function adminPage(): string {
       var vs = VEH_STATUS[v.status]||VEH_STATUS.pending;
 
       var prodRows = (v.products||[]).map(function(p,i) {
-        return '<tr class="border-t border-gray-100"><td class="py-2 px-3 text-sm">' + (i+1) + '</td><td class="py-2 px-3 text-sm font-medium">' + esc(p.product_name) + '</td><td class="py-2 px-3 text-sm text-center">' + p.quantity + '</td><td class="py-2 px-3 text-sm font-mono text-xs">' + (p.serial_number||'<span class="text-gray-300">未登録</span>') + '</td><td class="py-2 px-3 text-right"><button onclick="deleteProduct('+v.id+','+p.id+')" class="text-red-400 hover:text-red-600 text-xs">削除</button></td></tr>';
+        return '<tr class="border-t border-gray-100"><td class="py-2 px-2 sm:px-3 text-xs sm:text-sm">' + (i+1) + '</td><td class="py-2 px-2 sm:px-3 text-xs sm:text-sm font-medium">' + esc(p.product_name) + '</td><td class="py-2 px-2 sm:px-3 text-xs sm:text-sm text-center">' + p.quantity + '</td><td class="py-2 px-2 sm:px-3 text-xs font-mono hidden sm:table-cell">' + (p.serial_number||'<span class="text-gray-300">未登録</span>') + '</td><td class="py-2 px-2 sm:px-3 text-right"><button onclick="deleteProduct('+v.id+','+p.id+')" class="text-red-400 hover:text-red-600 text-xs">削除</button></td></tr>';
       }).join('');
 
       var statusOpts = [['pending','未着手'],['in_progress','作業中'],['completed','完了'],['issue','問題あり']].map(function(o) { return '<option value="'+o[0]+'"'+(v.status===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('');
@@ -2105,11 +2109,11 @@ export function adminPage(): string {
           + '</div>';
       }).join('');
 
-      ct.innerHTML = '<div><div class="flex items-center gap-3 mb-5">'
-        + '<button onclick="backToVehicleList()" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">← 車両一覧</button>'
+      ct.innerHTML = '<div><div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-5">'
+        + '<button onclick="backToVehicleList()" class="px-3 py-1.5 text-xs sm:text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">← 車両一覧</button>'
         + '<span class="px-2 py-0.5 text-[10px] rounded font-medium border ' + vs[1] + '">' + vs[0] + '</span>'
-        + '<h3 class="text-base font-bold text-sva-dark flex-1">#' + v.seq + ' ' + esc(v.maker_name) + ' ' + esc(v.car_model) + '</h3>'
-        + '<button onclick="deleteVehicle('+v.id+')" class="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50">車両削除</button></div>'
+        + '<h3 class="text-sm sm:text-base font-bold text-sva-dark flex-1 basis-full sm:basis-auto order-last sm:order-none mt-1 sm:mt-0">#' + v.seq + ' ' + esc(v.maker_name) + ' ' + esc(v.car_model) + '</h3>'
+        + '<button onclick="deleteVehicle('+v.id+')" class="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 ml-auto sm:ml-0">車両削除</button></div>'
         + '<div class="grid lg:grid-cols-3 gap-5">'
         + '<div class="lg:col-span-2 space-y-5">'
         // 車両情報（編集可能）
@@ -2124,7 +2128,7 @@ export function adminPage(): string {
         + '</div>'
         // 商品テーブル
         + '<div class="rounded-xl border border-gray-200 p-5"><div class="flex items-center justify-between mb-3"><h4 class="text-sm font-bold text-sva-dark">取付商品</h4><button onclick="addProductPrompt('+v.id+')" class="px-3 py-1 text-[10px] bg-sva-red text-white rounded-lg hover:bg-red-800">+ 商品追加</button></div>'
-        + '<table class="w-full text-left"><thead class="text-[10px] text-gray-400 uppercase"><tr><th class="py-2 px-3 w-10">#</th><th class="py-2 px-3">商品名</th><th class="py-2 px-3 text-center w-16">数量</th><th class="py-2 px-3 w-40">シリアル番号</th><th class="py-2 px-3 w-12"></th></tr></thead><tbody>' + (prodRows||'<tr><td colspan="5" class="py-4 text-center text-sm text-gray-400">商品未登録</td></tr>') + '</tbody></table></div>'
+        + '<table class="w-full text-left"><thead class="text-[10px] text-gray-400 uppercase"><tr><th class="py-2 px-2 sm:px-3 w-8 sm:w-10">#</th><th class="py-2 px-2 sm:px-3">商品名</th><th class="py-2 px-2 sm:px-3 text-center w-12 sm:w-16">数量</th><th class="py-2 px-2 sm:px-3 w-24 sm:w-40 hidden sm:table-cell">シリアル番号</th><th class="py-2 px-2 sm:px-3 w-10 sm:w-12"></th></tr></thead><tbody>' + (prodRows||'<tr><td colspan="5" class="py-4 text-center text-sm text-gray-400">商品未登録</td></tr>') + '</tbody></table></div>'
         // 作業報告
         + '<div class="rounded-xl border border-gray-200 p-5"><h4 class="text-sm font-bold text-sva-dark mb-3">作業報告</h4>'
         + (v.work_report ? '<div class="text-sm text-gray-600 bg-green-50 rounded-lg p-3 whitespace-pre-line border border-green-100">' + esc(v.work_report) + '</div>'
