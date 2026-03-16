@@ -529,14 +529,14 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
           <p class="text-gray-500 mt-3 text-sm">乗用車以外のすべての車両に対応しています</p>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          ${vehicleCard('フォークリフト', '倉庫・工場内の安全対策に', 'priority')}
-          ${vehicleCard('重機', 'ショベルカー・クレーン等', 'priority')}
-          ${vehicleCard('建機', '建設現場の安全管理に', 'priority')}
-          ${vehicleCard('トラック', '大型・中型・小型すべて対応', '')}
-          ${vehicleCard('バス', '路線・観光・送迎バス', '')}
-          ${vehicleCard('農機', 'トラクター・コンバイン等', '')}
-          ${vehicleCard('船舶', '船舶用ドラレコ対応', '')}
-          ${vehicleCard('その他特殊車両', 'ご相談ください', '')}
+          ${vehicleCard('フォークリフト', '倉庫・工場内の安全対策に', 'priority', '/service/forklift')}
+          ${vehicleCard('重機', 'ショベルカー・クレーン等', 'priority', '/service/heavy-equipment')}
+          ${vehicleCard('建機', '建設現場の安全管理に', 'priority', '/service/construction')}
+          ${vehicleCard('トラック', '大型・中型・小型すべて対応', '', '/service/truck')}
+          ${vehicleCard('バス', '路線・観光・送迎バス', '', '/service/bus')}
+          ${vehicleCard('農機', 'トラクター・コンバイン等', '', '')}
+          ${vehicleCard('船舶', '船舶用ドラレコ対応', '', '/service/ship')}
+          ${vehicleCard('その他特殊車両', 'ご相談ください', '', '')}
         </div>
       </div>
     </section>
@@ -755,6 +755,12 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
             <li><a href="#service" class="hover:text-white transition-colors">SVAが選ばれる理由</a></li>
             <li><a href="#vehicles" class="hover:text-white transition-colors">対応車両カテゴリ</a></li>
             <li><a href="#devices" class="hover:text-white transition-colors">取付対応装置</a></li>
+            <li><a href="/service/forklift" class="hover:text-white transition-colors">フォークリフト取付</a></li>
+            <li><a href="/service/heavy-equipment" class="hover:text-white transition-colors">重機取付</a></li>
+            <li><a href="/service/construction" class="hover:text-white transition-colors">建機取付</a></li>
+            <li><a href="/service/truck" class="hover:text-white transition-colors">トラック取付</a></li>
+            <li><a href="/service/bus" class="hover:text-white transition-colors">バス取付</a></li>
+            <li><a href="/service/ship" class="hover:text-white transition-colors">船舶取付</a></li>
             <li><a href="/column" class="hover:text-white transition-colors">コラム</a></li>
             <li><a href="#partner" class="hover:text-white transition-colors">公認パートナー募集</a></li>
             <li><a href="#faq" class="hover:text-white transition-colors">よくあるご質問</a></li>
@@ -910,15 +916,19 @@ export function topPage(latestArticles: LatestArticle[] = []): string {
 </html>`
 }
 
-function vehicleCard(name: string, description: string, priority: string): string {
+function vehicleCard(name: string, description: string, priority: string, href: string): string {
   const borderClass = priority === 'priority' ? 'border-sva-red/20 bg-red-50/30' : 'border-gray-100 bg-white'
   const badge = priority === 'priority' ? '<span class="absolute top-2 right-2 bg-sva-red text-white text-[10px] px-1.5 py-0.5 rounded font-medium">優先対応</span>' : ''
+  const linkArrow = href ? '<span class="text-sva-red text-xs mt-2 inline-flex items-center gap-1">詳しく見る <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></span>' : ''
+  const tag = href ? 'a' : 'div'
+  const hrefAttr = href ? ` href="${href}"` : ''
   return `
-    <div class="relative rounded-xl p-5 border ${borderClass} card-hover">
+    <${tag}${hrefAttr} class="relative rounded-xl p-5 border ${borderClass} card-hover block">
       ${badge}
       <p class="font-bold text-sva-dark text-sm mb-1">${name}</p>
       <p class="text-xs text-gray-500">${description}</p>
-    </div>`
+      ${linkArrow}
+    </${tag}>`
 }
 
 function deviceCard(name: string, description: string): string {

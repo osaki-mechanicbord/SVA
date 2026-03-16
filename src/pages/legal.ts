@@ -404,6 +404,16 @@ export function sitemapHtmlPage(articles: { slug: string; title: string; categor
           { url: '/partner/mypage', label: 'パートナーマイページ' },
         ])}
 
+        <!-- 車種別サービスページ -->
+        ${sitemapCard('🚛', '車種別サービス', [
+          { url: '/service/forklift', label: 'フォークリフト用AIカメラ・ドラレコ取付' },
+          { url: '/service/heavy-equipment', label: '重機用人検知AIカメラ取付' },
+          { url: '/service/construction', label: '建機停止装置AIカメラ取付' },
+          { url: '/service/truck', label: 'トラック用ドラレコ・デジタコ・ETC取付' },
+          { url: '/service/bus', label: 'バス用置き去り防止装置・ドラレコ取付' },
+          { url: '/service/ship', label: '船舶用ドライブレコーダー取付' },
+        ])}
+
         <!-- 法的ページ -->
         ${sitemapCard('📋', '法的情報・ポリシー', [
           { url: '/privacy', label: 'プライバシーポリシー' },

@@ -126,6 +126,10 @@ export function siteFooter(): string {
           <p class="text-sm font-medium mb-4">サービス</p>
           <ul class="space-y-2 text-xs text-gray-400">
             <li><a href="/#service" class="hover:text-white transition-colors">SVAが選ばれる理由</a></li>
+            <li><a href="/service/forklift" class="hover:text-white transition-colors">フォークリフト取付</a></li>
+            <li><a href="/service/heavy-equipment" class="hover:text-white transition-colors">重機取付</a></li>
+            <li><a href="/service/truck" class="hover:text-white transition-colors">トラック取付</a></li>
+            <li><a href="/service/bus" class="hover:text-white transition-colors">バス取付</a></li>
             <li><a href="/column" class="hover:text-white transition-colors">コラム</a></li>
             <li><a href="/#partner" class="hover:text-white transition-colors">公認パートナー募集</a></li>
             <li><a href="/#faq" class="hover:text-white transition-colors">よくあるご質問</a></li>

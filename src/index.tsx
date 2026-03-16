@@ -11,6 +11,7 @@ import { partnerLoginPage } from './pages/partner-login'
 import { partnerMypagePage } from './pages/partner-mypage'
 import { partnerInvitePage } from './pages/partner-invite'
 import { privacyPage, termsPage, tokushohoPage, sitemapHtmlPage } from './pages/legal'
+import { servicePage, getServiceSlugs, getServiceList } from './pages/service'
 import { api } from './api/articles'
 import { imagesApi } from './api/images'
 import { partnerApi } from './api/partner'
@@ -148,6 +149,18 @@ app.get('/partner/mypage', (c) => {
 app.get('/partner/invite/:token', (c) => {
   const token = c.req.param('token')
   return c.html(partnerInvitePage(token))
+})
+
+// ==========================================
+// Service Pages (vehicle-specific)
+// ==========================================
+app.get('/service/:slug', (c) => {
+  const slug = c.req.param('slug')
+  const html = servicePage(slug)
+  if (!html) {
+    return c.html('<html><body><h1>404 - ページが見つかりません</h1><p><a href="/">トップに戻る</a></p></body></html>', 404)
+  }
+  return c.html(html)
 })
 
 // ==========================================
