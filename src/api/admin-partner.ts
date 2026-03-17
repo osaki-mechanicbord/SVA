@@ -164,12 +164,27 @@ adminPartnerApi.get('/jobs', async (c) => {
   const partnerId = c.req.query('partner_id') || ''
   const status = c.req.query('status') || ''
   const search = c.req.query('search') || ''
+  const area = c.req.query('area') || ''
+  const clientName = c.req.query('client_name') || ''
+  const productName = c.req.query('product_name') || ''
 
   let where = '1=1'
   const params: any[] = []
   if (partnerId) { where += ' AND j.partner_id = ?'; params.push(Number(partnerId)); }
   if (status) { where += ' AND j.status = ?'; params.push(status); }
-  if (search) { where += ' AND (j.job_number LIKE ? OR j.title LIKE ? OR p.company_name LIKE ?)'; const s = '%' + search + '%'; params.push(s, s, s); }
+  if (search) {
+    where += ' AND (j.job_number LIKE ? OR j.title LIKE ? OR p.company_name LIKE ? OR p.representative_name LIKE ? OR j.client_contact_name LIKE ? OR j.client_company LIKE ?)'
+    const s = '%' + search + '%'; params.push(s, s, s, s, s, s)
+  }
+  if (area) { where += ' AND j.location LIKE ?'; params.push('%' + area + '%'); }
+  if (clientName) {
+    where += ' AND (j.client_contact_name LIKE ? OR j.client_company LIKE ? OR j.client_branch LIKE ?)'
+    const cn = '%' + clientName + '%'; params.push(cn, cn, cn)
+  }
+  if (productName) {
+    where += ' AND EXISTS (SELECT 1 FROM vehicle_products vp JOIN job_vehicles jv ON vp.vehicle_id = jv.id WHERE jv.job_id = j.id AND vp.product_name LIKE ?)'
+    params.push('%' + productName + '%')
+  }
 
   const countQ = `SELECT COUNT(*) as total FROM jobs j LEFT JOIN partners p ON j.partner_id = p.id WHERE ${where}`
   const dataQ = `SELECT j.*, p.company_name, p.representative_name, p.email as partner_email,
@@ -253,6 +268,13 @@ adminPartnerApi.post('/jobs', async (c) => {
 
     if (partner?.email) {
       const partnerName = partner.representative_name || partner.company_name || 'パートナー'
+      
+      // Load email template from DB (if exists)
+      let template: any = null
+      try {
+        template = await c.env.DB.prepare("SELECT * FROM email_templates WHERE template_key = 'job_notification'").first()
+      } catch {}
+      
       const emailData = buildJobNotificationEmail({
         partnerName,
         jobTitle: body.title,
@@ -263,7 +285,7 @@ adminPartnerApi.post('/jobs', async (c) => {
         vehicleCount: vehicleCount,
         preferredDate: body.preferred_date,
         urgentNote: body.urgent_contact_note,
-      })
+      }, template)
 
       // Fire-and-forget: don't block job creation on email delivery
       c.executionCtx.waitUntil(
@@ -768,6 +790,96 @@ adminPartnerApi.delete('/jobs/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const r = await c.env.DB.prepare("DELETE FROM jobs WHERE id = ?").bind(id).run()
   if (r.meta.changes === 0) return c.json({ error: 'Not found' }, 404)
+  return c.json({ success: true })
+})
+
+// Bulk delete jobs
+adminPartnerApi.post('/jobs/bulk-delete', async (c) => {
+  const { ids } = await c.req.json<{ ids: number[] }>()
+  if (!ids || !ids.length) return c.json({ error: 'ids required' }, 400)
+  if (ids.length > 100) return c.json({ error: 'Max 100 items at once' }, 400)
+  const placeholders = ids.map(() => '?').join(',')
+  // Delete related data first
+  await c.env.DB.prepare(`DELETE FROM job_photos WHERE job_id IN (${placeholders})`).bind(...ids).run()
+  await c.env.DB.prepare(`DELETE FROM vehicle_products WHERE vehicle_id IN (SELECT id FROM job_vehicles WHERE job_id IN (${placeholders}))`).bind(...ids).run()
+  await c.env.DB.prepare(`DELETE FROM job_vehicles WHERE job_id IN (${placeholders})`).bind(...ids).run()
+  await c.env.DB.prepare(`DELETE FROM job_attachments WHERE job_id IN (${placeholders})`).bind(...ids).run()
+  await c.env.DB.prepare(`DELETE FROM messages WHERE job_id IN (${placeholders})`).bind(...ids).run()
+  const r = await c.env.DB.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).bind(...ids).run()
+  return c.json({ success: true, deleted: r.meta.changes })
+})
+
+// ===================== Email Templates =====================
+
+// Send test email (must be before :key routes)
+adminPartnerApi.post('/email-templates/test', async (c) => {
+  const body = await c.req.json<{ to: string; template_key: string }>()
+  if (!body.to || !body.template_key) return c.json({ error: 'to and template_key required' }, 400)
+  if (!c.env.RESEND_API_KEY) return c.json({ error: 'RESEND_API_KEY not configured' }, 500)
+  
+  const template = await c.env.DB.prepare("SELECT * FROM email_templates WHERE template_key = ?").bind(body.template_key).first<any>()
+  
+  const subject = (template?.subject || '【SVA】テストメール').replace('{{job_title}}', 'テスト案件')
+  const { html } = buildJobNotificationEmail({
+    partnerName: 'テスト パートナー',
+    jobTitle: 'テスト案件名',
+    jobNumber: 'TEST-001',
+    location: '東京都',
+    vehicleType: '大型車',
+    deviceType: 'カメラ',
+    vehicleCount: 3,
+    preferredDate: '2026年4月1日',
+    urgentNote: '',
+  }, template)
+  
+  const result = await sendMail(c.env.RESEND_API_KEY, { to: body.to, subject, html })
+  if (!result.success) return c.json({ error: result.error }, 500)
+  return c.json({ success: true })
+})
+
+// List all email templates
+adminPartnerApi.get('/email-templates', async (c) => {
+  try {
+    const data = await c.env.DB.prepare("SELECT * FROM email_templates ORDER BY template_key ASC").all()
+    return c.json({ templates: data.results })
+  } catch {
+    return c.json({ templates: [] })
+  }
+})
+
+// Get email template by key
+adminPartnerApi.get('/email-templates/:key', async (c) => {
+  const key = c.req.param('key')
+  const t = await c.env.DB.prepare("SELECT * FROM email_templates WHERE template_key = ?").bind(key).first()
+  if (!t) {
+    // Return default values if table/row doesn't exist
+    return c.json({ template: { template_key: key, subject: '', body_intro: '', body_footer: '', sender_name: 'SVA', cta_text: '', cta_url: '', is_active: 1 } })
+  }
+  return c.json({ template: t })
+})
+
+// Update/create email template
+adminPartnerApi.put('/email-templates/:key', async (c) => {
+  const key = c.req.param('key')
+  const body = await c.req.json<{
+    subject?: string; body_intro?: string; body_footer?: string;
+    sender_name?: string; cta_text?: string; cta_url?: string; is_active?: number
+  }>()
+  
+  const existing = await c.env.DB.prepare("SELECT id FROM email_templates WHERE template_key = ?").bind(key).first()
+  if (existing) {
+    await c.env.DB.prepare(
+      `UPDATE email_templates SET subject=?, body_intro=?, body_footer=?, sender_name=?, cta_text=?, cta_url=?, is_active=?, updated_at=CURRENT_TIMESTAMP WHERE template_key=?`
+    ).bind(
+      body.subject ?? '', body.body_intro ?? '', body.body_footer ?? '',
+      body.sender_name ?? 'SVA', body.cta_text ?? '', body.cta_url ?? '',
+      body.is_active ?? 1, key
+    ).run()
+  } else {
+    await c.env.DB.prepare(
+      `INSERT INTO email_templates (template_key, subject, body_intro, body_footer, sender_name, cta_text, cta_url, is_active) VALUES (?,?,?,?,?,?,?,?)`
+    ).bind(key, body.subject ?? '', body.body_intro ?? '', body.body_footer ?? '', body.sender_name ?? 'SVA', body.cta_text ?? '', body.cta_url ?? '', body.is_active ?? 1).run()
+  }
   return c.json({ success: true })
 })
 

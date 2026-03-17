@@ -440,11 +440,16 @@ export function adminPage(): string {
             <div id="jobViewTitle" class="text-base sm:text-lg font-bold text-sva-dark">取付依頼一覧</div>
             <div class="flex items-center gap-2">
               <button id="backToJobListBtn" class="hidden px-3 py-1.5 text-xs sm:text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50" onclick="loadJobs(1)">一覧に戻る</button>
+              <button id="jobBulkDeleteBtn" class="hidden px-3 py-1.5 text-xs sm:text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 font-medium" onclick="bulkDeleteJobs()">
+                <svg class="w-3.5 h-3.5 inline mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                選択削除 (<span id="jobSelectedCount">0</span>)
+              </button>
               <button onclick="showNewJobForm()" class="px-3 sm:px-4 py-1.5 bg-sva-red text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-800 whitespace-nowrap">新規作成</button>
             </div>
           </div>
+          <!-- Search row 1: main search + status -->
           <div class="flex items-center gap-2 flex-wrap">
-            <div class="relative flex-1 min-w-[140px]"><input id="jobSearchInput" type="text" placeholder="No・依頼名・会社名で検索" class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
+            <div class="relative flex-1 min-w-[140px]"><input id="jobSearchInput" type="text" placeholder="フリーワード検索（No/依頼名/会社名/パートナー名/お客様名）" class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)"><svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div>
             <select id="jobStatusFilter" onchange="loadJobs(1)" class="px-2 sm:px-3 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
               <option value="">全ステータス</option>
               <option value="pending">未対応</option>
@@ -454,6 +459,39 @@ export function adminPage(): string {
               <option value="declined">辞退</option>
               <option value="cancelled">キャンセル</option>
             </select>
+            <button onclick="toggleJobAdvSearch()" class="px-2 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1" id="jobAdvSearchToggle">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+              詳細検索
+            </button>
+          </div>
+          <!-- Search row 2: advanced filters (hidden by default) -->
+          <div id="jobAdvSearch" class="hidden mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-0.5">公認パートナー</label>
+                <select id="jobPartnerFilter" onchange="loadJobs(1)" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+                  <option value="">全パートナー</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-0.5">エリア</label>
+                <select id="jobAreaFilter" onchange="loadJobs(1)" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
+                  <option value="">全エリア</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-0.5">お客様名</label>
+                <input id="jobClientFilter" type="text" placeholder="お客様名/会社名" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)">
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-0.5">商品名</label>
+                <input id="jobProductFilter" type="text" placeholder="商品名で検索" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-sva-red" onkeydown="if(event.key==='Enter')loadJobs(1)">
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mt-2">
+              <button onclick="loadJobs(1)" class="px-3 py-1 text-xs bg-sva-dark text-white rounded-lg hover:bg-gray-800">絞り込む</button>
+              <button onclick="clearJobFilters()" class="px-3 py-1 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">クリア</button>
+            </div>
           </div>
         </div>
       </div>
@@ -701,6 +739,81 @@ export function adminPage(): string {
             <p class="text-xs text-amber-700 leading-relaxed">⚠️ セキュリティのため、パスワードは定期的に変更することをお勧めします。パスワード変更後は再ログインが必要です。</p>
           </div>
         </div>
+
+        <!-- ========== メール送信内容編集 ========== -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mt-6">
+          <div class="px-6 py-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-sva-dark flex items-center gap-2">
+                <svg class="w-5 h-5 text-sva-red" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                メール送信内容編集
+              </h2>
+              <p class="text-sm text-gray-500 mt-1">取付依頼通知メールの内容をカスタマイズ</p>
+            </div>
+            <span id="emailTemplateStatus" class="hidden px-2 py-1 text-xs font-medium rounded-full"></span>
+          </div>
+
+          <div class="px-6 py-5 space-y-5">
+            <!-- 送信者名 -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">送信者名</label>
+              <input id="etSenderName" type="text" maxlength="50" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="SVA">
+              <p class="text-[10px] text-gray-400 mt-1">メールヘッダーに表示される送信元名称</p>
+            </div>
+
+            <!-- 件名テンプレート -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">件名テンプレート</label>
+              <input id="etSubject" type="text" maxlength="200" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="【SVA】新しい取付依頼が届きました: {{job_title}}">
+              <p class="text-[10px] text-gray-400 mt-1">利用可能な変数: <code class="bg-gray-100 px-1 rounded">{{job_title}}</code> <code class="bg-gray-100 px-1 rounded">{{job_number}}</code> <code class="bg-gray-100 px-1 rounded">{{partner_name}}</code> <code class="bg-gray-100 px-1 rounded">{{location}}</code></p>
+            </div>
+
+            <!-- 本文（挨拶） -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">本文（導入メッセージ）</label>
+              <textarea id="etBodyIntro" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red resize-y" placeholder="SVAから新しい取付依頼が届きました。&#10;内容をご確認のうえ、受諾・辞退のご対応をお願いいたします。"></textarea>
+              <p class="text-[10px] text-gray-400 mt-1">パートナー名の後に表示されるメッセージ</p>
+            </div>
+
+            <!-- CTAボタン -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">ボタンテキスト</label>
+                <input id="etCtaText" type="text" maxlength="50" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="マイページで確認する">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">ボタンリンクURL</label>
+                <input id="etCtaUrl" type="url" maxlength="300" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red" placeholder="https://sva-assist.com/partner/mypage">
+              </div>
+            </div>
+
+            <!-- フッター -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">フッターメッセージ</label>
+              <textarea id="etBodyFooter" rows="3" class="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sva-red/20 focus:border-sva-red resize-y" placeholder="このメールはSVAシステムから自動送信されています。"></textarea>
+              <p class="text-[10px] text-gray-400 mt-1">メール下部に表示される注意書き（HTMLタグ使用可：&lt;a href=&quot;...&quot;&gt;リンク&lt;/a&gt;）</p>
+            </div>
+
+            <!-- メール送信ON/OFF -->
+            <div class="flex items-center gap-3 py-2">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="etIsActive" type="checkbox" checked class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-sva-red/20 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sva-red"></div>
+              </label>
+              <span class="text-sm text-gray-700">メール通知を有効にする</span>
+            </div>
+
+            <!-- アクションボタン -->
+            <div class="flex items-center gap-3 pt-2 border-t border-gray-100">
+              <button onclick="saveEmailTemplate()" class="px-5 py-2.5 bg-sva-red text-white text-sm font-medium rounded-lg hover:bg-red-800 transition-colors">保存する</button>
+              <button onclick="sendTestEmail()" class="px-5 py-2.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                テスト送信
+              </button>
+              <span id="emailTemplateSaveMsg" class="text-sm hidden"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -718,7 +831,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobs(1); }, 0); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); loadJobFilterPartners(); loadJobFilterAreas(); setTimeout(function(){ loadJobs(1); }, 0); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -733,7 +846,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobs(1); }, 0);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); loadJobFilterPartners(); loadJobFilterAreas(); setTimeout(function(){ loadJobs(1); }, 0);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -788,7 +901,7 @@ export function adminPage(): string {
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
-        if (t === 'account' && tab === 'account') loadAccountInfo();
+        if (t === 'account' && tab === 'account') { loadAccountInfo(); loadEmailTemplate(); }
         // Desktop tab styling
         var btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         if (btn) { btn.classList.toggle('border-sva-red', t === tab); btn.classList.toggle('text-sva-red', t === tab); btn.classList.toggle('border-transparent', t !== tab); btn.classList.toggle('text-gray-500', t !== tab); }
@@ -1088,9 +1201,9 @@ export function adminPage(): string {
       el.classList.remove('hidden');
       setTimeout(function() { el.classList.add('hidden'); }, 3000);
     }
-    function showToast(msg) {
+    function showToast(msg, isError) {
       const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-sva-dark text-white text-sm rounded-lg shadow-lg z-[200] transition-opacity';
+      toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2.5 text-white text-sm rounded-lg shadow-lg z-[200] transition-opacity ' + (isError ? 'bg-red-600' : 'bg-sva-dark');
       toast.textContent = msg;
       document.body.appendChild(toast);
       setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 300); }, 2500);
@@ -1414,17 +1527,29 @@ export function adminPage(): string {
     const WORK_S = { 'scheduling': ['日程調整中','bg-blue-50 text-blue-700'], 'completed': ['完了','bg-green-50 text-green-700'], 'user_postponed': ['ユーザー都合延期','bg-amber-50 text-amber-700'], 'self_postponed': ['自己都合延期','bg-orange-50 text-orange-700'], 'maker_postponed': ['メーカー都合延期','bg-purple-50 text-purple-700'], 'cancelled': ['キャンセル','bg-red-50 text-red-600'] };
     let jPage = 1;
 
+    var jobSelectedIds = [];
+
     async function loadJobs(page) {
       jPage = page;
+      jobSelectedIds = [];
+      updateBulkDeleteBtn();
       document.getElementById('jobListView').classList.remove('hidden');
       document.getElementById('jobDetailView').classList.add('hidden');
       document.getElementById('backToJobListBtn').classList.add('hidden');
       document.getElementById('jobViewTitle').textContent = '取付依頼一覧';
       var status = document.getElementById('jobStatusFilter').value;
       var search = document.getElementById('jobSearchInput').value.trim();
+      var partnerId = (document.getElementById('jobPartnerFilter') || {}).value || '';
+      var area = (document.getElementById('jobAreaFilter') || {}).value || '';
+      var clientName = (document.getElementById('jobClientFilter') || {}).value || '';
+      var productName = (document.getElementById('jobProductFilter') || {}).value || '';
       var url = API + '/admin/jobs?page=' + page;
       if (status) url += '&status=' + status;
       if (search) url += '&search=' + encodeURIComponent(search);
+      if (partnerId) url += '&partner_id=' + partnerId;
+      if (area) url += '&area=' + encodeURIComponent(area);
+      if (clientName) url += '&client_name=' + encodeURIComponent(clientName);
+      if (productName) url += '&product_name=' + encodeURIComponent(productName);
       try {
         var res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
         var data = await res.json();
@@ -1435,15 +1560,17 @@ export function adminPage(): string {
     function renderJobList(jobs, pag) {
       var el = document.getElementById('jobList');
       if (!jobs || !jobs.length) { el.innerHTML = '<div class="text-center py-16 text-gray-400 text-sm">取付依頼がまだありません</div>'; return; }
-      el.innerHTML = jobs.map(function(j) {
+      // Select all checkbox
+      var selectAllHtml = '<div class="flex items-center gap-2 mb-2 px-1"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="jobSelectAll" onchange="toggleJobSelectAll(this.checked)" class="w-4 h-4 rounded border-gray-300 text-sva-red focus:ring-sva-red/20"><span class="text-xs text-gray-500">すべて選択</span></label></div>';
+      el.innerHTML = selectAllHtml + jobs.map(function(j) {
         var s = JOB_STATUS[j.status] || ['不明','bg-gray-100 text-gray-500 border-gray-200'];
         var sh = SHIP_S[j.shipping_status] || SHIP_S.not_shipped;
         var sc = SCHED_S[j.schedule_status] || SCHED_S.not_started;
         var wk = WORK_S[j.work_status] || WORK_S.scheduling;
         var date = j.created_at ? new Date(j.created_at).toLocaleDateString('ja-JP') : '-';
-        return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-gray-300 cursor-pointer" onclick="viewJob(' + j.id + ')">'
-          + '<div class="flex items-center gap-4">'
-          + '<div class="min-w-0 flex-1">'
+        return '<div class="bg-white rounded-lg border border-gray-200 px-4 py-3 hover:border-gray-300 flex items-center gap-3">'
+          + '<input type="checkbox" class="job-select-cb w-4 h-4 rounded border-gray-300 text-sva-red focus:ring-sva-red/20 shrink-0 cursor-pointer" value="' + j.id + '" onchange="onJobCheckChange()">'
+          + '<div class="min-w-0 flex-1 cursor-pointer" onclick="viewJob(' + j.id + ')">'
           + '<div class="flex items-center gap-2 mb-1.5 flex-wrap"><span class="px-2 py-0.5 text-xs rounded font-medium border ' + s[1] + '">' + s[0] + '</span>'
           + (j.job_number ? '<span class="px-2 py-0.5 text-xs rounded font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">' + esc(j.job_number) + '</span>' : '')
           + '<span class="text-xs text-gray-400">' + esc(j.company_name || '-') + '</span></div>'
@@ -1454,7 +1581,7 @@ export function adminPage(): string {
           + (j.photo_count > 0 ? '<span class="px-1.5 py-0.5 text-[10px] rounded font-medium bg-emerald-50 text-emerald-700">写真 ' + j.photo_count + '枚</span>' : '')
           + '</div>'
           + '<p class="text-xs text-gray-400 mt-1">' + esc(j.location || '-') + ' ・ ' + esc(j.vehicle_type || '-') + ' ・ ' + date + '</p></div>'
-          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div>';
+          + '<svg class="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div>';
       }).join('');
       renderPagination('jobPagination', pag, 'loadJobs');
     }
@@ -3624,6 +3751,148 @@ export function adminPage(): string {
     window.removeCsvRow = removeCsvRow;
     window.clearCsvPreview = clearCsvPreview;
     window.executeCsvBulkRegister = executeCsvBulkRegister;
+
+    // ===== Job Checkbox / Bulk Delete =====
+    function onJobCheckChange() {
+      var cbs = document.querySelectorAll('.job-select-cb');
+      jobSelectedIds = [];
+      cbs.forEach(function(cb) { if (cb.checked) jobSelectedIds.push(Number(cb.value)); });
+      updateBulkDeleteBtn();
+      var allCb = document.getElementById('jobSelectAll');
+      if (allCb) allCb.checked = cbs.length > 0 && jobSelectedIds.length === cbs.length;
+    }
+    function toggleJobSelectAll(checked) {
+      var cbs = document.querySelectorAll('.job-select-cb');
+      cbs.forEach(function(cb) { cb.checked = checked; });
+      onJobCheckChange();
+    }
+    function updateBulkDeleteBtn() {
+      var btn = document.getElementById('jobBulkDeleteBtn');
+      var cnt = document.getElementById('jobSelectedCount');
+      if (btn) btn.classList.toggle('hidden', jobSelectedIds.length === 0);
+      if (cnt) cnt.textContent = jobSelectedIds.length;
+    }
+    async function bulkDeleteJobs() {
+      if (!jobSelectedIds.length) return;
+      if (!confirm(jobSelectedIds.length + '件の取付依頼を削除しますか？\\n関連する車両・製品・写真・添付・メッセージも削除されます。\\nこの操作は元に戻せません。')) return;
+      try {
+        var res = await fetch(API + '/admin/jobs/bulk-delete', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ ids: jobSelectedIds })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          showToast(data.deleted + '件を削除しました');
+          jobSelectedIds = [];
+          loadJobs(jPage);
+        } else {
+          showToast(data.error || '削除に失敗しました', true);
+        }
+      } catch(e) { showToast('通信エラー', true); }
+    }
+    window.onJobCheckChange = onJobCheckChange;
+    window.toggleJobSelectAll = toggleJobSelectAll;
+    window.bulkDeleteJobs = bulkDeleteJobs;
+
+    // ===== Advanced Job Search =====
+    var jobAdvSearchOpen = false;
+    function toggleJobAdvSearch() {
+      jobAdvSearchOpen = !jobAdvSearchOpen;
+      var el = document.getElementById('jobAdvSearch');
+      var btn = document.getElementById('jobAdvSearchToggle');
+      if (el) el.classList.toggle('hidden', !jobAdvSearchOpen);
+      if (btn) btn.classList.toggle('bg-gray-100', jobAdvSearchOpen);
+    }
+    function clearJobFilters() {
+      var ids = ['jobSearchInput','jobClientFilter','jobProductFilter'];
+      ids.forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; });
+      var sels = ['jobStatusFilter','jobPartnerFilter','jobAreaFilter'];
+      sels.forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; });
+      loadJobs(1);
+    }
+    async function loadJobFilterPartners() {
+      try {
+        var res = await fetch(API + '/admin/partners/all', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var sel = document.getElementById('jobPartnerFilter');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">全パートナー</option>' + (data.partners || []).map(function(p) {
+          return '<option value="' + p.id + '">' + esc(p.company_name || p.representative_name || p.email) + '</option>';
+        }).join('');
+      } catch(e) {}
+    }
+    function loadJobFilterAreas() {
+      var sel = document.getElementById('jobAreaFilter');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">全エリア</option>' + PREFECTURES.map(function(p) {
+        return '<option value="' + p + '">' + p + '</option>';
+      }).join('');
+    }
+    window.toggleJobAdvSearch = toggleJobAdvSearch;
+    window.clearJobFilters = clearJobFilters;
+
+    // ===== Email Template Editor =====
+    async function loadEmailTemplate() {
+      try {
+        var res = await fetch(API + '/admin/email-templates/job_notification', { headers: { 'Authorization': 'Bearer ' + authToken } });
+        var data = await res.json();
+        var t = data.template;
+        if (t) {
+          document.getElementById('etSenderName').value = t.sender_name || 'SVA';
+          document.getElementById('etSubject').value = t.subject || '';
+          document.getElementById('etBodyIntro').value = t.body_intro || '';
+          document.getElementById('etBodyFooter').value = t.body_footer || '';
+          document.getElementById('etCtaText').value = t.cta_text || '';
+          document.getElementById('etCtaUrl').value = t.cta_url || '';
+          document.getElementById('etIsActive').checked = t.is_active !== 0;
+        }
+      } catch(e) {}
+    }
+    async function saveEmailTemplate() {
+      var payload = {
+        sender_name: document.getElementById('etSenderName').value.trim() || 'SVA',
+        subject: document.getElementById('etSubject').value.trim(),
+        body_intro: document.getElementById('etBodyIntro').value.trim(),
+        body_footer: document.getElementById('etBodyFooter').value.trim(),
+        cta_text: document.getElementById('etCtaText').value.trim(),
+        cta_url: document.getElementById('etCtaUrl').value.trim(),
+        is_active: document.getElementById('etIsActive').checked ? 1 : 0
+      };
+      try {
+        var res = await fetch(API + '/admin/email-templates/job_notification', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          showToast('メールテンプレートを保存しました');
+          var msg = document.getElementById('emailTemplateSaveMsg');
+          if (msg) { msg.textContent = '保存しました'; msg.className = 'text-sm text-green-600'; msg.classList.remove('hidden'); setTimeout(function(){ msg.classList.add('hidden'); }, 3000); }
+        } else {
+          showToast('保存に失敗しました', true);
+        }
+      } catch(e) { showToast('通信エラー', true); }
+    }
+    async function sendTestEmail() {
+      var email = prompt('テスト送信先のメールアドレスを入力してください:');
+      if (!email) return;
+      try {
+        var res = await fetch(API + '/admin/email-templates/test', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+          body: JSON.stringify({ to: email, template_key: 'job_notification' })
+        });
+        var data = await res.json();
+        if (res.ok) {
+          showToast('テストメールを送信しました: ' + email);
+        } else {
+          showToast(data.error || '送信に失敗しました', true);
+        }
+      } catch(e) { showToast('通信エラー', true); }
+    }
+    window.saveEmailTemplate = saveEmailTemplate;
+    window.sendTestEmail = sendTestEmail;
+
+    // Load filters on init
+    if (authToken) { loadJobFilterPartners(); loadJobFilterAreas(); }
 
   </script>
 </body>

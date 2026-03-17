@@ -56,8 +56,32 @@ interface JobNotificationData {
   urgentNote?: string
 }
 
-export function buildJobNotificationEmail(data: JobNotificationData): { subject: string; html: string } {
-  const subject = `【SVA】新しい取付依頼が届きました: ${data.jobTitle}`
+interface EmailTemplate {
+  subject?: string
+  body_intro?: string
+  body_footer?: string
+  sender_name?: string
+  cta_text?: string
+  cta_url?: string
+}
+
+export function buildJobNotificationEmail(data: JobNotificationData, template?: EmailTemplate | null): { subject: string; html: string } {
+  // Use template values or defaults
+  const senderName = template?.sender_name || 'SVA'
+  const ctaText = template?.cta_text || 'マイページで確認する'
+  const ctaUrl = template?.cta_url || `${SITE_URL}/partner/mypage`
+  const bodyIntro = template?.body_intro || 'SVAから新しい取付依頼が届きました。\n内容をご確認のうえ、受諾・辞退のご対応をお願いいたします。'
+  const bodyFooter = template?.body_footer || `このメールはSVA (Special Vehicle Assist) システムから自動送信されています。\nご不明点は <a href="${SITE_URL}" style="color:#B91C1C;text-decoration:none">sva-assist.com</a> までお問い合わせください。`
+
+  const subjectTemplate = template?.subject || `【SVA】新しい取付依頼が届きました: {{job_title}}`
+  const subject = subjectTemplate
+    .replace('{{job_title}}', data.jobTitle)
+    .replace('{{job_number}}', data.jobNumber || '')
+    .replace('{{partner_name}}', data.partnerName)
+    .replace('{{location}}', data.location || '')
+
+  const introHtml = escHtml(bodyIntro).replace(/\n/g, '<br>')
+  const footerHtml = bodyFooter.replace(/\n/g, '<br>')
 
   const urgentBlock = data.urgentNote
     ? `<tr><td style="padding:12px 20px">
@@ -78,7 +102,7 @@ export function buildJobNotificationEmail(data: JobNotificationData): { subject:
 
   <!-- Header -->
   <tr><td style="background:#1A1A2E;padding:20px 24px;text-align:center">
-    <p style="margin:0;font-size:18px;font-weight:bold;color:#FFFFFF;letter-spacing:1px">SVA</p>
+    <p style="margin:0;font-size:18px;font-weight:bold;color:#FFFFFF;letter-spacing:1px">${escHtml(senderName)}</p>
     <p style="margin:4px 0 0;font-size:11px;color:#9CA3AF">Special Vehicle Assist</p>
   </td></tr>
 
@@ -91,7 +115,7 @@ export function buildJobNotificationEmail(data: JobNotificationData): { subject:
   <!-- Partner greeting -->
   <tr><td style="padding:4px 20px 16px">
     <p style="margin:0;font-size:14px;color:#4B5563">${escHtml(data.partnerName)} 様</p>
-    <p style="margin:8px 0 0;font-size:13px;color:#6B7280;line-height:1.6">SVAから新しい取付依頼が届きました。<br>内容をご確認のうえ、受諾・辞退のご対応をお願いいたします。</p>
+    <p style="margin:8px 0 0;font-size:13px;color:#6B7280;line-height:1.6">${introHtml}</p>
   </td></tr>
 
   ${urgentBlock}
@@ -144,7 +168,7 @@ export function buildJobNotificationEmail(data: JobNotificationData): { subject:
 
   <!-- CTA -->
   <tr><td style="padding:16px 20px 8px;text-align:center">
-    <a href="${SITE_URL}/partner/mypage" style="display:inline-block;background:#B91C1C;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;padding:14px 40px;border-radius:8px;letter-spacing:0.5px">マイページで確認する</a>
+    <a href="${escHtml(ctaUrl)}" style="display:inline-block;background:#B91C1C;color:#FFFFFF;text-decoration:none;font-size:14px;font-weight:bold;padding:14px 40px;border-radius:8px;letter-spacing:0.5px">${escHtml(ctaText)}</a>
   </td></tr>
   <tr><td style="padding:4px 20px 20px;text-align:center">
     <p style="margin:0;font-size:11px;color:#9CA3AF">上記ボタンから案件詳細の確認・受諾が可能です</p>
@@ -152,9 +176,8 @@ export function buildJobNotificationEmail(data: JobNotificationData): { subject:
 
   <!-- Footer -->
   <tr><td style="background:#F9FAFB;border-top:1px solid #E5E7EB;padding:16px 20px;text-align:center">
-    <p style="margin:0;font-size:11px;color:#9CA3AF">このメールはSVA (Special Vehicle Assist) システムから自動送信されています。</p>
-    <p style="margin:4px 0 0;font-size:11px;color:#9CA3AF">ご不明点は <a href="${SITE_URL}" style="color:#B91C1C;text-decoration:none">sva-assist.com</a> までお問い合わせください。</p>
-    <p style="margin:8px 0 0;font-size:10px;color:#D1D5DB">&copy; SVA - Special Vehicle Assist</p>
+    <p style="margin:0;font-size:11px;color:#9CA3AF">${footerHtml}</p>
+    <p style="margin:8px 0 0;font-size:10px;color:#D1D5DB">&copy; ${escHtml(senderName)} - Special Vehicle Assist</p>
   </td></tr>
 
 </table>
