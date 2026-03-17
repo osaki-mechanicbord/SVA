@@ -2,7 +2,7 @@
 // Uses Resend REST API directly (no Node.js dependencies)
 
 const RESEND_API_URL = 'https://api.resend.com/emails'
-const FROM_EMAIL = 'SVA <noreply@send.sva-assist.com>'
+const FROM_EMAIL = 'SVA <noreply@sva-assist.com>'
 const SITE_URL = 'https://sva-assist.com'
 
 interface SendMailOptions {
