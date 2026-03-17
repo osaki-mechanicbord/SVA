@@ -1,7 +1,8 @@
 import { Hono } from 'hono'
 import { getSupabaseConfig, uploadToSupabase, deleteFromSupabase, generateStoragePath } from './supabase-storage'
+import { sendMail, buildJobNotificationEmail } from '../lib/mail'
 
-type Bindings = { DB: D1Database; PHOTOS?: R2Bucket; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; SUPABASE_SERVICE_KEY?: string }
+type Bindings = { DB: D1Database; PHOTOS?: R2Bucket; SUPABASE_URL?: string; SUPABASE_ANON_KEY?: string; SUPABASE_SERVICE_KEY?: string; RESEND_API_KEY?: string }
 const adminPartnerApi = new Hono<{ Bindings: Bindings }>()
 
 // Auth middleware - Bearer token required
@@ -243,6 +244,40 @@ adminPartnerApi.post('/jobs', async (c) => {
   ).bind(body.partner_id, '新しい案件が届きました: ' + body.title,
     '新しい案件依頼が届きました。マイページの「案件一覧」からご確認ください。\n\n案件名: ' + body.title + '\n場所: ' + (body.location || '未定') + '\n車両: ' + (body.vehicle_type || '-') + '\n装置: ' + (body.device_type || '-') + vehInfo
   ).run()
+
+  // Send email notification to partner (non-blocking)
+  if (c.env.RESEND_API_KEY) {
+    const partner = await c.env.DB.prepare(
+      "SELECT email, company_name, representative_name FROM partners WHERE id = ?"
+    ).bind(body.partner_id).first<{ email: string; company_name: string; representative_name: string }>()
+
+    if (partner?.email) {
+      const partnerName = partner.representative_name || partner.company_name || 'パートナー'
+      const emailData = buildJobNotificationEmail({
+        partnerName,
+        jobTitle: body.title,
+        jobNumber: body.job_number,
+        location: body.location,
+        vehicleType: body.vehicle_type,
+        deviceType: body.device_type,
+        vehicleCount: vehicleCount,
+        preferredDate: body.preferred_date,
+        urgentNote: body.urgent_contact_note,
+      })
+
+      // Fire-and-forget: don't block job creation on email delivery
+      c.executionCtx.waitUntil(
+        sendMail(c.env.RESEND_API_KEY, {
+          to: partner.email,
+          subject: emailData.subject,
+          html: emailData.html,
+        }).then(result => {
+          if (!result.success) console.error('Email notification failed for partner', body.partner_id, result.error)
+          else console.log('Email notification sent to', partner.email)
+        })
+      )
+    }
+  }
 
   return c.json({ id: jobId }, 201)
 })
