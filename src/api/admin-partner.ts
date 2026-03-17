@@ -799,12 +799,11 @@ adminPartnerApi.post('/jobs/bulk-delete', async (c) => {
   if (!ids || !ids.length) return c.json({ error: 'ids required' }, 400)
   if (ids.length > 100) return c.json({ error: 'Max 100 items at once' }, 400)
   const placeholders = ids.map(() => '?').join(',')
-  // Delete related data first
-  await c.env.DB.prepare(`DELETE FROM job_photos WHERE job_id IN (${placeholders})`).bind(...ids).run()
-  await c.env.DB.prepare(`DELETE FROM vehicle_products WHERE vehicle_id IN (SELECT id FROM job_vehicles WHERE job_id IN (${placeholders}))`).bind(...ids).run()
-  await c.env.DB.prepare(`DELETE FROM job_vehicles WHERE job_id IN (${placeholders})`).bind(...ids).run()
-  await c.env.DB.prepare(`DELETE FROM job_attachments WHERE job_id IN (${placeholders})`).bind(...ids).run()
-  await c.env.DB.prepare(`DELETE FROM messages WHERE job_id IN (${placeholders})`).bind(...ids).run()
+  // Delete related data first (cascading)
+  try { await c.env.DB.prepare(`DELETE FROM job_photos WHERE job_id IN (${placeholders})`).bind(...ids).run() } catch {}
+  try { await c.env.DB.prepare(`DELETE FROM vehicle_products WHERE vehicle_id IN (SELECT id FROM job_vehicles WHERE job_id IN (${placeholders}))`).bind(...ids).run() } catch {}
+  try { await c.env.DB.prepare(`DELETE FROM job_vehicles WHERE job_id IN (${placeholders})`).bind(...ids).run() } catch {}
+  try { await c.env.DB.prepare(`DELETE FROM job_attachments WHERE job_id IN (${placeholders})`).bind(...ids).run() } catch {}
   const r = await c.env.DB.prepare(`DELETE FROM jobs WHERE id IN (${placeholders})`).bind(...ids).run()
   return c.json({ success: true, deleted: r.meta.changes })
 })
