@@ -831,7 +831,7 @@ export function adminPage(): string {
     };
 
     // ===== Auth =====
-    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); loadJobFilterPartners(); loadJobFilterAreas(); setTimeout(function(){ loadJobs(1); }, 0); }
+    if (authToken) { showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobFilterPartners(); loadJobFilterAreas(); loadJobs(1); }, 0); }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -846,7 +846,7 @@ export function adminPage(): string {
         if (!res.ok) throw new Error(data.error);
         authToken = data.token;
         sessionStorage.setItem('sva_token', authToken);
-        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); loadJobFilterPartners(); loadJobFilterAreas(); setTimeout(function(){ loadJobs(1); }, 0);
+        showDashboard(); loadProductMasterData(); loadInquiryBadge(); loadRequestBadge(); setTimeout(function(){ loadJobFilterPartners(); loadJobFilterAreas(); loadJobs(1); }, 0);
       } catch (err) {
         errEl.textContent = 'ユーザー名またはパスワードが正しくありません';
         errEl.classList.remove('hidden');
@@ -897,7 +897,7 @@ export function adminPage(): string {
     }
 
     // ===== Tabs =====
-    const TABS = ['jobs','requests','inquiries','products','photogallery','articles','images','partners','account'];
+    var TABS = ['jobs','requests','inquiries','products','photogallery','articles','images','partners','account'];
     function switchTab(tab) {
       TABS.forEach(function(t) {
         var el = document.getElementById(t + 'Tab'); if (el) el.classList.toggle('hidden', t !== tab);
@@ -3890,9 +3890,6 @@ export function adminPage(): string {
     }
     window.saveEmailTemplate = saveEmailTemplate;
     window.sendTestEmail = sendTestEmail;
-
-    // Load filters on init
-    if (authToken) { loadJobFilterPartners(); loadJobFilterAreas(); }
 
   </script>
 </body>
